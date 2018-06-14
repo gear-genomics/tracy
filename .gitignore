@@ -1,7 +1,7 @@
 .sdsl
 .htslib
 bin/
-src/idxgen
+src/tracy
 *~
 
 # Prerequisites

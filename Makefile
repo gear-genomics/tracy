@@ -38,8 +38,8 @@ HTSLIBSOURCES = $(wildcard src/htslib/*.c) $(wildcard src/htslib/*.h)
 PBASE=$(shell pwd)
 
 # Targets
-BUILT_PROGRAMS = src/idxgen
-TARGETS = .sdsl .htslib src/idxgen
+BUILT_PROGRAMS = src/tracy
+TARGETS = .sdsl .htslib ${BUILT_PROGRAMS}
 
 all:   	$(TARGETS)
 
