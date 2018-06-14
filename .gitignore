@@ -2,6 +2,7 @@
 .htslib
 bin/
 src/tracy
+src/sdslLite/
 *~
 
 # Prerequisites

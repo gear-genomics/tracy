@@ -33,7 +33,7 @@ endif
 
 # External sources
 SDSLSOURCES = $(wildcard src/sdsl/lib/*.cpp)
-IDXSOURCES = $(wildcard src/*.cpp) $(wildcard src/*.h)
+TRACYSOURCES = $(wildcard src/*.cpp) $(wildcard src/*.h)
 HTSLIBSOURCES = $(wildcard src/htslib/*.c) $(wildcard src/htslib/*.h)
 PBASE=$(shell pwd)
 
@@ -49,7 +49,7 @@ all:   	$(TARGETS)
 .htslib: $(HTSLIBSOURCES)
 	cd src/htslib && make && make lib-static && cd ../../ && touch .htslib
 
-src/idxgen: .sdsl .htslib ${IDXSOURCES}
+src/tracy: .sdsl .htslib ${TRACYSOURCES}
 	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
 
 install: ${BUILT_PROGRAMS}
