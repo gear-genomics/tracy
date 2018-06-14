@@ -1,0 +1,2 @@
+# idxgen
+FM-Index Generation
