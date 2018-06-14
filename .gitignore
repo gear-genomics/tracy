@@ -1,3 +1,9 @@
+.sdsl
+.htslib
+bin/
+src/idxgen
+*~
+
 # Prerequisites
 *.d
 
