@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/gear-genomics/tracy.svg?branch=master)](https://travis-ci.org/gear-genomics/tracy)
+
 Installing Tracy
 ----------------
 
