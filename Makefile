@@ -3,25 +3,24 @@ STATIC ?= 0
 
 # Submodules
 PWD = $(shell pwd)
-SDSL_ROOT ?= ${PWD}/src/sdslLite
+SDSL_ROOT ?= ${PWD}/src/sdslLite/
 EBROOTHTSLIB ?= ${PWD}/src/htslib/
 
 # Install dir
 prefix = ${PWD}
 exec_prefix = $(prefix)
-bindir = $(exec_prefix)/bin
+bindir ?= $(exec_prefix)/bin
 
 # Flags
 CXX=g++
-CXXFLAGS += -std=c++11 -O3 -DNDEBUG -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
-LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -lsdsl -ldivsufsort -ldivsufsort64 -ldl -L${EBROOTHTSLIB}
+CXXFLAGS += -std=c++11 -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
+LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -lsdsl -ldivsufsort -ldivsufsort64 -ldl -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib
 
 ifeq (${STATIC}, 1)
-	LDFLAGS += -static -static-libgcc -pthread -lhts -lz
+	LDFLAGS += -static -static-libgcc -pthread -lhts -lz -llzma -lbz2
 else
-	LDFLAGS += -lhts -lz -Wl,-rpath,${EBROOTHTSLIB}
+	LDFLAGS += -lhts -lz -llzma -lbz2 -Wl,-rpath,${EBROOTHTSLIB}
 endif
-
 ifeq (${DEBUG}, 1)
 	CXXFLAGS += -g -O0 -fno-inline -DDEBUG
 else ifeq (${DEBUG}, 2)
@@ -30,6 +29,13 @@ else ifeq (${DEBUG}, 2)
 else
 	CXXFLAGS += -O3 -fno-tree-vectorize -DNDEBUG
 endif
+ifeq (${EBROOTHTSLIB}, ${PWD}/src/htslib/)
+	SUBMODULES += .htslib
+endif
+ifeq (${SDSL_ROOT}, ${PWD}/src/sdslLite/)
+	SUBMODULES += .sdsl
+endif
+
 
 # External sources
 SDSLSOURCES = $(wildcard src/sdsl/lib/*.cpp)
@@ -39,7 +45,7 @@ PBASE=$(shell pwd)
 
 # Targets
 BUILT_PROGRAMS = src/tracy
-TARGETS = .sdsl .htslib ${BUILT_PROGRAMS}
+TARGETS = ${SUBMODULES} ${BUILT_PROGRAMS}
 
 all:   	$(TARGETS)
 
@@ -49,7 +55,7 @@ all:   	$(TARGETS)
 .htslib: $(HTSLIBSOURCES)
 	if [ -r src/htslib/Makefile ]; then cd src/htslib && make && make lib-static && cd ../../ && touch .htslib; fi
 
-src/tracy: .sdsl .htslib ${TRACYSOURCES}
+src/tracy: ${SUBMODULES} ${TRACYSOURCES}
 	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
 
 install: ${BUILT_PROGRAMS}
@@ -59,7 +65,7 @@ install: ${BUILT_PROGRAMS}
 clean:
 	if [ -r src/htslib/Makefile ]; then cd src/htslib && make clean; fi
 	if [ -r src/sdsl/install.sh ]; then cd src/sdsl/ && ./uninstall.sh && cd ../../ && rm -rf src/sdslLite/; fi
-	rm -f $(TARGETS) $(TARGETS:=.o)
+	rm -f $(TARGETS) $(TARGETS:=.o) ${SUBMODULES}
 
 distclean: clean
 	rm -f ${BUILT_PROGRAMS}
