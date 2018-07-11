@@ -1,4 +1,4 @@
-# Tracy build script
+# Tracy travis.yml
 
 language: cpp
 
