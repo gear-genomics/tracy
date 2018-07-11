@@ -28,16 +28,13 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 #define BOOST_DISABLE_ASSERTS
 
-#ifdef OPENMP
-#include <omp.h>
-#endif
-
 #ifdef PROFILE
 #include "gperftools/profiler.h"
 #endif
 
 #include "version.h"
 #include "index.h"
+#include "teal.h"
 
 using namespace tracy;
 
@@ -49,6 +46,7 @@ displayUsage() {
   std::cout << "Commands:" << std::endl;
   std::cout << std::endl;
   std::cout << "    index        index FASTA reference file" << std::endl;
+  std::cout << "    basecall     basecall Sanger Chromatogram file" << std::endl;
   std::cout << std::endl;
   std::cout << std::endl;
 }
@@ -79,6 +77,9 @@ int main(int argc, char **argv) {
     }
     else if ((std::string(argv[1]) == "index")) {
       return index(argc-1,argv+1);
+    }
+    else if ((std::string(argv[1]) == "basecall")) {
+      return teal(argc-1,argv+1);
     }
 
     std::cerr << "Unrecognized command " << std::string(argv[1]) << std::endl;

@@ -91,6 +91,7 @@ namespace tracy
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] ";
+    std::cout << "tracy ";
     for(int i=0; i<argc; ++i) { std::cout << argv[i] << ' '; }
     std::cout << std::endl;
     
@@ -121,7 +122,7 @@ namespace tracy
 	  std::istream instream(&dataIn);
 	  std::string line;
 	  while(std::getline(instream, line)) {
-	    if (line.find(">") == 0) {
+	    if ((!line.empty()) && (line[0] == ">")) {
 	      if (!firstSeq) tmpout << std::endl;
 	      else firstSeq = false;
 	    } else {
