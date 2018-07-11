@@ -122,7 +122,7 @@ namespace tracy
 	  std::istream instream(&dataIn);
 	  std::string line;
 	  while(std::getline(instream, line)) {
-	    if ((!line.empty()) && (line[0] == ">")) {
+	    if ((!line.empty()) && (line[0] == '>')) {
 	      if (!firstSeq) tmpout << std::endl;
 	      else firstSeq = false;
 	    } else {
