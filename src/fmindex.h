@@ -334,7 +334,7 @@ namespace tracy
     int32_t vi = 1;
     
     uint32_t fald = c.linelimit + 14;
-    std::ofstream ofile(c.align.string().c_str());
+    std::ofstream ofile(c.outfile.string().c_str());
     ofile << ">Alt" << std::endl;
     int32_t count = 0;
     for(TAIndex j = 0; j< (TAIndex) align.shape()[1]; ++j) {

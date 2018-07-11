@@ -63,7 +63,7 @@ namespace tracy {
     uint16_t kmer;
     uint16_t maxindel;
     float pratio;
-    std::string outprefix;
+    std::string format;
     boost::filesystem::path align;
     boost::filesystem::path outfile;
     boost::filesystem::path ab;
@@ -72,7 +72,6 @@ namespace tracy {
   
   int sage(int argc, char** argv) {
     SageConfig c;
-    c.outprefix = "bla";
   
     // Parameter
     boost::program_options::options_description generic("Generic options");
@@ -89,8 +88,8 @@ namespace tracy {
     boost::program_options::options_description otp("Output options");
     otp.add_options()
       ("linelimit,n", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
-      ("align,a", boost::program_options::value<boost::filesystem::path>(&c.align)->default_value("out.align"), "output alignment")
-      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
+      ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|align]")
+      ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -190,14 +189,11 @@ namespace tracy {
     TAlign final;
     AlignConfig<false, false> global;
     gotoh(ptr, prs, final, global, sc);
-    
     // Debug Alignment
     //for(uint32_t i = 0; i<final.shape()[0]; ++i) {
     //for(uint32_t j = 0; j<final.shape()[1]; ++j) std::cerr << final[i][j];
     //std::cerr << std::endl;
-    //}
-    plotAlignment(c, final, rs);
-    
+    //}    
     
     // Pad the trace according to alignment
     BaseCalls nbc;
@@ -206,8 +202,9 @@ namespace tracy {
     
     // Output
     now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Json output" << std::endl;
-    traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Output" << std::endl;
+    if (c.format == "align") plotAlignment(c, final, rs);
+    else traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
 
     // Done
     now = boost::posix_time::second_clock::local_time();

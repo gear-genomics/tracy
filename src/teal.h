@@ -44,7 +44,7 @@ namespace tracy {
       ("help,?", "show help message")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call a base")
       ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|tsv]")
-      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("output.file"), "basecalling output")
+      ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "basecalling output")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
