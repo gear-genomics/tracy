@@ -83,7 +83,7 @@ namespace tracy
     
     // Check command line arguments
     if ((vm.count("help")) || (!vm.count("input-file"))) {
-      std::cout << "Usage: " << argv[0] << " [OPTIONS] genome.fa.gz" << std::endl;
+      std::cout << "Usage: tracy " << argv[0] << " [OPTIONS] genome.fa.gz" << std::endl;
       std::cout << visible_options << "\n";
       return -1;
     }
