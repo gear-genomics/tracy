@@ -48,7 +48,7 @@ displayUsage() {
   std::cout << std::endl;
   std::cout << "    index        index FASTA reference file" << std::endl;
   std::cout << "    basecall     basecall Chromatogram trace file" << std::endl;
-  std::cout << "    alignment    alignment of a trace file to a genome" << std::endl;
+  std::cout << "    align        alignment of a trace file to a genome" << std::endl;
   std::cout << std::endl;
   std::cout << std::endl;
 }
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     else if ((std::string(argv[1]) == "basecall")) {
       return teal(argc-1,argv+1);
     }
-    else if ((std::string(argv[1]) == "alignment")) {
+    else if ((std::string(argv[1]) == "align")) {
       return sage(argc-1,argv+1);
     }
 
