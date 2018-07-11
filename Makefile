@@ -44,10 +44,10 @@ TARGETS = .sdsl .htslib ${BUILT_PROGRAMS}
 all:   	$(TARGETS)
 
 .sdsl: $(SDSLSOURCES)
-	cd src/sdsl/ && ./install.sh ${PBASE}/src/sdslLite && cd ../../ && touch .sdsl
+	if [ -r src/sdsl/install.sh ]; then cd src/sdsl/ && ./install.sh ${PBASE}/src/sdslLite && cd ../../ && touch .sdsl; fi
 
 .htslib: $(HTSLIBSOURCES)
-	cd src/htslib && make && make lib-static && cd ../../ && touch .htslib
+	if [ -r src/htslib/Makefile ]; then cd src/htslib && make && make lib-static && cd ../../ && touch .htslib; fi
 
 src/tracy: .sdsl .htslib ${TRACYSOURCES}
 	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
@@ -57,6 +57,11 @@ install: ${BUILT_PROGRAMS}
 	install -p ${BUILT_PROGRAMS} ${bindir}
 
 clean:
-	cd src/htslib && make clean
-	cd src/sdsl/ && ./uninstall.sh && cd ../../ && rm -rf src/sdslLite/
+	if [ -r src/htslib/Makefile ]; then cd src/htslib && make clean; fi
+	if [ -r src/sdsl/install.sh ]; then cd src/sdsl/ && ./uninstall.sh && cd ../../ && rm -rf src/sdslLite/; fi
 	rm -f $(TARGETS) $(TARGETS:=.o)
+
+distclean: clean
+	rm -f ${BUILT_PROGRAMS}
+
+.PHONY: clean distclean install all
