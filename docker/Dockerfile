@@ -3,7 +3,7 @@ FROM ubuntu:14.04
 
 MAINTAINER Tobias Rausch rausch@embl.de
 
-# install required packages
+# install packages
 RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
