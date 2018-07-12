@@ -79,7 +79,16 @@ _toString(TValue const a) {
   std::stringstream ss;
   ss << a;
   return ss.str();
-}  
+}
+
+inline std::string
+trimmedSeq(std::string const& str, uint32_t const ltrim, uint32_t const rtrim) {
+  if (ltrim + rtrim + 1 >= str.size()) return str;
+  else {
+    uint32_t len = str.size() - ltrim - rtrim;
+    return str.substr(ltrim, len);
+  }
+}
  
 template<typename TACGTMountains, typename TMountains>
 inline void

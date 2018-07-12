@@ -29,6 +29,79 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 namespace tracy
 {
+
+  template<typename TAlign, typename TAlignConfig, typename TScoreObject>
+  inline int
+  gotohString(std::string const& s1, std::string const& s2, TAlign& align, TAlignConfig const& ac, TScoreObject const& sc)
+  {
+    typedef typename TScoreObject::TValue TScoreValue;
+
+    // DP Matrix
+    typedef boost::multi_array<TScoreValue, 2> TMatrix;
+    std::size_t m = s1.size();
+    std::size_t n = s2.size();
+    TMatrix s(boost::extents[m+1][n+1]);
+    TMatrix h(boost::extents[m+1][n+1]);
+    TMatrix v(boost::extents[m+1][n+1]);
+
+    // Initialization
+    for(std::size_t col = 1; col <= n; ++col) {
+      v[0][col] = -sc.inf;
+      s[0][col] = _horizontalGap(ac, 0, m, sc.go + col * sc.ge);
+      h[0][col] = _horizontalGap(ac, 0, m, sc.go + col * sc.ge);
+    }
+    for(std::size_t row = 1; row <= m; ++row) {
+      h[row][0] = -sc.inf;
+      s[row][0] = _verticalGap(ac, 0, n, sc.go + row * sc.ge);
+      v[row][0] = _verticalGap(ac, 0, n, sc.go + row * sc.ge);
+    }
+    s[0][0] = 0;
+    v[0][0] = -sc.inf;
+    h[0][0] = -sc.inf;
+
+    // Recursion
+    for(std::size_t row = 1; row <= m; ++row) {
+      for(std::size_t col = 1; col <= n; ++col) {
+	h[row][col] = std::max(s[row][col-1] + _horizontalGap(ac, row, m, sc.go + sc.ge), h[row][col-1] + _horizontalGap(ac, row, m, sc.ge));
+	v[row][col] = std::max(s[row-1][col] + _verticalGap(ac, col, n, sc.go + sc.ge), v[row-1][col] + _verticalGap(ac, col, n, sc.ge));
+	s[row][col] = std::max(std::max(s[row-1][col-1] + _scoreString(s1, s2, row-1, col-1, sc), h[row][col]), v[row][col]);
+      }
+    }
+
+    // Trace-back
+    std::size_t row = m;
+    std::size_t col = n;
+    char lastMatrix = 's';
+    typedef std::vector<char> TTrace;
+    TTrace trace;
+    while ((row>0) || (col>0)) {
+      if (lastMatrix == 's') {
+	if (s[row][col] == h[row][col]) lastMatrix = 'h';
+	else if (s[row][col] == v[row][col]) lastMatrix = 'v';
+	else {
+	  --row;
+	  --col;
+	  trace.push_back('s');
+	}
+      } else if (lastMatrix == 'h') {
+	if (h[row][col] != h[row][col-1] + _horizontalGap(ac, row, m, sc.ge)) lastMatrix = 's';
+	--col;
+	trace.push_back('h');
+      } else if (lastMatrix == 'v') {
+	if (v[row][col] != v[row-1][col] + _verticalGap(ac, col, n, sc.ge)) lastMatrix = 's';
+	--row;
+	trace.push_back('v');
+      }
+    }
+
+    // Create alignment
+    _createAlignmentString(trace, s1, s2, align);
+
+    // Score
+    return s[m][n];
+  }
+
+
   
   template<typename TProfile, typename TAlign, typename TAlignConfig, typename TScoreObject>
   inline int

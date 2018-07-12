@@ -100,6 +100,13 @@ namespace tracy
     else return cost;
   }
 
+
+  template<typename TAIndex, typename TScore>
+  inline int
+  _scoreString(std::string const& s1, std::string const& s2, TAIndex row, TAIndex col, TScore const& sc) {
+    return (s1[row] == s2[col] ? sc.match : sc.mismatch );
+  }
+  
   template<typename TProfile, typename TAIndex, typename TScore>
   inline int
   _score(TProfile const& p1, TProfile const& p2, TAIndex row, TAIndex col, TScore const& sc)
@@ -131,7 +138,29 @@ namespace tracy
     else return '-';
   }
 
-    
+
+  template<typename TTrace, typename TAlign>
+  inline void
+  _createAlignmentString(TTrace const& trace, std::string const& s1, std::string const& s2, TAlign& align)
+  {
+    align.resize(boost::extents[2][trace.size()]);
+    std::size_t row = 0;
+    std::size_t col = 0;
+    std::size_t ai = 0;
+    for(typename TTrace::const_reverse_iterator itT = trace.rbegin(); itT != trace.rend(); ++itT, ++ai) {
+      if (*itT == 's') {
+	align[0][ai] = s1[row++];
+	align[1][ai] = s2[col++];
+      } else if (*itT =='h') {
+	align[0][ai] = '-';
+	align[1][ai] = s2[col++];
+      } else {
+	align[0][ai] = s1[row++];
+	align[1][ai] = '-';
+      }
+    }
+  }
+  
   template<typename TTrace, typename TProfile, typename TAlign>
   inline void
   _createAlignment(TTrace const& trace, TProfile const& p1, TProfile const& p2, TAlign& align)

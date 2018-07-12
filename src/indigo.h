@@ -91,6 +91,12 @@ namespace tracy {
     }
     if (c.maxindel < 1) c.maxindel = 1;
 
+    // Check ab1
+    if (!(boost::filesystem::exists(c.ab) && boost::filesystem::is_regular_file(c.ab) && boost::filesystem::file_size(c.ab))) {
+      std::cerr << "Trace file is missing: " << c.ab.string() << std::endl;
+      return 1;
+    }
+    
     // Check reference
     if (!(boost::filesystem::exists(c.genome) && boost::filesystem::is_regular_file(c.genome) && boost::filesystem::file_size(c.genome))) {
       std::cerr << "Reference file is missing: " << c.genome.string() << std::endl;
@@ -160,7 +166,7 @@ namespace tracy {
     // Debug Breakpoint & Alignment
     std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << ',' << bp.bestDiff << std::endl;
     for(uint32_t i = 0; i<align.shape()[0]; ++i) {
-      int32_t alignedNuc = 0;
+      uint32_t alignedNuc = 0;
       for(uint32_t j = 0; j<align.shape()[1]; ++j) {
 	if (align[0][j] != '-') {
 	  ++alignedNuc;
@@ -171,14 +177,11 @@ namespace tracy {
       std::cerr << std::endl;
     }    
 
-
-    
-    /*
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Decompose Chromatogram" << std::endl;
     
     // Decompose alleles
-    if (!decomposeAlleles(c, bc, rs)) return -1;
+    if (!decomposeAlleles(c, align, bc, bp, rs)) return -1;
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
@@ -186,24 +189,21 @@ namespace tracy {
     // Plot alignments
     typedef boost::multi_array<char, 2> TAlign;
     TAlign alignPrimary;
-    AlignConfig<true, false> semiglobal;
-    DnaScore<int> sc(5, -4, -50, 0);
-    std::string pri = trimmedPSeq(bc);
-    gotoh(pri, rs.refslice, alignPrimary, semiglobal, sc);
-    plotAlignment(c, alignPrimary, rs, 1);
+    DnaScore<int> scSeq(5, -4, -50, 0);
+    std::string pri = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
+    gotohString(pri, rs.refslice, alignPrimary, semiglobal, scSeq);
+    plotAlignmentDeprecated(c, alignPrimary, rs, 1);
     
     typedef boost::multi_array<char, 2> TAlign;
     TAlign alignSecondary;
-    std::string sec = trimmedSecSeq(bc);
-    gotoh(sec, rs.refslice, alignSecondary, semiglobal, sc);
-    plotAlignment(c, alignSecondary, rs, 2);
+    std::string sec = trimmedSeq(bc.secondary, c.trimLeft, c.trimRight);
+    gotohString(sec, rs.refslice, alignSecondary, semiglobal, scSeq);
+    plotAlignmentDeprecated(c, alignSecondary, rs, 2);
+      
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
+    return 0;
   }
-    
-  now = boost::posix_time::second_clock::local_time();
-  std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
-    */
-  return 0;
-}
 
 }
 
