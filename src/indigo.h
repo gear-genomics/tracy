@@ -126,19 +126,49 @@ namespace tracy {
     // Identify position of indel shift in Sanger trace
     TraceBreakpoint bp;
     findBreakpoint(c, bc, bp);
-    std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << ',' << bp.bestDiff << std::endl;
-    /*
+
     // Get reference slice
     if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
 
-    // Find breakpoint for hom. indels
+    // Create trimmed trace and reference profile
+    typedef boost::multi_array<double, 2> TProfile;
+    TProfile ptrace;
+    createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
+    TProfile prefslice;
+    createProfile(c, rs, prefslice);
+
+    // Semi-global alignment
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Alignment" << std::endl;
+    typedef boost::multi_array<char, 2> TAlign;
+    TAlign align;
+    AlignConfig<true, false> semiglobal;
+    DnaScore<int> sc(5, -4, -10, -1);
+    gotoh(ptrace, prefslice, align, semiglobal, sc);
+    
+    // Debug Alignment
+    std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << std::endl;
+    for(uint32_t i = 0; i<align.shape()[0]; ++i) {
+      int32_t alignedNuc = 0;
+      for(uint32_t j = 0; j<align.shape()[1]; ++j) {
+	if (align[0][j] != '-') {
+	  ++alignedNuc;
+	  if (alignedNuc == bp.breakpoint) std::cerr << "#####";
+	}
+	std::cerr << align[i][j];
+      }
+      std::cerr << std::endl;
+    }    
+
+        /*
+
+    // Do we have a shifted trace?
     if (!bc.indelshift) {
+      // Find breakpoint for hom. indels
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Find Alignment Break" << std::endl;
       if (!findHomozygousBreakpoint(c, bc, rs)) return -1;
-      if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
     }
-    
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Decompose Chromatogram" << std::endl;
     

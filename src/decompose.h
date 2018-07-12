@@ -69,22 +69,22 @@ namespace tracy
     }
     bp.indelshift = true;
     // Forward breakpoint to first N
-  for(uint32_t i = bp.breakpoint; i < bc.consensus.size(); ++i) {
-    if (bc.consensus[i] == 'N') {
-      bp.breakpoint = i;
-      break;
+    for(uint32_t i = bp.breakpoint; i < bc.consensus.size(); ++i) {
+      if (bc.consensus[i] == 'N') {
+	bp.breakpoint = i;
+	break;
+      }
     }
+    if ((bp.breakpoint <= c.trimLeft) || ((bc.consensus.size() - bp.breakpoint <= c.trimRight)) || (bp.bestDiff < 0.25)) {
+      // No indel shift
+      bp.indelshift = false;
+      bp.breakpoint = bc.consensus.size() - c.trimRight - 1;
+      bp.traceleft = true;
+      bp.bestDiff = 0;
+    } else {
+      bp.indelshift = true;
+    }    
   }
-  if ((bp.breakpoint <= c.trimLeft) || ((bc.consensus.size() - bp.breakpoint <= c.trimRight)) || (bp.bestDiff < 0.25)) {
-    // No indel shift
-    bp.indelshift = false;
-    bp.breakpoint = bc.consensus.size() - c.trimRight - 1;
-    bp.traceleft = true;
-    bp.bestDiff = 0;
-  } else {
-    bp.indelshift = true;
-  }    
-}
 
 
   /*  
@@ -625,113 +625,10 @@ scanRight(TFMIndex const& fm_index, std::string const& consensus, uint16_t const
     }
   }
 }
+  */ 
 
- 
-
-template<typename TConfig, typename TFMIndex>
-inline bool
-getReferenceSlice(TConfig const& c, TFMIndex const& fm_index, BaseCalls const& bc, ReferenceSlice& rs) {
-  uint32_t minKmerSupport = 3;
-  
-  // Get sequence lengths
-  std::vector<uint32_t> seqlen;
-  faidx_t* fai = NULL;
-  if (c.filetype) {
-    seqlen.push_back(rs.refslice.size());
-  } else {
-    fai = fai_load(c.genome.string().c_str());
-    seqlen.resize(faidx_nseq(fai));
-    for(int32_t refIndex = 0; refIndex < faidx_nseq(fai); ++refIndex) {
-      std::string seqname(faidx_iseq(fai, refIndex));
-      seqlen[refIndex] = faidx_seq_len(fai, seqname.c_str()) + 1;
-    }
-  }
-
-  // Fwd and rev index search
-  std::vector<int64_t> hitFwd;
-  std::vector<int64_t> hitRev;
-  scanLeft(fm_index, bc.consensus, bc.breakpoint, c.kmer, bc.ltrim, hitFwd, true);
-  std::string rv = bc.consensus;
-  reverseComplement(rv);
-  scanRight(fm_index, rv, (uint16_t) (rv.size() - bc.breakpoint - 1), c.kmer, bc.rtrim, hitRev, true);
-  
-  // Select best orientation
-  int64_t bestFwd;
-  uint32_t freqFwd = findMaxFreq(hitFwd, bestFwd);
-  int64_t bestRev;
-  uint32_t freqRev = findMaxFreq(hitRev, bestRev);
-  int64_t bestPos;
-  if ((freqFwd >= minKmerSupport) && (freqFwd > 2*freqRev)) {
-    rs.forward = true;
-    rs.kmersupport = freqFwd;
-    bestPos = bestFwd;
-  } else if ((freqRev >= minKmerSupport) && (freqRev > 2*freqFwd)) {
-    rs.forward = false;
-    rs.kmersupport = freqRev;
-    bestPos = bestRev;
-  } else {
-    // Try using non-unique matches
-    hitFwd.clear();
-    hitRev.clear();
-    scanLeft(fm_index, bc.consensus, bc.breakpoint, c.kmer, bc.ltrim, hitFwd, false);
-    scanRight(fm_index, rv, (uint16_t) (rv.size() - bc.breakpoint - 1), c.kmer, bc.rtrim, hitRev, false);
-    freqFwd = findMaxFreq(hitFwd, bestFwd);
-    freqRev = findMaxFreq(hitRev, bestRev);
-    if ((freqFwd >= minKmerSupport) && (freqFwd > 2*freqRev)) {
-      rs.forward = true;
-      rs.kmersupport = freqFwd;
-      bestPos = bestFwd;
-    } else if ((freqRev >= minKmerSupport) && (freqRev > 2*freqFwd)) {
-      rs.forward = false;
-      rs.kmersupport = freqRev;
-      bestPos = bestRev;
-    } else {
-      std::cerr << "Couldn't anchor the Sanger trace in the selected reference genome." << std::endl;
-      return false;
-    }
-  }
- 
-  // Get initial ref slice
-  int64_t cumsum = 0;
-  uint32_t refIndex = 0;
-  for(; bestPos >= cumsum + seqlen[refIndex]; ++refIndex) cumsum += seqlen[refIndex];
-  if (!c.filetype) rs.chr = std::string(faidx_iseq(fai, refIndex));
-  uint32_t chrpos = bestPos - cumsum;
-  int32_t slen = -1;
-  uint32_t slicestart = 0;
-  uint32_t sliceend = seqlen[refIndex];
-  if (bc.indelshift) {
-    if (rs.forward) {
-      if (chrpos > (uint32_t) (0.05 * (float) (bc.consensus.size()))) slicestart = chrpos - (int) (0.05 * (float) (bc.consensus.size()));
-      uint32_t tmpend = chrpos + bc.consensus.size() + c.maxindel;
-      if (tmpend < seqlen[refIndex]) sliceend = tmpend;
-    } else {
-      if (chrpos > c.maxindel) slicestart = chrpos - c.maxindel;
-      uint32_t tmpend = chrpos + bc.consensus.size() + (int) (0.05 * (float) (bc.consensus.size()));
-      if (tmpend < seqlen[refIndex]) sliceend = tmpend;
-    }
-  } else {
-    // Homozygous mutation, search both sides
-    if (chrpos > c.maxindel) slicestart = chrpos - c.maxindel;
-    uint32_t tmpend = chrpos + bc.consensus.size() + c.maxindel;
-    if (tmpend < seqlen[refIndex]) sliceend = tmpend;
-  }
-  if (!c.filetype) {
-    rs.pos = slicestart;
-    char* seq = faidx_fetch_seq(fai, rs.chr.c_str(), slicestart, sliceend, &slen);
-    rs.refslice = boost::to_upper_copy(std::string(seq));
-    if (seq != NULL) free(seq);
-  }
-  if (!rs.forward) reverseComplement(rs.refslice);
-  //std::cout << rs.chr << "\t" << rs.pos << "\t" << rs.forward << std::endl;
-  
-  // Clean-up
-  if (fai != NULL) fai_destroy(fai);
- 
-  return true;
 }
-  */
- 
-}
+
+
 
 #endif
