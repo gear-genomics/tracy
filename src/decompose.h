@@ -33,58 +33,125 @@ namespace tracy
     int32_t breakpoint;
     float bestDiff;
   };
-  
-  template<typename TConfig>
+
+  template<typename TProfile>
   inline void
-  findBreakpoint(TConfig const& c, BaseCalls& bc, TraceBreakpoint& bp) {
-    int32_t ncount = 0;
-    for(uint32_t i = 0; ((i<c.kmer) && (i<bc.consensus.size())); ++i)
-      if (bc.consensus[i] == 'N') ++ncount;
-    std::vector<float> nratio;
-    nratio.push_back((float)ncount / (float)c.kmer);  
-    for(uint32_t i = c.kmer; i < bc.consensus.size(); ++i) {
-      if (bc.consensus[i-c.kmer] == 'N') --ncount;
-      if (bc.consensus[i] == 'N') ++ncount;
-      nratio.push_back((float)ncount / (float)c.kmer);
+  findBreakpoint(TProfile const& ptrace, TraceBreakpoint& bp) {
+    // Compute signal vector
+    std::vector<double> sigratio;
+    for(uint32_t j = 0; j<ptrace.shape()[1]; ++j) {
+      double best = 0.001;
+      double sndBest = 0.001;
+      for(uint32_t i = 0; i<ptrace.shape()[0]; ++i) {
+	if (ptrace[i][j] > best) {
+	  sndBest = best;
+	  best = ptrace[i][j];
+	} else if (ptrace[i][j] > sndBest) {
+	  sndBest = ptrace[i][j];
+	}
+      }
+      sigratio.push_back(best - sndBest);
     }
-    float totalN = 0;
-    for(uint32_t i = 0; i < nratio.size(); ++i) totalN += nratio[i];
-    float leftSum = nratio[0];
-    float rightSum = totalN - leftSum;
+
+    // Find best breakpoint
     bp.bestDiff = 0;
     bp.traceleft = true;
     bp.breakpoint = 0;
-    for(uint32_t i = 1; i < nratio.size() - 1; ++i) {
-      float right = rightSum / (float)(nratio.size() - i);
-      float left = leftSum / (float)i;
-      float diff = std::abs(right - left);
+    uint32_t minWindow = 25;
+    for(uint32_t i = minWindow; i < sigratio.size() - minWindow; ++i) {
+      double leftSum = 0;
+      for(uint32_t k = i-minWindow; k < i; ++k) leftSum += sigratio[k];
+      double left = leftSum / (double) minWindow;
+      double rightSum = 0;
+      for(uint32_t k = i; k < i + minWindow; ++k) rightSum += sigratio[k];
+      double right = rightSum / (double) minWindow;
+      double diff = std::abs(right - left);
       if (diff > bp.bestDiff) {
 	bp.breakpoint = i;
+	bp.bestDiff = diff;
+	if (left < right) bp.traceleft = false;
+	else bp.traceleft = true;
+      }
+    }
+    bp.indelshift = true;
+    if (bp.bestDiff < 0.25) {
+      // No indel shift
+      bp.indelshift = false;
+      bp.breakpoint = ptrace.shape()[1];
+      bp.traceleft = true;
+      bp.bestDiff = 0;
+    }
+  }
+
+
+  template<typename TAlign>
+  inline bool
+  findHomozygousBreakpoint(TAlign& align, TraceBreakpoint& bp) {
+    // Homozygous mutation, estimate the breakpoint based on percent identity
+    typedef typename TAlign::index TAIndex;
+    TAIndex alignStart = 0;
+    TAIndex alignEnd = 0;
+    TAIndex varIndex = 0;
+    for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+      if ((align[0][j] != '-') && (align[1][j] != '-')) {
+	alignStart = j;
+	break;
+      }
+      if (align[0][j] != '-') ++varIndex;
+    }
+    for(int32_t j = (int32_t) (align.shape()[1] - 1); j >= 0; --j) {
+      if ((align[0][j] != '-') && (align[1][j] != '-')) {
+	alignEnd = j;
+	break;
+      }
+    }
+    if (alignStart >= alignEnd) {
+      std::cerr << "No valid alignment found between consensus and reference!" << std::endl;
+      return false;
+    }
+
+
+    // Find best breakpoint
+    bp.bestDiff = 0;
+    bp.traceleft = true;
+    bp.breakpoint = 0;
+    uint32_t minWindow = 25;
+    for(uint32_t i = alignStart; i < alignStart + minWindow; ++i) {
+      if (align[0][i] != '-') ++varIndex;
+    }
+    for(uint32_t i = alignStart + minWindow; i < alignEnd - minWindow; ++i) {
+      if (align[0][i] != '-') ++varIndex;
+      double leftSum = 0;
+      for(uint32_t k = i-minWindow; k < i; ++k) {
+	if (align[0][k] != align[1][k]) ++leftSum;
+      }
+      double left = leftSum / (double) minWindow;
+      double rightSum = 0;
+      for(uint32_t k = i; k < i + minWindow; ++k) {
+	if (align[0][k] != align[1][k]) ++rightSum;
+      }
+      double right = rightSum / (double) minWindow;
+      double diff = std::abs(right - left);
+      if (diff > bp.bestDiff) {
+	bp.breakpoint = varIndex;
 	bp.bestDiff = diff;
 	if (left < right) bp.traceleft = true;
 	else bp.traceleft = false;
       }
-      leftSum += nratio[i];
-      rightSum -= nratio[i];
+      //std::cerr << varIndex << ':' << diff << std::endl;
     }
     bp.indelshift = true;
-    // Forward breakpoint to first N
-    for(uint32_t i = bp.breakpoint; i < bc.consensus.size(); ++i) {
-      if (bc.consensus[i] == 'N') {
-	bp.breakpoint = i;
-	break;
-      }
-    }
-    if ((bp.breakpoint <= c.trimLeft) || ((bc.consensus.size() - bp.breakpoint <= c.trimRight)) || (bp.bestDiff < 0.25)) {
+    if (bp.bestDiff < 0.25) {
       // No indel shift
       bp.indelshift = false;
-      bp.breakpoint = bc.consensus.size() - c.trimRight - 1;
+      bp.breakpoint = varIndex;
       bp.traceleft = true;
       bp.bestDiff = 0;
-    } else {
-      bp.indelshift = true;
-    }    
-  }
+    }
+    return true;
+  }  
+
+ 
 
 
   /*  
@@ -184,12 +251,7 @@ plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, i
  
 
   
-template<typename TIterator, typename TValue>
-inline void
-getMedian(TIterator begin, TIterator end, TValue& median) {
-  std::nth_element(begin, begin + (end - begin) / 2, end);
-  median = *(begin + (end - begin) / 2);
-}
+
 
 template<typename TIterator, typename TValue>
 inline void
@@ -247,104 +309,6 @@ phaseRefAllele(BaseCalls& bc, char const r, uint32_t varIndex) {
 }
 
 
-template<typename TConfig>
-inline bool
-findHomozygousBreakpoint(TConfig const& c, BaseCalls& bc, ReferenceSlice& rs) {
-  // Homozygous mutation, estimate the breakpoint based on percent identity
-  typedef boost::multi_array<char, 2> TAlign;
-  TAlign align;
-  AlignConfig<true, false> semiglobal;
-  DnaScore<int> sc(5, -4, -10, -1);
-  std::string consslice = trimmedCSeq(bc);
-  gotoh(consslice, rs.refslice, align, semiglobal, sc);
-
-  typedef typename TAlign::index TAIndex;
-  TAIndex alignStart = 0;
-  TAIndex alignEnd = 0;
-  for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
-    if ((align[0][j] != '-') && (align[1][j] != '-')) {
-      alignStart = j;
-      break;
-    }
-  }
-  for(int32_t j = (int32_t) (align.shape()[1] - 1); j >= 0; --j) {
-    if ((align[0][j] != '-') && (align[1][j] != '-')) {
-      alignEnd = j;
-      break;
-    }
-  }
-  if (alignStart >= alignEnd) {
-    std::cerr << "No valid alignment found between consensus and reference!" << std::endl;
-    return false;
-  }
-  int32_t mismatch = 0;
-  for(uint32_t j = alignStart; ((j<c.kmer) && (j<alignEnd)); ++j)
-    if (align[0][j] != align[1][j]) ++mismatch;
-  std::vector<float> mmratio;
-  mmratio.push_back((float)mismatch/(float)c.kmer);
-  for(uint32_t j = alignStart + c.kmer; j<alignEnd; ++j) {
-    if (align[0][j-c.kmer] != align[1][j-c.kmer]) --mismatch;
-    if (align[0][j] != align[1][j]) ++mismatch;
-    mmratio.push_back((float)mismatch/(float)c.kmer);
-  }
-  float totalMM = 0;
-  for(uint32_t i = 0; i < mmratio.size(); ++i) totalMM += mmratio[i];
-  float leftSum = mmratio[0];
-  float rightSum = totalMM - leftSum;
-  float bestDiff = 0;
-  bool traceleft = true;
-  TAIndex bp = 0;
-  for(uint32_t i = 1; i < mmratio.size() - 1; ++i) {
-    float right = rightSum / (float)(mmratio.size() - i);
-    float left = leftSum / (float)i;
-    float diff = std::abs(right - left);
-    if (diff > bestDiff) {
-      bp = i;
-      bestDiff = diff;
-      if (left < right) traceleft = true;
-      else traceleft = false;
-    }
-    leftSum += mmratio[i];
-    rightSum -= mmratio[i];
-  }
-  // Find true consensus sequence breakpoint
-  TAIndex varIndex = bc.ltrim;
-  for(TAIndex j = alignStart; j < alignEnd; ++j) {
-    if (j >= alignStart + bp) {
-      // Forward breakpoint to first N or gap
-      if ((align[0][j] == '-') || (align[0][j] == 'N')) break;
-    }
-    if (align[0][j] != '-') ++varIndex;
-  }
-  bc.breakpoint = varIndex;
-  bc.indelshift = true;
-  if (bestDiff < 0.25) {
-    // Likely no hom. indel
-    bc.indelshift = false;
-    bc.breakpoint = bc.consensus.size() / 2;
-    traceleft = true;
-    bestDiff = 0;
-  }
-
-  //std::cout << bc.indelshift << ',' << bc.breakpoint << ',' << bc.consensus.size() << ',' << traceleft << std::endl;
-  if (!traceleft) {
-    bc.breakpoint = (uint16_t) (bc.consensus.size() - bc.breakpoint - 1);
-    std::reverse(bc.consensus.begin(), bc.consensus.end());
-    std::reverse(bc.primary.begin(), bc.primary.end());
-    std::reverse(bc.secondary.begin(), bc.secondary.end());
-    uint16_t tmptrim = bc.ltrim;
-    bc.ltrim = bc.rtrim;
-    bc.rtrim = tmptrim;
-    for(uint32_t k = 0; k<4; ++k) {
-      std::reverse(bc.peak[k].begin(), bc.peak[k].end());
-      std::reverse(bc.pos[k].begin(), bc.pos[k].end());
-    }
-  }
-  
-  return true;
-}  
-
- 
 template<typename TConfig>
 inline bool
 decomposeAlleles(TConfig const& c, BaseCalls& bc, ReferenceSlice& rs) {

@@ -114,6 +114,16 @@ namespace tracy {
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
 
+    // Create trimmed trace profile
+    typedef boost::multi_array<double, 2> TProfile;
+    TProfile ptrace;
+    createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
+
+    // Identify position of indel shift in Sanger trace
+    TraceBreakpoint bp;
+    findBreakpoint(ptrace, bp);
+    //std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << ',' << bp.bestDiff << std::endl;
+    
     // Load reference
     csa_wt<> fm_index;
     ReferenceSlice rs;
@@ -123,17 +133,10 @@ namespace tracy {
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Find Reference Match" << std::endl;
     
-    // Identify position of indel shift in Sanger trace
-    TraceBreakpoint bp;
-    findBreakpoint(c, bc, bp);
-
     // Get reference slice
     if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
 
-    // Create trimmed trace and reference profile
-    typedef boost::multi_array<double, 2> TProfile;
-    TProfile ptrace;
-    createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
+    // Create reference profile
     TProfile prefslice;
     createProfile(c, rs, prefslice);
 
@@ -146,8 +149,16 @@ namespace tracy {
     DnaScore<int> sc(5, -4, -10, -1);
     gotoh(ptrace, prefslice, align, semiglobal, sc);
     
-    // Debug Alignment
-    std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << std::endl;
+    // Do we have a shifted trace?
+    if (!bp.indelshift) {
+      // Find breakpoint for hom. indels
+      now = boost::posix_time::second_clock::local_time();
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Homozygous InDel Search" << std::endl;
+      if (!findHomozygousBreakpoint(align, bp)) return -1;
+    }
+
+    // Debug Breakpoint & Alignment
+    std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << ',' << bp.bestDiff << std::endl;
     for(uint32_t i = 0; i<align.shape()[0]; ++i) {
       int32_t alignedNuc = 0;
       for(uint32_t j = 0; j<align.shape()[1]; ++j) {
@@ -160,15 +171,9 @@ namespace tracy {
       std::cerr << std::endl;
     }    
 
-        /*
 
-    // Do we have a shifted trace?
-    if (!bc.indelshift) {
-      // Find breakpoint for hom. indels
-      now = boost::posix_time::second_clock::local_time();
-      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Find Alignment Break" << std::endl;
-      if (!findHomozygousBreakpoint(c, bc, rs)) return -1;
-    }
+    
+    /*
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Decompose Chromatogram" << std::endl;
     
