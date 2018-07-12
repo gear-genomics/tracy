@@ -71,6 +71,11 @@ namespace tracy {
   };
   
   int sage(int argc, char** argv) {
+
+#ifdef PROFILE
+    ProfilerStart("tracy.prof");
+#endif
+    
     SageConfig c;
   
     // Parameter
@@ -206,6 +211,11 @@ namespace tracy {
     if (c.format == "align") plotAlignment(c, final, rs);
     else traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
 
+
+#ifdef PROFILE
+    ProfilerStop();
+#endif
+    
     // Done
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;

@@ -54,40 +54,40 @@ displayUsage() {
 }
 
 int main(int argc, char **argv) {
-    if (argc < 2) { 
-      printTitle("Tracy");
-      displayUsage();
-      return 0;
-    }
-
-    if ((std::string(argv[1]) == "version") || (std::string(argv[1]) == "--version") || (std::string(argv[1]) == "--version-only") || (std::string(argv[1]) == "-v")) {
-      std::cout << "Tracy version: v" << tracyVersionNumber << std::endl;
-      return 0;
-    }
-    else if ((std::string(argv[1]) == "help") || (std::string(argv[1]) == "--help") || (std::string(argv[1]) == "-h") || (std::string(argv[1]) == "-?")) {
-      printTitle("Tracy");
-      displayUsage();
-      return 0;
-    }
-    else if ((std::string(argv[1]) == "warranty") || (std::string(argv[1]) == "--warranty") || (std::string(argv[1]) == "-w")) {
-      displayWarranty();
-      return 0;
-    }
-    else if ((std::string(argv[1]) == "license") || (std::string(argv[1]) == "--license") || (std::string(argv[1]) == "-l")) {
-      gplV3();
-      return 0;
-    }
-    else if ((std::string(argv[1]) == "index")) {
-      return index(argc-1,argv+1);
-    }
-    else if ((std::string(argv[1]) == "basecall")) {
-      return teal(argc-1,argv+1);
-    }
-    else if ((std::string(argv[1]) == "align")) {
-      return sage(argc-1,argv+1);
-    }
-
+  if (argc < 2) { 
+    printTitle("Tracy");
+    displayUsage();
+    return 0;
+  }
+  
+  if ((std::string(argv[1]) == "version") || (std::string(argv[1]) == "--version") || (std::string(argv[1]) == "--version-only") || (std::string(argv[1]) == "-v")) {
+    std::cout << "Tracy version: v" << tracyVersionNumber << std::endl;
+    return 0;
+  }
+  else if ((std::string(argv[1]) == "help") || (std::string(argv[1]) == "--help") || (std::string(argv[1]) == "-h") || (std::string(argv[1]) == "-?")) {
+    printTitle("Tracy");
+    displayUsage();
+    return 0;
+  }
+  else if ((std::string(argv[1]) == "warranty") || (std::string(argv[1]) == "--warranty") || (std::string(argv[1]) == "-w")) {
+    displayWarranty();
+    return 0;
+  }
+  else if ((std::string(argv[1]) == "license") || (std::string(argv[1]) == "--license") || (std::string(argv[1]) == "-l")) {
+    gplV3();
+    return 0;
+  }
+  else if ((std::string(argv[1]) == "index")) {
+    return index(argc-1,argv+1);
+  }
+  else if ((std::string(argv[1]) == "basecall")) {
+    return teal(argc-1,argv+1);
+  }
+  else if ((std::string(argv[1]) == "align")) {
+    return sage(argc-1,argv+1);
+  } else {
     std::cerr << "Unrecognized command " << std::string(argv[1]) << std::endl;
     return 1;
+  }
 }
 
