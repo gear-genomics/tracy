@@ -462,7 +462,7 @@ _traceJsonOut(TStream& rfile, BaseCalls& bc, Trace const& tr) {
       if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
     }
   }
-  rfile << "}" << std::endl;
+  rfile << "}";
 }
    
 inline void
@@ -471,6 +471,7 @@ traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   std::ofstream rfile(outfile.c_str());
   rfile << "{" << std::endl;
   _traceJsonOut(rfile, bc, tr);
+  rfile << std::endl;
   rfile << "}" << std::endl;
   rfile.close();  
 }

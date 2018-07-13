@@ -200,9 +200,9 @@ namespace tracy
 
 
  
-  template<typename TConfig, typename TAlign>
+  template<typename TConfig, typename TAlign, typename TDecomp>
   inline bool
-    decomposeAlleles(TConfig const& c, TAlign const& align, BaseCalls& bc, TraceBreakpoint bp, ReferenceSlice& rs) {
+  decomposeAlleles(TConfig const& c, TAlign const& align, BaseCalls& bc, TraceBreakpoint bp, ReferenceSlice& rs, TDecomp& dcp) {
     int32_t ltrim = c.trimLeft;
     int32_t rtrim = c.trimRight;
     
@@ -303,12 +303,8 @@ namespace tracy
     for(uint32_t i = 0; i < deldecomp.size(); ++i)
       if (deldecomp[i] + 15 > defdel) defdel = deldecomp[i] + 15;
     if (defdel > (int32_t) fref.size()) defdel = fref.size();
-    boost::filesystem::path outdecomp(c.outfile.string() + ".decomp");
-    std::ofstream ofile(outdecomp.string().c_str());
-    ofile << "indel\tdecomp" << std::endl;
-    for(int32_t i = defdel - 1; i>=0; --i) ofile << (-1 * i) << "\t" << fref[i] << std::endl;
-    for(int32_t i = 1; i<defins; ++i) ofile << (i) << "\t" << fins[i] << std::endl;
-    ofile.close();
+    for(int32_t i = defdel - 1; i>=0; --i) dcp.push_back(std::make_pair((-1 * i), fref[i]));
+    for(int32_t i = 1; i<defins; ++i) dcp.push_back(std::make_pair(i, fins[i]));
     
     // Actual decomposition
     if ((deldecomp.empty()) && (insdecomp.empty())) {
@@ -383,6 +379,15 @@ namespace tracy
     return true;
   }
 
+  template<typename TConfig, typename TDecomp>
+  inline void
+  writeDecomposition(TConfig const& c, TDecomp const& dcp) {
+    boost::filesystem::path outdecomp(c.outfile.string() + ".decomp");
+    std::ofstream ofile(outdecomp.string().c_str());
+    ofile << "indel\tdecomp" << std::endl;
+    for(uint32_t i = 0; i < dcp.size(); ++i) ofile << dcp[i].first << "\t" << dcp[i].second << std::endl;
+    ofile.close();
+  }  
 }
 
 

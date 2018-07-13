@@ -113,6 +113,58 @@ namespace tracy
   }
 
 
+  template<typename TAlign, typename TDecomposition>
+  inline void
+  traceAlleleAlignJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, TAlign const& align1, TAlign const& align2, TDecomposition const& dcp) {
+    // Output trace
+    std::ofstream rfile(outfile.c_str());
+    rfile << "{" << std::endl;
+    // Trace Output
+    _traceJsonOut(rfile, bc, tr);
+    rfile << "," << std::endl;
+
+    // Allele1
+    rfile << "\"ref1chr\": \"" << rs1.chr << "\"," << std::endl;
+    rfile << "\"ref1pos\": " << (rs1.pos + 1) << "," << std::endl;
+    rfile << "\"alt1align\": \"";
+    for(uint32_t j = 0; j<align1.shape()[1]; ++j) rfile << align1[0][j];
+    rfile << "\"," << std::endl;
+    rfile << "\"ref1align\": \"";
+    for(uint32_t j = 0; j<align1.shape()[1]; ++j) rfile << align1[1][j];
+    rfile << "\"," << std::endl;
+    rfile << "\"ref1forward\": " << rs1.forward << "," << std::endl;
+
+    // Allele 2
+    rfile << "\"ref2chr\": \"" << rs2.chr << "\"," << std::endl;
+    rfile << "\"ref2pos\": " << (rs2.pos + 1) << "," << std::endl;
+    rfile << "\"alt2align\": \"";
+    for(uint32_t j = 0; j<align2.shape()[1]; ++j) rfile << align2[0][j];
+    rfile << "\"," << std::endl;
+    rfile << "\"ref2align\": \"";
+    for(uint32_t j = 0; j<align2.shape()[1]; ++j) rfile << align2[1][j];
+    rfile << "\"," << std::endl;
+    rfile << "\"ref2forward\": " << rs2.forward << "," << std::endl;
+
+    // Decomposition
+    rfile << "\"decomposition\": " << "{" << std::endl;
+    rfile << "\"x\": [";
+    for(uint32_t i = 0; i < dcp.size(); ++i) {
+      if (i!=0) rfile << ", ";
+      rfile << dcp[i].first;
+    }
+    rfile << "]," << std::endl;
+    rfile << "\"y\": [";
+    for(uint32_t i = 0; i < dcp.size(); ++i) {
+      if (i!=0) rfile << ", ";
+      rfile << dcp[i].second;
+    }
+    rfile << "]" << std::endl;
+    rfile << "}" << std::endl;
+    
+    // Close
+    rfile << "}" << std::endl;
+    rfile.close();
+  }
   
   template<typename TAlign>
   inline void

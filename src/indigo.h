@@ -183,7 +183,11 @@ namespace tracy {
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Decompose Chromatogram" << std::endl;
     
     // Decompose alleles
-    if (!decomposeAlleles(c, align, bc, bp, rs)) return -1;
+    typedef std::pair<int32_t, int32_t> TIndelError;
+    typedef std::vector<TIndelError> TDecomposition;
+    TDecomposition dcp;
+    if (!decomposeAlleles(c, align, bc, bp, rs, dcp)) return -1;
+    if (c.format == "align") writeDecomposition(c, dcp);
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
@@ -212,6 +216,11 @@ namespace tracy {
     TAlign final2;
     gotohString(sec, allele2.refslice, final2, global, sc);
     if (c.format == "align") plotAlignment(c, final2, allele2, 2);
+
+    // Json output
+    if (c.format == "json") {
+      traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp);
+    }
     
       
     now = boost::posix_time::second_clock::local_time();
