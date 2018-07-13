@@ -40,7 +40,8 @@ namespace tracy {
     uint16_t maxindel;
     uint16_t madc;
     float pratio;
-    std::string outprefix;
+    std::string format;
+    boost::filesystem::path outfile;
     boost::filesystem::path ab;
     boost::filesystem::path genome;
   };
@@ -62,8 +63,9 @@ namespace tracy {
     
     boost::program_options::options_description otp("Output options");
     otp.add_options()
-      ("output,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("align"), "output file prefix")
       ("linelimit,l", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
+      ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|align]")
+      ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -164,18 +166,18 @@ namespace tracy {
     }
 
     // Debug Breakpoint & Alignment
-    std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << ',' << bp.bestDiff << std::endl;
-    for(uint32_t i = 0; i<align.shape()[0]; ++i) {
-      uint32_t alignedNuc = 0;
-      for(uint32_t j = 0; j<align.shape()[1]; ++j) {
-	if (align[0][j] != '-') {
-	  ++alignedNuc;
-	  if (alignedNuc == bp.breakpoint) std::cerr << "#####";
-	}
-	std::cerr << align[i][j];
-      }
-      std::cerr << std::endl;
-    }    
+    //std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << ',' << bp.bestDiff << std::endl;
+    //for(uint32_t i = 0; i<align.shape()[0]; ++i) {
+    //uint32_t alignedNuc = 0;
+    //for(uint32_t j = 0; j<align.shape()[1]; ++j) {
+    //if (align[0][j] != '-') {
+    //++alignedNuc;
+    //if (alignedNuc == bp.breakpoint) std::cerr << "#####";
+    //}
+    //std::cerr << align[i][j];
+    //}
+    //std::cerr << std::endl;
+    //}    
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Decompose Chromatogram" << std::endl;
@@ -186,19 +188,31 @@ namespace tracy {
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
     
-    // Plot alignments
+    // Allele1
     typedef boost::multi_array<char, 2> TAlign;
     TAlign alignPrimary;
-    DnaScore<int> scSeq(5, -4, -50, 0);
     std::string pri = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
-    gotohString(pri, rs.refslice, alignPrimary, semiglobal, scSeq);
-    plotAlignmentDeprecated(c, alignPrimary, rs, 1);
-    
+    gotohString(pri, rs.refslice, alignPrimary, semiglobal, sc);
+    // Trim initial reference slice
+    ReferenceSlice allele1(rs);
+    trimReferenceSlice(c, alignPrimary, allele1);
     typedef boost::multi_array<char, 2> TAlign;
+    TAlign final1;
+    AlignConfig<false, false> global;
+    gotohString(pri, allele1.refslice, final1, global, sc);
+    if (c.format == "align") plotAlignment(c, final1, allele1, 1);
+
+    // Allele2
     TAlign alignSecondary;
     std::string sec = trimmedSeq(bc.secondary, c.trimLeft, c.trimRight);
-    gotohString(sec, rs.refslice, alignSecondary, semiglobal, scSeq);
-    plotAlignmentDeprecated(c, alignSecondary, rs, 2);
+    gotohString(sec, rs.refslice, alignSecondary, semiglobal, sc);
+    // Trim initial reference slice
+    ReferenceSlice allele2(rs);
+    trimReferenceSlice(c, alignSecondary, allele2);
+    TAlign final2;
+    gotohString(sec, allele2.refslice, final2, global, sc);
+    if (c.format == "align") plotAlignment(c, final2, allele2, 2);
+    
       
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;

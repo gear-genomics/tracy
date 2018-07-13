@@ -303,7 +303,7 @@ namespace tracy
     for(uint32_t i = 0; i < deldecomp.size(); ++i)
       if (deldecomp[i] + 15 > defdel) defdel = deldecomp[i] + 15;
     if (defdel > (int32_t) fref.size()) defdel = fref.size();
-    boost::filesystem::path outdecomp(c.outprefix + ".decomp");
+    boost::filesystem::path outdecomp(c.outfile.string() + ".decomp");
     std::ofstream ofile(outdecomp.string().c_str());
     ofile << "indel\tdecomp" << std::endl;
     for(int32_t i = defdel - 1; i>=0; --i) ofile << (-1 * i) << "\t" << fref[i] << std::endl;
@@ -383,100 +383,6 @@ namespace tracy
     return true;
   }
 
-
-  template<typename TConfig, typename TAlign>
-  inline void
-  plotAlignmentDeprecated(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t key) {
-    typedef typename TAlign::index TAIndex;
-    uint32_t vi = 1;
-    uint32_t ri = rs.pos;
-    
-    std::vector<char> alt;
-    int32_t s = -1;
-    int32_t e = -1;
-    for(TAIndex j = 0; j< (TAIndex) align.shape()[1]; ++j) {
-      if ((s == -1) && (align[1][j] != '-')) ++ri;
-      if (align[0][j] != '-') {
-	if (s == -1) s = j;
-	e = j + 1;
-	alt.push_back(align[0][j]);
-      }
-    }
-    
-    uint32_t riend = ri - 1;
-    std::vector<char> ref;
-    for(TAIndex j = s; j < (TAIndex) e; ++j) {
-      if (align[1][j] != '-') {
-	ref.push_back(align[1][j]);
-	++riend;
-      }
-    }
-
-
-    boost::filesystem::path outalign(c.outprefix + ".align" + boost::lexical_cast<std::string>(key));
-    std::ofstream ofile(outalign.string().c_str());
-    uint32_t fald = c.linelimit + 14;
-    ofile << ">Alt" << std::endl;
-    for(uint32_t i = 0; i < alt.size(); ++i) {
-      ofile << alt[i];
-      if ((i+1) % fald == 0) ofile << std::endl;
-    }
-    if (alt.size() % fald != 0) ofile << std::endl;
-    if (rs.forward) ofile << ">Ref " << rs.chr << ":" << ri << "-" << riend << " forward" << std::endl;
-    else ofile << ">Ref " << rs.chr << ":" << rs.pos + rs.refslice.size() - (riend - rs.pos) + 1 << "-" << rs.pos + rs.refslice.size() - (ri - rs.pos) + 1 << " reversecomplement" << std::endl;
-    for(uint32_t i = 0; i < ref.size(); ++i) {
-      ofile << ref[i];
-      if ((i+1)% fald == 0) ofile << std::endl;
-    }
-    if (ref.size() % fald != 0) ofile << std::endl;
-    ofile << std::endl;
-    ofile << "#";
-    for(uint32_t i = 1; i < fald; ++i) ofile << "-";
-    ofile << std::endl;
-    ofile << std::endl;
-    
-    uint32_t blockcount = 0;
-    while (s < e) {
-      ofile << "Alt" << std::setw(10) << vi << ' ';
-      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
-	ofile << align[0][j];
-	if (align[0][j] != '-') ++vi;
-      }
-      ofile << std::endl;
-      ofile << "              ";
-      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
-	if (align[0][j] == align[1][j]) ofile << "|";
-	else ofile << " ";
-      }
-      ofile << std::endl;
-      if (rs.forward) ofile << "Ref" << std::setw(10) << ri << ' ';
-      else ofile << "Ref" << std::setw(10) << rs.pos + rs.refslice.size() - (ri - rs.pos) + 1 << ' ';
-      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
-	ofile << align[1][j];
-	if (align[1][j] != '-') ++ri;
-      }
-      ofile << std::endl;
-      ofile << std::endl;
-      s += c.linelimit;
-      ++blockcount;
-    }
-    if (blockcount < 6) {
-      // Add spacer for small alignments
-      for(uint32_t i = blockcount; i < 6; ++i) {
-	for(uint32_t k = 0; k<4; ++k) ofile << std::endl;
-      }
-    }
-    ofile << "#";
-    for(uint32_t i = 1; i < fald; ++i) ofile << "-";
-    ofile << std::endl;
-    ofile << "#";
-    for(uint32_t i = 1; i < fald; ++i) ofile << "-";
-    ofile << std::endl;
-    ofile << std::endl;
-    ofile << std::endl;
-    ofile.close();
-  }
- 
 }
 
 

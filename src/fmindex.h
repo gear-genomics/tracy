@@ -327,14 +327,16 @@ namespace tracy
 
   template<typename TConfig, typename TAlign>
   inline void
-  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs) {
+  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key) {
     typedef typename TAlign::index TAIndex;
     int32_t ri = rs.pos + 1;
     int32_t riend = rs.pos + rs.refslice.size();
     int32_t vi = 1;
     
     uint32_t fald = c.linelimit + 14;
-    std::ofstream ofile(c.outfile.string().c_str());
+    std::string filename = c.outfile.string();
+    if (key != 0) filename = filename + ".align" + boost::lexical_cast<std::string>(key);
+    std::ofstream ofile(filename.c_str());
     ofile << ">Alt" << std::endl;
     int32_t count = 0;
     for(TAIndex j = 0; j< (TAIndex) align.shape()[1]; ++j) {
@@ -404,6 +406,12 @@ namespace tracy
     ofile << std::endl;
     ofile << std::endl;
     ofile.close();
+  }
+
+  template<typename TConfig, typename TAlign>
+  inline void
+  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs) {
+    plotAlignment(c, align, rs, 0);
   }
 
   template<typename TConfig, typename TAlign>
