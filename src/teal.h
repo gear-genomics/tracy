@@ -85,11 +85,14 @@ namespace tracy {
     } else {
       // Read *.ab1 file
       Trace tr;
-      std::string extension = boost::filesystem::extension(c.tracein.string());
-      if (extension == ".scf") {
+      int32_t ft = traceFormat(c.tracein.string());
+      if (ft == 0) {
+	if (!readab(c.tracein.string(), tr)) return -1;
+      } else if (ft == 1) {
 	if (!readscf(c.tracein.string(), tr)) return -1;
       } else {
-	if (!readab(c.tracein.string(), tr)) return -1;
+	std::cerr << "Unknown trace file type!" << std::endl;
+	return -1;
       }
 
       // Call bases

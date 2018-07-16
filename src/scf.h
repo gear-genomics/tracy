@@ -39,6 +39,25 @@ Contact: Tobias Rausch (rausch@embl.de)
 namespace tracy
 {
 
+inline int32_t
+traceFormat(std::string const& filename) {
+  // Read the mountains
+  std::ifstream bfile(filename.c_str(), std::ios_base::binary | std::ios::ate);
+  std::streamsize bsize = bfile.tellg();
+  bfile.seekg(0, std::ios::beg);
+  std::vector<char> buffer(bsize);
+  int32_t ft = -1;
+  if (bfile.read(buffer.data(), bsize)) {
+    std::string filetype = readBinStr(buffer, 0, 4);
+    if (filetype == "ABIF") ft = 0;
+    else if (filetype == ".scf") ft = 1;
+  }
+  bfile.close();
+  return ft;
+}
+
+  
+  
 inline bool
 readscf(std::string const& filename, Trace& tr) {
   typedef Trace::TACGTMountains TACGTMountains;
