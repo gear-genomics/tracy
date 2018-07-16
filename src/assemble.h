@@ -26,7 +26,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 #define BOOST_DISABLE_ASSERTS
 #include <boost/multi_array.hpp>
-#include "decompose.h"
+#include "msa.h"
 
 using namespace sdsl;
 
@@ -101,7 +101,8 @@ namespace tracy {
     
     // Load *.ab1 files
     now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 filse" << std::endl;
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
+    std::vector<std::string> traceSet;
     for(uint32_t i = 0; i < c.ab.size(); ++i) {
       Trace tr;
       if (!readab(c.ab[i].string(), tr)) return -1;
@@ -110,10 +111,19 @@ namespace tracy {
       BaseCalls bc;
       basecall(tr, bc, c.pratio);
 
-      std::cerr << ">" << i << std::endl;
-      std::cerr << bc.primary << std::endl;
+      // Append to trace set
+      int32_t sz = bc.primary.size() - c.trimLeft - c.trimRight;
+      traceSet.push_back(bc.primary.substr(c.trimLeft, sz));
+      //std::cerr << ">" << i << std::endl;
+      //std::cerr << bc.primary << std::endl;
     }
 
+    // Assemble Traces
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;
+    std::string consensus;
+    msa(c, traceSet, consensus);
+    
     // Done
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
