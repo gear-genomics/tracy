@@ -25,6 +25,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #define TEAL_H
 
 #include "abif.h"
+#include "scf.h"
 
 namespace tracy {
 
@@ -84,8 +85,13 @@ namespace tracy {
     } else {
       // Read *.ab1 file
       Trace tr;
-      if (!readab(c.tracein.string(), tr)) return -1;
-	  
+      std::string extension = boost::filesystem::extension(c.tracein.string());
+      if (extension == ".scf") {
+	if (!readscf(c.tracein.string(), tr)) return -1;
+      } else {
+	if (!readab(c.tracein.string(), tr)) return -1;
+      }
+
       // Call bases
       BaseCalls bc;
       basecall(tr, bc, c.pratio);
