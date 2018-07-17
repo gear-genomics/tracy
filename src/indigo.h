@@ -121,6 +121,7 @@ namespace tracy {
     // Call bases
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
+    if ((c.format == "align") || (c.format == "both")) traceTxtOut(c.outfile.string() + ".abif", bc, tr, c.trimLeft, c.trimRight);
 
     // Create trimmed trace profile
     typedef boost::multi_array<double, 2> TProfile;
@@ -187,7 +188,7 @@ namespace tracy {
     typedef std::vector<TIndelError> TDecomposition;
     TDecomposition dcp;
     if (!decomposeAlleles(c, align, bc, bp, rs, dcp)) return -1;
-    if (c.format == "align") writeDecomposition(c, dcp);
+    if ((c.format == "align") || (c.format == "both")) writeDecomposition(c, dcp);
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
@@ -204,7 +205,7 @@ namespace tracy {
     TAlign final1;
     AlignConfig<false, false> global;
     gotohString(pri, allele1.refslice, final1, global, sc);
-    if (c.format == "align") plotAlignment(c, final1, allele1, 1);
+    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final1, allele1, 1);
 
     // Allele2
     TAlign alignSecondary;
@@ -215,13 +216,11 @@ namespace tracy {
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
     gotohString(sec, allele2.refslice, final2, global, sc);
-    if (c.format == "align") plotAlignment(c, final2, allele2, 2);
+    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2);
 
     // Json output
-    if (c.format == "json") {
-      traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp);
-    }
-    
+    if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp);
+    else if (c.format == "both") traceAlleleAlignJsonOut(c.outfile.string() + ".json", bc, tr, allele1, allele2, final1, final2, dcp);
       
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
