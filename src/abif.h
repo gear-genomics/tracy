@@ -110,6 +110,23 @@ peak(TACGTMountains const& trace, float const s, float const e, TMountains& pVal
   }
 }
 
+inline std::string
+expandIUPAC(char const c) {
+  if (c == 'A') return "A";
+  else if (c == 'C') return "C";
+  else if (c == 'G') return "G";
+  else if (c == 'T') return "T";
+  else if (c == 'N') return "N";
+  else if (c == 'R') return "A|G";
+  else if (c == 'Y') return "C|T";
+  else if (c == 'S') return "C|G";
+  else if (c == 'W') return "A|T";
+  else if (c == 'K') return "G|T";
+  else if (c == 'M') return "A|C";
+  else return "N";
+}
+		  
+   
 template<typename TMountains>
 inline char
 iupac(TMountains const& p) {
@@ -124,7 +141,7 @@ iupac(TMountains const& p) {
     else if ((p[0] == 1) && (p[1] == 2)) return 'S';
     else if ((p[0] == 0) && (p[1] == 3)) return 'W';
     else if ((p[0] == 2) && (p[1] == 3)) return 'K';
-    else if ((p[0] == 0) && (p[1])) return 'M';
+    else if ((p[0] == 0) && (p[1] == 1)) return 'M';
   }
   return 'N';
 }
@@ -410,81 +427,6 @@ inline void
 traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
   traceTxtOut(outfile, bc, tr, 0, bc.primary.size());
 }
-
-template<typename TStream>
-inline void
-_traceJsonOut(TStream& rfile, BaseCalls& bc, Trace const& tr) {
-  typedef Trace::TValue TValue;
-
-  rfile << "\"pos\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << (i+1);
-  }
-  rfile << "]," << std::endl;
-  rfile << "\"peakA\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[0][i];
-  }
-  rfile << "]," << std::endl;
-  rfile << "\"peakC\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[1][i];
-  }
-  rfile << "]," << std::endl;
-  rfile << "\"peakG\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[2][i];
-  }
-  rfile << "]," << std::endl;
-  rfile << "\"peakT\": [";
-  for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-    if (i!=0) rfile << ", ";
-    rfile << tr.traceACGT[3][i];
-  }
-  rfile << "]," << std::endl;
-
-  // Basecalls
-  uint32_t bcpos = 0;
-  TValue idx = bc.bcPos[0];
-  rfile << "\"basecallPos\": [";
-  for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-    if (idx == i) {
-      if (i!=bc.bcPos[0]) rfile << ", ";
-      rfile << (i+1);
-      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
-    }
-  }
-  rfile << "]," << std::endl;
-  bcpos = 0;
-  idx = bc.bcPos[0];
-  rfile << "\"basecalls\": {";
-  for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-    if (idx == i) {
-      if (i!=bc.bcPos[0]) rfile << ", ";
-      rfile << "\"" << (i+1) << "\"" << ":" << "\"" << (bcpos+1) << ":" <<  bc.primary[bcpos];
-      if (bc.primary[bcpos] != bc.secondary[bcpos]) rfile << "|" << bc.secondary[bcpos];
-      rfile << "\"";
-      if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
-    }
-  }
-  rfile << "}";
-}
-   
-inline void
-traceJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
-  // Output trace
-  std::ofstream rfile(outfile.c_str());
-  rfile << "{" << std::endl;
-  _traceJsonOut(rfile, bc, tr);
-  rfile << std::endl;
-  rfile << "}" << std::endl;
-  rfile.close();  
-}
-
 
 }
 

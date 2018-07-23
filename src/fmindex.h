@@ -26,6 +26,8 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 #include <boost/progress.hpp>
 
+#include <htslib/faidx.h>
+
 namespace tracy
 {
 

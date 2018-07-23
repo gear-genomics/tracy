@@ -26,6 +26,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 #include "abif.h"
 #include "scf.h"
+#include "json.h"
 
 namespace tracy {
 
