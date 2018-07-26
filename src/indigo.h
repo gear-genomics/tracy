@@ -63,7 +63,7 @@ namespace tracy {
     
     boost::program_options::options_description otp("Output options");
     otp.add_options()
-      ("linelimit,l", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
+      ("linelimit,n", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
       ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|align]")
       ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
       ;
