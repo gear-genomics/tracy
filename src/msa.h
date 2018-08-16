@@ -221,7 +221,7 @@ namespace tracy {
 
   template<typename TConfig, typename TSplitReadSet>
   inline int
-  msa(TConfig const& c, TSplitReadSet const& sps, std::string& cs) {
+  msa(TConfig const& c, TSplitReadSet const& sps, std::string&) {
     // Compute distance matrix
     typedef boost::multi_array<int, 2> TDistArray;
     typedef typename TDistArray::index TDIndex;

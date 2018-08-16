@@ -27,6 +27,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "abif.h"
 #include "scf.h"
 #include "json.h"
+#include "fasta.h"
 
 namespace tracy {
 
@@ -45,7 +46,7 @@ namespace tracy {
     generic.add_options()
       ("help,?", "show help message")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call a base")
-      ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|tsv]")
+      ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|tsv|fasta|fastq]")
       ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "basecalling output")
       ;
     
@@ -102,6 +103,8 @@ namespace tracy {
 	  
       // Write bases
       if (c.format == "tsv") traceTxtOut(c.outfile.string(), bc, tr);
+      else if (c.format == "fasta") traceFastaOut(c.outfile.string(), bc, tr);
+      else if (c.format == "fastq") traceFastqOut(c.outfile.string(), bc, tr);
       else traceJsonOut(c.outfile.string(), bc, tr);
     }
 
