@@ -97,7 +97,9 @@ namespace tracy
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }
-    rfile << "}";
+    rfile << "},";
+    rfile << "\"primarySeq\": \"" << bc.primary << "\",";
+    rfile << "\"secondarySeq\": \"" << bc.secondary << "\"";
   }
   
   inline void
