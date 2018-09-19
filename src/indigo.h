@@ -116,7 +116,15 @@ namespace tracy {
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 file" << std::endl;
     Trace tr;
-    if (!readab(c.ab.string(), tr)) return -1;
+    int32_t ft = traceFormat(c.ab.string());
+    if (ft == 0) {
+      if (!readab(c.ab.string(), tr)) return -1;
+    } else if (ft == 1) {
+      if (!readscf(c.ab.string(), tr)) return -1;
+    } else {
+      std::cerr << "Unknown trace file type!" << std::endl;
+      return -1;
+    }
 
     // Call bases
     BaseCalls bc;

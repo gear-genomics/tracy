@@ -98,7 +98,15 @@ namespace tracy
 	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 	std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 wildtype" << std::endl;
 	Trace wt;
-	if (!readab(c.genome.string(), wt)) return false;
+	int32_t ft = traceFormat(c.genome.string());
+	if (ft == 0) {
+	  if (!readab(c.genome.string(), wt)) return -1;
+	} else if (ft == 1) {
+	  if (!readscf(c.genome.string(), wt)) return -1;
+	} else {
+	  std::cerr << "Unknown trace file type!" << std::endl;
+	  return -1;
+	}
 	BaseCalls wtbc;
 	basecall(wt, wtbc, c.pratio);
 	rs.chr = "wildtype";
