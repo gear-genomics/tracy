@@ -10,6 +10,8 @@ Installing Tracy
 
 The easiest way to get Tracy is to download a statically linked binary from the [Tracy release page](https://github.com/gear-genomics/tracy/releases). Building from source is also possible:
 
+`apt-get install -y build-essential g++ cmake zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev`
+
 `git clone --recursive https://github.com/gear-genomics/tracy.git`
 
 `cd tracy/`
