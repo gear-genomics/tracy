@@ -92,7 +92,7 @@ namespace tracy
 	  store_to_file(fm_index, index_file);
 	  boost::filesystem::remove(outfile);
 	}
-      } else if ((fcode[0] == 'A') && (fcode[1] == 'B') && (fcode[2] == 'I') && (fcode[3] == 'F')) {
+      } else if (traceFormat(c.genome.string()) >= 0) {
 	rs.filetype = 2;
 	
 	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
