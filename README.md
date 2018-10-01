@@ -60,3 +60,19 @@ Once the index has been built you can align to the indexed genome.
 `./tracy align -g hg19.fa.gz input.ab1`
 
 
+Separating heterozygous variants
+--------------------------------
+
+Double-peaks in the Chromatogram can cause alignment issues. Tracy supports deconvolution of heterozygous variants into two separate alleles.
+
+`./tracy decompose -g hg19.fa.gz -f align -o outprefix input.ab1`
+
+The two alleles are then separately aligned.
+
+`cat outprefix.align1 outprefix.align2`
+
+
+Questions
+---------
+
+In case of questions feel free to send us an [email](https://www-db.embl.de/EMBLPersonGroup-PersonPicture/MailForm/?recipient=ggenomics).
