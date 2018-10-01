@@ -38,3 +38,25 @@ To get the primary sequence (highest peak) of a trace file in FASTA or FASTQ for
 To get full trace information, including primary and secondary basecalls for heterozygous variants.
 
 `./tracy basecall -f tsv -o out.tsv input.ab1`
+
+
+Alignment to a Fasta Slice
+--------------------------
+
+Alignment of a trace file to a FASTA reference slice.
+
+`./tracy align -f align -o out.align -g ref_slice.fa input.ab1`
+
+
+Alignment to an indexed reference genome
+----------------------------------------
+
+Alignment to a large reference genome requires a pre-built index on a bgzip compressed genome.
+
+`./tracy index -o hg19.fa.fm9 hg19.fa.gz`
+
+Once the index has been built you can align to the indexed genome.
+
+`./tracy align -g hg19.fa.gz input.ab1`
+
+
