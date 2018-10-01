@@ -23,4 +23,18 @@ The easiest way to get Tracy is to download a statically linked binary from the 
 Running Tracy
 -------------
 
-`./bin/tracy -h`
+`./tracy -h`
+
+
+Basecalling a Trace File
+------------------------
+
+To get the primary sequence (highest peak) of a trace file in FASTA or FASTQ format.
+
+`./tracy basecall -f fasta -o out.fasta input.ab1`
+
+`./tracy basecall -f fastq -o out.fastq input.ab1`
+
+To get full trace information, including primary and secondary basecalls for heterozygous variants.
+
+`./tracy basecall -f tsv -o out.tsv input.ab1`
