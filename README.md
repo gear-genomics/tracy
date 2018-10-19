@@ -9,7 +9,7 @@
 Installing Tracy
 ----------------
 
-The easiest way to get Tracy is to download a statically linked binary from the [Tracy release page](https://github.com/gear-genomics/tracy/releases). Building from source is also possible:
+The easiest way to get Tracy is to download a statically linked binary from the [Tracy release page](https://github.com/gear-genomics/tracy/releases) or to download Tracy from [Bioconda](https://anaconda.org/bioconda/tracy). Building from source is also possible:
 
 `apt-get install -y build-essential g++ cmake zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev`
 
@@ -56,6 +56,8 @@ Alignment to a large reference genome requires a pre-built index on a bgzip comp
 
 `./tracy index -o hg19.fa.fm9 hg19.fa.gz`
 
+`samtools faidx hg19.fa.gz`
+
 Once the index has been built you can align to the indexed genome.
 
 `./tracy align -g hg19.fa.gz input.ab1`
@@ -71,6 +73,10 @@ Double-peaks in the Chromatogram can cause alignment issues. Tracy supports deco
 The two alleles are then separately aligned.
 
 `cat outprefix.align1 outprefix.align2`
+
+You can also use a wildtype chromatogram for decomposition.
+
+`./tracy decompose -g wildtype.ab1 -f align -o outprefix mutated.ab1`
 
 
 Questions
