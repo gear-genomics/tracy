@@ -21,11 +21,11 @@ Contact: Tobias Rausch (rausch@embl.de)
 ============================================================================
 */
 
-#ifndef GOTOH_H
-#define GOTOH_H
+#ifndef NEEDLE_H
+#define NEEDLE_H
 
-#include <boost/dynamic_bitset.hpp>
-
+#define BOOST_DISABLE_ASSERTS
+#include <boost/multi_array.hpp>
 #include <iostream>
 #include "align.h"
 
@@ -34,20 +34,18 @@ namespace tracy
 
   template<typename TAlign1, typename TAlign2, typename TAlignConfig, typename TScoreObject>
   inline int
-  gotohScore(TAlign1 const& a1, TAlign2 const& a2, TAlignConfig const& ac, TScoreObject const& sc)
+  needleScore(TAlign1 const& a1, TAlign2 const& a2, TAlignConfig const& ac, TScoreObject const& sc)
   {
     typedef typename TScoreObject::TValue TScoreValue;
 
-    // DP variables
+    // DP Matrix
     std::size_t m = _size(a1, 1);
     std::size_t n = _size(a2, 1);
     std::vector<TScoreValue> s(n+1, 0);
-    std::vector<TScoreValue> v(n+1, 0);
-    TScoreValue newhoz = 0;
     TScoreValue prevsub = 0;
-    
+
     // Create profile
-    typedef boost::multi_array<float, 2> TProfile;
+    typedef boost::multi_array<double, 2> TProfile;
     TProfile p1;
     TProfile p2;
     if ((_size(a1, 0) != 1) || (_size(a2, 0) != 1)) {
@@ -61,27 +59,18 @@ namespace tracy
 	// Initialization
 	if ((row == 0) && (col == 0)) {
 	  s[0] = 0;
-	  v[0] = -sc.inf;
-	  newhoz = -sc.inf;
+	  prevsub = 0;
 	} else if (row == 0) {
-	  v[col] = -sc.inf;
-	  s[col] = _horizontalGap(ac, 0, m, sc.go + col * sc.ge);
-	  newhoz = _horizontalGap(ac, 0, m, sc.go + col * sc.ge);
+	  s[col] = _horizontalGap(ac, 0, m, col * sc.ge);
 	} else if (col == 0) {
-	  newhoz = -sc.inf;
-	  s[0] = _verticalGap(ac, 0, n, sc.go + row * sc.ge);
+	  s[0] = _verticalGap(ac, 0, n, row * sc.ge);
 	  if (row - 1 == 0) prevsub = 0;
-	  else prevsub = _verticalGap(ac, 0, n, sc.go + (row - 1) * sc.ge);
-	  v[0] = _verticalGap(ac, 0, n, sc.go + row * sc.ge);
+	  else prevsub = _verticalGap(ac, 0, n, (row - 1) * sc.ge);
 	} else {
 	  // Recursion
-	  TScoreValue prevhoz = newhoz;
-	  TScoreValue prevver = v[col];
 	  TScoreValue prevprevsub = prevsub;
 	  prevsub = s[col];
-	  newhoz = std::max(s[col-1] + _horizontalGap(ac, row, m, sc.go + sc.ge), prevhoz + _horizontalGap(ac, row, m, sc.ge));
-	  v[col] = std::max(prevsub + _verticalGap(ac, col, n, sc.go + sc.ge), prevver + _verticalGap(ac, col, n, sc.ge));
-	  s[col] = std::max(std::max(prevprevsub + _score(a1, a2, p1, p2, row-1, col-1, sc), newhoz), v[col]);
+	  s[col] = std::max(std::max(prevprevsub + _score(a1, a2, p1, p2, row-1, col-1, sc), prevsub + _verticalGap(ac, col, n, sc.ge)), s[col-1] + _horizontalGap(ac, row, m, sc.ge));
 	}
       }
     }
@@ -89,32 +78,27 @@ namespace tracy
     // Score
     return s[n];
   }
-
   
   template<typename TAlign1, typename TAlign2, typename TAlign, typename TAlignConfig, typename TScoreObject>
   inline int
-    gotoh(TAlign1 const& a1, TAlign2 const& a2, TAlign& align, TAlignConfig const& ac, TScoreObject const& sc)
+  needle(TAlign1 const& a1, TAlign2 const& a2, TAlign& align, TAlignConfig const& ac, TScoreObject const& sc)
   {
     typedef typename TScoreObject::TValue TScoreValue;
 
-    // DP variables
+    // DP Matrix
     std::size_t m = _size(a1, 1);
     std::size_t n = _size(a2, 1);
     std::vector<TScoreValue> s(n+1, 0);
-    std::vector<TScoreValue> v(n+1, 0);
-    TScoreValue newhoz = 0;
     TScoreValue prevsub = 0;
-    
+
     // Trace Matrix
     std::size_t mf = n+1;
     typedef boost::dynamic_bitset<> TBitSet;
-    TBitSet bit1( (m+1) * (n+1), false);
-    TBitSet bit2( (m+1) * (n+1), false);
     TBitSet bit3( (m+1) * (n+1), false);
     TBitSet bit4( (m+1) * (n+1), false);
-
+    
     // Create profile
-    typedef boost::multi_array<float, 2> TProfile;
+    typedef boost::multi_array<double, 2> TProfile;
     TProfile p1;
     TProfile p2;
     if ((_size(a1, 0) != 1) || (_size(a2, 0) != 1)) {
@@ -128,69 +112,49 @@ namespace tracy
 	// Initialization
 	if ((row == 0) && (col == 0)) {
 	  s[0] = 0;
-	  v[0] = -sc.inf;
-	  newhoz = -sc.inf;
-	  bit1[0] = true;
-	  bit2[0] = true;
+	  prevsub = 0;
 	} else if (row == 0) {
-	  v[col] = -sc.inf;
-	  s[col] = _horizontalGap(ac, 0, m, sc.go + col * sc.ge);
-	  newhoz = _horizontalGap(ac, 0, m, sc.go + col * sc.ge);
+	  s[col] = _horizontalGap(ac, 0, m, col * sc.ge);
 	  bit3[col] = true;
 	} else if (col == 0) {
-	  newhoz = -sc.inf;
-	  s[0] = _verticalGap(ac, 0, n, sc.go + row * sc.ge);
+	  s[0] = _verticalGap(ac, 0, n, row * sc.ge);
 	  if (row - 1 == 0) prevsub = 0;
-	  else prevsub = _verticalGap(ac, 0, n, sc.go + (row - 1) * sc.ge);
-	  v[0] = _verticalGap(ac, 0, n, sc.go + row * sc.ge);
+	  else prevsub = _verticalGap(ac, 0, n, (row - 1) * sc.ge);
 	  bit4[row * mf] = true;
 	} else {
 	  // Recursion
-	  TScoreValue prevhoz = newhoz;
-	  TScoreValue prevver = v[col];
 	  TScoreValue prevprevsub = prevsub;
 	  prevsub = s[col];
-	  newhoz = std::max(s[col-1] + _horizontalGap(ac, row, m, sc.go + sc.ge), prevhoz + _horizontalGap(ac, row, m, sc.ge));
-	  v[col] = std::max(prevsub + _verticalGap(ac, col, n, sc.go + sc.ge), prevver + _verticalGap(ac, col, n, sc.ge));
-	  s[col] = std::max(std::max(prevprevsub + _score(a1, a2, p1, p2, row-1, col-1, sc), newhoz), v[col]);
+	  s[col] = std::max(std::max(prevprevsub + _score(a1, a2, p1, p2, row-1, col-1, sc), prevsub + _verticalGap(ac, col, n, sc.ge)), s[col-1] + _horizontalGap(ac, row, m, sc.ge));
 
 	  // Trace
-	  if (s[col] == newhoz) bit3[row * mf + col] = true;
-	  else if (s[col] == v[col]) bit4[row * mf + col] = true;
-	  if (newhoz != prevhoz + _horizontalGap(ac, row, m, sc.ge)) bit1[row * mf + col] = true;
-	  if (v[col] != prevver + _verticalGap(ac, col, n, sc.ge)) bit2[row * mf + col] = true;
+	  if (s[col] ==  s[col-1] + _horizontalGap(ac, row, m, sc.ge)) bit3[row * mf + col] = true;
+	  else if (s[col] == prevsub + _verticalGap(ac, col, n, sc.ge)) bit4[row * mf + col] = true;
 	}
       }
     }
-
+	
     // Trace-back using pointers
     std::size_t row = m;
     std::size_t col = n;
-    char lastMatrix = 's';
     typedef std::vector<char> TTrace;
-    TTrace btr;
+    TTrace trace;
     while ((row>0) || (col>0)) {
-      if (lastMatrix == 's') {
-	if (bit3[row * mf + col]) lastMatrix = 'h';
-	else if (bit4[row * mf + col]) lastMatrix = 'v';
-	else {
-	  --row;
-	  --col;
-	  btr.push_back('s');
-	}
-      } else if (lastMatrix == 'h') {
-	if (bit1[row * mf + col]) lastMatrix = 's';
+      if (bit3[row * mf + col]) {
 	--col;
-	btr.push_back('h');
-      } else if (lastMatrix == 'v') {
-	if (bit2[row * mf + col]) lastMatrix = 's';
+	trace.push_back('h');
+      } else if (bit4[row * mf + col]) {
 	--row;
-	btr.push_back('v');
+	trace.push_back('v');
+      } else {
+	--row;
+	--col;
+	trace.push_back('s');
       }
     }
 
     // Create alignment
-    _createAlignment(btr, a1, a2, align);
+    _createAlignment(trace, a1, a2, align);
 
     // Score
     return s[n];
@@ -198,18 +162,18 @@ namespace tracy
 
   template<typename TAlign1, typename TAlign2, typename TAlign, typename TAlignConfig>
   inline int
-  gotoh(TAlign1 const& a1, TAlign2 const& a2, TAlign& align, TAlignConfig const& ac) 
+  needle(TAlign1 const& a1, TAlign2 const& a2, TAlign& align, TAlignConfig const& ac)
   {
-    DnaScore<int> dnasc;    
-    return gotoh(a1, a2, align, ac, dnasc);
+    DnaScore<int> dnasc;
+    return needle(a1, a2, align, ac, dnasc);
   }
 
   template<typename TAlign1, typename TAlign2, typename TAlign>
   inline int
-  gotoh(TAlign1 const& a1, TAlign2 const& a2, TAlign& align)
+  needle(TAlign1 const& a1, TAlign2 const& a2, TAlign& align)
   {
     AlignConfig<false, false> ac;
-    return gotoh(a1, a2, align, ac);
+    return needle(a1, a2, align, ac);
   }
 
 }

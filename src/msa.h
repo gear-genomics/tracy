@@ -2,7 +2,7 @@
 ============================================================================
 Tracy: Trace File Handling
 ============================================================================
-Copyright (C) 2017,2018 Tobias Rausch
+Copyright (C) 2017-2018 Tobias Rausch
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,61 +24,55 @@ Contact: Tobias Rausch (rausch@embl.de)
 #ifndef MSA_H
 #define MSA_H
 
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/device/file.hpp>
 #include <boost/multi_array.hpp>
 #include "gotoh.h"
+#include "needle.h"
 
 namespace tracy {
 
-
-  template<typename TConfig, typename TAlign>
-  inline void
-  plotMSAAlignment(TConfig const& c, TAlign const& align) {
-    typedef typename TAlign::index TAIndex;
-    std::ofstream ofile(c.outfile.string().c_str());
-    
-    uint32_t blockcount = 0;
-    int32_t s = 0;
-    int32_t e = (TAIndex) align.shape()[1];
-    while (s < e) {
-      for(uint32_t k = 0; k<align.shape()[0]; ++k) {
-	ofile << "Seq" << std::setw(10) << k << ' ';
-	for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) ofile << align[k][j];
-	ofile << std::endl;
-      }
-      ofile << std::endl;
-      s += c.linelimit;
-      ++blockcount;
-    }
-    ofile.close();
-  }
-  
-  inline int
+  inline int32_t
   lcs(std::string const& s1, std::string const& s2) {
-    int m = s1.size();
-    int n = s2.size();
-    typedef boost::multi_array<int, 2> T2DArray;
-    typedef T2DArray::index T2DIndex;
-    T2DArray L(boost::extents[m+1][n+1]);
-    for(T2DIndex i=0; i<=m; ++i) {
-      for(T2DIndex j=0; j<=n; ++j) {
-	if ((i==0) || (j==0)) L[i][j]=0;
-	else if (s1[i-1] == s2[j-1]) L[i][j] = L[i-1][j-1] + 1;
-	else L[i][j] = (L[i-1][j] > L[i][j-1]) ? L[i-1][j] : L[i][j-1];
+    uint32_t m = s1.size();
+    uint32_t n = s2.size();
+    int32_t prevdiag = 0;
+    int32_t prevprevdiag = 0;
+    std::vector<int32_t> onecol(n+1, 0);
+    for(uint32_t i = 0; i <= m; ++i) {
+      for(uint32_t j = 0; j <= n; ++j) {
+	if ((i==0) || (j==0)) {
+	  onecol[j] = 0;
+	  prevprevdiag = 0;
+	  prevdiag = 0;
+	} else {
+	  prevprevdiag = prevdiag;
+	  prevdiag = onecol[j];
+	  if (s1[i-1] == s2[j-1]) onecol[j] = prevprevdiag + 1;
+	  else onecol[j] = (onecol[j] > onecol[j-1]) ? onecol[j] : onecol[j-1];
+	}
       }
     }
-    return L[m][n];
+    return onecol[n];
   }
 
-  template<typename TSplitReadSet, typename TDistArray>
+  template<typename TConfig, typename TSplitReadSet, typename TDistArray>
   inline void
-  distanceMatrix(TSplitReadSet const& sps, TDistArray& d) {
+  distanceMatrix(TConfig const& c, TSplitReadSet const& sps, TDistArray& d) {
     typedef typename TDistArray::index TDIndex;
     typename TSplitReadSet::const_iterator sIt1 = sps.begin();
     for (TDIndex i = 0; sIt1 != sps.end(); ++sIt1, ++i) {
       typename TSplitReadSet::const_iterator sIt2 = sIt1;
       ++sIt2;
       for (TDIndex j = i+1; sIt2 != sps.end(); ++sIt2, ++j) {
-	d[i][j] = (lcs(*sIt1, *sIt2) * 100) / std::min(sIt1->size(), sIt2->size());
+	// LCS
+	//d[i][j] = (lcs(*sIt1, *sIt2) * 100) / std::min(sIt1->size(), sIt2->size());
+	// DP
+	AlignConfig<true, true> alignconf;
+	d[i][j] = gotohScore(*sIt1, *sIt2, alignconf, c.aliscore);
       }
     }
   }
@@ -144,21 +138,20 @@ namespace tracy {
       TAlign align2;
       palign(c, sps, p, p[root][2], align2);
       AlignConfig<true, true> endFreeAlign;
-      DnaScore<int> sc = DnaScore<int>(5, -4, -10, -1);
-      gotohMSA(align1, align2, align, endFreeAlign, sc);
+      gotoh(align1, align2, align, endFreeAlign, c.aliscore);
     }
   }
 
-  template<typename TAlign>
+  template<typename TConfig, typename TAlign>
   inline void
-  consensus(TAlign const& align, std::string& cs) {
+  consensus(TConfig const& c, TAlign const& align, std::string& gapped, std::string& cs) {
     typedef typename TAlign::index TAIndex;
 
     // Calculate coverage
     typedef boost::multi_array<bool, 2> TFlag;
     TFlag fl;
     fl.resize(boost::extents[align.shape()[0]][align.shape()[1]]);
-    typedef std::vector<int> TCoverage;
+    typedef std::vector<int32_t> TCoverage;
     TCoverage cov;
     cov.resize(align.shape()[1], 0);
     for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
@@ -174,54 +167,59 @@ namespace tracy {
 	fl[i][j] = true;
       }
     }
-    
-    int covThreshold = 3;
+
+    // Minimum number of aligned sequences
+    int32_t covThreshold = (int32_t) (c.fractionCalled * align.shape()[0]);
     TAIndex j = 0;
-    std::vector<char> cons;
+    std::vector<char> cons(align.shape()[1], '-');
     for(typename TCoverage::const_iterator itCov = cov.begin(); itCov != cov.end(); ++itCov, ++j) {
+      int32_t maxIdx = 4;  // Leading/trailing gaps until min. coverage is reached
       if (*itCov >= covThreshold) {
 	// Get consensus letter
-	int countA = 0;
-	int countC = 0;
-	int countG = 0;
-	int countT = 0;
+	std::vector<int32_t> count(5, 0); // ACGT-
 	for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
 	  if (fl[i][j]) {
-	    if ((align[i][j] == 'A') || (align[i][j] == 'a')) ++countA;
-	    else if ((align[i][j] == 'C') || (align[i][j] == 'c')) ++countC;
-	    else if ((align[i][j] == 'G') || (align[i][j] == 'g')) ++countG;
-	    else if ((align[i][j] == 'T') || (align[i][j] == 't')) ++countT;
+	    if ((align[i][j] == 'A') || (align[i][j] == 'a')) ++count[0];
+	    else if ((align[i][j] == 'C') || (align[i][j] == 'c')) ++count[1];
+	    else if ((align[i][j] == 'G') || (align[i][j] == 'g')) ++count[2];
+	    else if ((align[i][j] == 'T') || (align[i][j] == 't')) ++count[3];
+	    else ++count[4];
 	  }
 	}
-	int countAligned = countA + countC + countG + countT;
-	if (countAligned > (*itCov / 2)) {
-	  if (countA > countC) {
-	    if (countA > countG) {
-	      if (countA > countT) cons.push_back('A');
-	      else cons.push_back('T');
-	    } else {
-	      if (countG > countT) cons.push_back('G');
-	      else cons.push_back('T');
-	    }
-	  } else {
-	    if (countC > countG) {
-	      if (countC > countT) cons.push_back('C');
-	      else cons.push_back('T');
-	    } else {
-	      if (countG > countT) cons.push_back('G');
-	      else cons.push_back('T');
-	    }
+	maxIdx = 0;
+	int32_t maxCount = count[0];
+	for(uint32_t i = 1; i<5; ++i) {
+	  if (count[i] > maxCount) {
+	    maxCount = count[i];
+	    maxIdx = i;
 	  }
 	}
       }
+      switch (maxIdx) {
+      case 0: cons[j] = 'A'; break;
+      case 1: cons[j] = 'C'; break;
+      case 2: cons[j] = 'G'; break;
+      case 3: cons[j] = 'T'; break;
+      default: break;
+      }
     }
-    cs = std::string(cons.begin(), cons.end());
+    gapped = std::string(cons.begin(), cons.end());
+    for(uint32_t i = 0; i<cons.size(); ++i) {
+      if (cons[i] != '-') cs.push_back(cons[i]);
+    }
   }
 
 
+  template<typename TConfig, typename TAlign>
+  inline void
+  consensus(TConfig const& c, TAlign const& align, std::string& cs) {
+    std::string gapped;
+    consensus(c, align, gapped, cs);
+  }
+
   template<typename TConfig, typename TSplitReadSet>
   inline int
-  msa(TConfig const& c, TSplitReadSet const& sps, std::string&) {
+  msa(TConfig const& c, TSplitReadSet const& sps, std::string& cs) {
     // Compute distance matrix
     typedef boost::multi_array<int, 2> TDistArray;
     typedef typename TDistArray::index TDIndex;
@@ -230,7 +228,7 @@ namespace tracy {
     for (TDIndex i = 0; i<(2*num+1); ++i) 
       for (TDIndex j = i+1; j<(2*num+1); ++j) 
 	d[i][j]=-1;
-    distanceMatrix(sps, d);
+    distanceMatrix(c, sps, d);
 
     // UPGMA
     typedef boost::multi_array<int, 2> TPhylogeny;
@@ -256,19 +254,25 @@ namespace tracy {
     typedef boost::multi_array<char, 2> TAlign;
     TAlign align;
     palign(c, sps, p, root, align);
-    plotMSAAlignment(c, align);
-    
-    // Debug MSA
-    //typedef typename TAlign::index TAIndex;
-    //for(TAIndex i = 0; i<align.shape()[0]; ++i) {
-    //for(TAIndex j = 0; j<align.shape()[1]; ++j) {
-    //	std::cerr << align[i][j];
-    //}
-    //std::cerr << std::endl;
-    //}
 
     // Consensus calling
-    //consensus(align, cs);
+    std::string gapped;
+    consensus(c, align, gapped, cs);
+    
+    // Output vertical alignment
+    boost::iostreams::filtering_ostream rcfile;
+    rcfile.push(boost::iostreams::gzip_compressor());
+    rcfile.push(boost::iostreams::file_sink(c.alignment.c_str(), std::ios_base::out | std::ios_base::binary));
+    typedef typename TAlign::index TAIndex;
+    for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+      for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	rcfile << align[i][j];
+      }
+      rcfile << '|' << gapped[j] << std::endl;
+    }
+    rcfile.pop();
+    
+
     //std::cerr << cs << std::endl;
     //std::cerr << std::endl;
     

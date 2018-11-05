@@ -205,25 +205,25 @@ namespace tracy {
     typedef boost::multi_array<char, 2> TAlign;
     TAlign alignPrimary;
     std::string pri = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
-    gotohString(pri, rs.refslice, alignPrimary, semiglobal, sc);
+    gotoh(pri, rs.refslice, alignPrimary, semiglobal, sc);
     // Trim initial reference slice
     ReferenceSlice allele1(rs);
     trimReferenceSlice(c, alignPrimary, allele1);
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final1;
     AlignConfig<false, false> global;
-    gotohString(pri, allele1.refslice, final1, global, sc);
+    gotoh(pri, allele1.refslice, final1, global, sc);
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final1, allele1, 1);
 
     // Allele2
     TAlign alignSecondary;
     std::string sec = trimmedSeq(bc.secondary, c.trimLeft, c.trimRight);
-    gotohString(sec, rs.refslice, alignSecondary, semiglobal, sc);
+    gotoh(sec, rs.refslice, alignSecondary, semiglobal, sc);
     // Trim initial reference slice
     ReferenceSlice allele2(rs);
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
-    gotohString(sec, allele2.refslice, final2, global, sc);
+    gotoh(sec, allele2.refslice, final2, global, sc);
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2);
 
     // Json output
