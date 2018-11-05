@@ -217,6 +217,94 @@ namespace tracy {
     consensus(c, align, gapped, cs);
   }
 
+
+  template<typename TConfig, typename TSeqSegment, typename TSequences>
+  inline void
+  revSeqBasedOnDist(TConfig const& c, TSeqSegment const& trpart, TSequences& seq) {
+    // Initialize Sequence Set
+    seq.resize(trpart.size(), "");
+    for(uint32_t k = 0; k < trpart.size(); ++k) {
+      if ((trpart[k].trimLeft >= 0) && (trpart[k].trimRight >= 0) && (trpart[k].trimLeft + trpart[k].trimRight < trpart[k].seq.size())) {
+	int32_t sz =  trpart[k].seq.size() - trpart[k].trimLeft - trpart[k].trimRight;
+	seq[k] = trpart[k].seq.substr(trpart[k].trimLeft, sz);
+      }
+    }
+
+    // Compute distance matrix
+    int32_t totalScore = 0;
+    typedef boost::multi_array<int32_t, 2> TDistArray;
+    typedef typename TDistArray::index TDIndex;
+    TDIndex num = seq.size();
+    TDistArray d(boost::extents[num][num]);
+    for (TDIndex i = 0; i<num; ++i) {
+      d[i][i] = 0;
+      for (TDIndex j = i+1; j<num; ++j) {
+	AlignConfig<true, true> alignconf;
+	d[i][j] = gotohScore(seq[i], seq[j], alignconf, c.aliscore);
+	d[j][i] = d[i][j];
+	totalScore += d[i][j];
+      }
+    }
+
+    // Optimize fwd-rev X-times
+    bool iterateScore = true;
+    while (iterateScore) {
+      std::cout << "Score: " << totalScore << std::endl;
+      
+      // Get quality
+      typedef std::pair<int32_t, int32_t> TSeqScore;
+      std::vector<TSeqScore> seqQuality;
+      for (TDIndex i = 0; i<num; ++i) {
+	int32_t rowSum = 0;
+	for (TDIndex j = 0; j<num; ++j) {
+	  rowSum += d[i][j];
+	}
+	seqQuality.push_back(std::make_pair(rowSum, i));
+      }
+      // Sort by worst sequence
+      std::sort(seqQuality.begin(), seqQuality.end());
+
+      // Update scores
+      for(uint32_t k = 0; k<seqQuality.size(); ++k) {
+	std::string s = seq[k];
+	reverseComplement(s);
+	std::vector<int32_t> newD(num, 0);
+	int32_t scoreSum = 0;
+	int32_t oldScoreSum = 0;
+	for (TDIndex i = 0; i<num; ++i) {
+	  if (i != k) {
+	    AlignConfig<true, true> alignconf;
+	    newD[i] = gotohScore(seq[i], s, alignconf, c.aliscore);
+	    oldScoreSum += d[i][k];
+	    scoreSum += newD[i];
+	  }
+	}
+	if (scoreSum >= oldScoreSum) {
+	  seq[k] = s;
+	  for (TDIndex i = 0; i<num; ++i) {
+	    d[i][k] = newD[i];
+	    d[k][i] = d[i][k];
+	  }
+	}
+      }
+
+      // Update trimming boundaries
+
+
+      
+
+      // Updated score
+      int32_t updatedScore = 0;
+      for (TDIndex i = 0; i<num; ++i) {
+	for (TDIndex j = 0; j<num; ++j) {
+	  updatedScore += d[i][j];
+	}
+      }
+      if (totalScore < updatedScore) totalScore = updatedScore;
+      else iterateScore = false;
+    }
+  }
+
   template<typename TConfig, typename TSplitReadSet>
   inline int
   msa(TConfig const& c, TSplitReadSet const& sps, std::string& cs) {

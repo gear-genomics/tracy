@@ -49,6 +49,14 @@ namespace tracy {
     std::vector<boost::filesystem::path> ab;
   };
 
+  struct SequenceSegment {
+    std::string seq;
+    int32_t trimLeft;
+    int32_t trimRight;
+    bool forward;
+    SequenceSegment(std::string s, int32_t tl, int32_t tr, bool f) : seq(s), trimLeft(tl), trimRight(tr), forward(f) {}
+  };
+
   int assemble(int argc, char** argv) {
     AssembleConfig c;
   
@@ -121,7 +129,7 @@ namespace tracy {
     // Load *.ab1 files
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
-    std::vector<std::string> traceSet;
+    std::vector<SequenceSegment> seqSegment;
     for(uint32_t i = 0; i < c.ab.size(); ++i) {
       Trace tr;
       if (!readab(c.ab[i].string(), tr)) return -1;
@@ -134,16 +142,18 @@ namespace tracy {
       uint32_t trimLeft = 0;
       uint32_t trimRight = 0;
       trimTrace(c, bc, trimLeft, trimRight);
-      if (trimLeft + trimRight < bc.primary.size()) {
-	std::cout << c.ab[i].string() << "(Size: " << bc.primary.size() << ", Trimming Left: " << trimLeft << ", Trimming Right: " << trimRight << ")" << std::endl;
-	int32_t sz = bc.primary.size() - trimLeft - trimRight;
-	traceSet.push_back(bc.primary.substr(trimLeft, sz));
-      }
+      seqSegment.push_back(SequenceSegment(bc.primary, trimLeft, trimRight, true));
     }
+
+    // Reverse Complement Sequences
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Optimize layout/trimming" << std::endl;
+    std::vector<std::string> traceSet;
+    revSeqBasedOnDist(c, seqSegment, traceSet);
 
     // Assemble Traces
     now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;    
     std::string consensus;
     msa(c, traceSet, consensus);
     
