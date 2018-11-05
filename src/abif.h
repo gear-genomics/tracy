@@ -146,6 +146,13 @@ iupac(TMountains const& p) {
   return 'N';
 }
 
+inline bool
+isAmbiguous(char const n) {
+  if ((n == 'A') || (n == 'C') || (n == 'G') || (n == 'T')) return false;
+  else return true;
+}
+  
+
 inline char
 iupac(char const one, char const two) {
   typedef Trace::TMountains TMountains;

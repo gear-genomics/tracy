@@ -39,6 +39,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "indigo.h"
 #include "assemble.h"
 
+
 using namespace tracy;
 
 
@@ -52,7 +53,7 @@ displayUsage() {
   std::cout << "    basecall     basecall Chromatogram trace file" << std::endl;
   std::cout << "    align        alignment of a trace file to a genome" << std::endl;
   std::cout << "    decompose    separate a mutated and wildtype allele" << std::endl;
-  //std::cout << "    assemble     assemble a set of trace files" << std::endl;
+  std::cout << "    assemble     assemble a set of trace files" << std::endl;
   std::cout << std::endl;
   std::cout << std::endl;
 }

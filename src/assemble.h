@@ -27,6 +27,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #define BOOST_DISABLE_ASSERTS
 #include <boost/multi_array.hpp>
 #include "msa.h"
+#include "trim.h"
 
 using namespace sdsl;
 
@@ -34,9 +35,8 @@ namespace tracy {
   
   struct AssembleConfig {
     uint16_t linelimit;
-    uint16_t trimLeft;
-    uint16_t trimRight;
     float pratio;
+    float trimStringency;
     std::string format;
     boost::filesystem::path outfile;
     std::vector<boost::filesystem::path> ab;
@@ -50,8 +50,7 @@ namespace tracy {
     generic.add_options()
       ("help,?", "show help message")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
-      ("trimLeft,l", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
-      ("trimRight,r", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
+      ("pratio,p", boost::program_options::value<float>(&c.trimStringency)->default_value(2), "trimming stringency [1:9]")
       ;
     
     boost::program_options::options_description otp("Output options");
@@ -112,10 +111,13 @@ namespace tracy {
       basecall(tr, bc, c.pratio);
 
       // Append to trace set
-      int32_t sz = bc.primary.size() - c.trimLeft - c.trimRight;
-      traceSet.push_back(bc.primary.substr(c.trimLeft, sz));
-      //std::cerr << ">" << i << std::endl;
-      //std::cerr << bc.primary << std::endl;
+      uint32_t trimLeft = 0;
+      uint32_t trimRight = 0;
+      trimTrace(c, bc, trimLeft, trimRight);
+      if (trimLeft + trimRight < bc.primary.size()) {
+	int32_t sz = bc.primary.size() - trimLeft - trimRight;
+	traceSet.push_back(bc.primary.substr(trimLeft, sz));
+      }
     }
 
     // Assemble Traces
