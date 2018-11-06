@@ -220,11 +220,11 @@ namespace tracy {
 
   template<typename TConfig, typename TSeqSegment, typename TSequences>
   inline void
-  revSeqBasedOnDist(TConfig const& c, TSeqSegment const& trpart, TSequences& seq) {
+  revSeqBasedOnDist(TConfig const& c, TSeqSegment& trpart, TSequences& seq) {
     // Initialize Sequence Set
     seq.resize(trpart.size(), "");
     for(uint32_t k = 0; k < trpart.size(); ++k) {
-      if ((trpart[k].trimLeft >= 0) && (trpart[k].trimRight >= 0) && (trpart[k].trimLeft + trpart[k].trimRight < trpart[k].seq.size())) {
+      if ((trpart[k].trimLeft >= 0) && (trpart[k].trimRight >= 0) && (trpart[k].trimLeft + trpart[k].trimRight < (int32_t) trpart[k].seq.size())) {
 	int32_t sz =  trpart[k].seq.size() - trpart[k].trimLeft - trpart[k].trimRight;
 	seq[k] = trpart[k].seq.substr(trpart[k].trimLeft, sz);
       }
@@ -248,6 +248,7 @@ namespace tracy {
 
     // Optimize fwd-rev X-times
     bool iterateScore = true;
+    int32_t updatedScore = 0;
     while (iterateScore) {
       std::cout << "Score: " << totalScore << std::endl;
       
@@ -286,15 +287,79 @@ namespace tracy {
 	    d[k][i] = d[i][k];
 	  }
 	}
+
+	// Update trimming boundaries
+	int32_t lr = 0;
+	int32_t offsetBP = 8;
+	int32_t newTrim = 0;
+	while (lr < 4) {
+	  std::string s = "";
+	  if (lr == 0) {
+	    if (trpart[k].trimLeft >= offsetBP) {
+	      newTrim = trpart[k].trimLeft - offsetBP;
+	      int32_t sz =  trpart[k].seq.size() - newTrim - trpart[k].trimRight;
+	      s = trpart[k].seq.substr(newTrim, sz);
+	    } else ++lr;
+	  }
+	  if (lr == 1) {
+	    if (trpart[k].trimLeft + trpart[k].trimRight + offsetBP + 100 < (int32_t) trpart[k].seq.size()) {
+	      newTrim = trpart[k].trimLeft + offsetBP;
+	      int32_t sz =  trpart[k].seq.size() - newTrim - trpart[k].trimRight;
+	      s = trpart[k].seq.substr(newTrim, sz);
+	    } else ++lr;
+	  }
+	  if (lr == 2) {
+	    if (trpart[k].trimRight >= offsetBP) {
+	      newTrim = trpart[k].trimRight - offsetBP;
+	      int32_t sz =  trpart[k].seq.size() - trpart[k].trimLeft - newTrim;
+	      s = trpart[k].seq.substr(trpart[k].trimLeft, sz);
+	    } else ++lr;
+	  }
+	  if (lr == 4) {
+	    if (trpart[k].trimLeft + trpart[k].trimRight + offsetBP + 100 < (int32_t) trpart[k].seq.size()) {
+	      newTrim = trpart[k].trimRight + offsetBP;
+	      int32_t sz =  trpart[k].seq.size() - trpart[k].trimLeft - newTrim;
+	      s = trpart[k].seq.substr(trpart[k].trimLeft, sz);
+	    }
+	    else break;
+	  }
+
+	  // Compute trimmed scores
+	  std::vector<int32_t> newD(num, 0);
+	  int32_t scoreSum = 0;
+	  int32_t oldScoreSum = 0;
+	  for (TDIndex i = 0; i<num; ++i) {
+	    if (i != k) {
+	      AlignConfig<true, true> alignconf;
+	      newD[i] = gotohScore(seq[i], s, alignconf, c.aliscore);
+	      oldScoreSum += d[i][k];
+	      scoreSum += newD[i];
+	    }
+	  }
+	  if (scoreSum >= oldScoreSum) {
+	    seq[k] = s;
+	    if ((lr == 0) || (lr == 1)) trpart[k].trimLeft = newTrim;
+	    else trpart[k].trimRight = newTrim;
+	    for (TDIndex i = 0; i<num; ++i) {
+	      d[i][k] = newD[i];
+	      d[k][i] = d[i][k];
+	    }
+	  } else ++lr;
+
+	  // Updated Score
+	  updatedScore = 0;
+	  for (TDIndex i = 0; i<num; ++i) {
+	    for (TDIndex j = 0; j<num; ++j) {
+	      updatedScore += d[i][j];
+	    }
+	  }
+	  std::cout << "Score: " << updatedScore << std::endl;
+	}
       }
-
-      // Update trimming boundaries
-
-
       
 
       // Updated score
-      int32_t updatedScore = 0;
+      updatedScore = 0;
       for (TDIndex i = 0; i<num; ++i) {
 	for (TDIndex j = 0; j<num; ++j) {
 	  updatedScore += d[i][j];
