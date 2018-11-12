@@ -38,6 +38,15 @@ namespace tracy
     uint32_t pos;
     std::string chr;
     std::string refslice;
+
+    ReferenceSlice() {
+      forward = true;
+      filetype = 0;
+      kmersupport = 0;
+      pos = 0;
+      chr = "";
+      refslice = "";
+    }
   };
   
 
