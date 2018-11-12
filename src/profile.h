@@ -35,11 +35,11 @@ namespace tracy
   createProfile(Trace const& tr, BaseCalls const& bc, TProfile& p) {
     p.resize(boost::extents[6][bc.bcPos.size()]);   // 'A', 'C', 'G', 'T', 'N', '-'
     for(uint32_t j = 0; j < bc.bcPos.size(); ++j) {
-      double totalsig = 0;
+      float totalsig = 0;
       for(uint32_t k = 0; k<4; ++k) totalsig += tr.traceACGT[k][bc.bcPos[j]];
       p[4][j] = 0;
       p[5][j] = 0;
-      for(uint32_t k = 0; k<4; ++k) p[k][j] = ((double) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+      for(uint32_t k = 0; k<4; ++k) p[k][j] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
     }
   }
   
@@ -51,11 +51,11 @@ namespace tracy
       int32_t sz = bc.bcPos.size() - (trimleft + trimright);
       p.resize(boost::extents[6][sz]);   // 'A', 'C', 'G', 'T', 'N', '-'
       for(int32_t j = trimleft; j < (trimleft + sz); ++j) {
-	double totalsig = 0;
+	float totalsig = 0;
 	for(uint32_t k = 0; k<4; ++k) totalsig += tr.traceACGT[k][bc.bcPos[j]];
 	p[4][j-trimleft] = 0;
 	p[5][j-trimleft] = 0;
-	for(uint32_t k = 0; k<4; ++k) p[k][j-trimleft] = ((double) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+	for(uint32_t k = 0; k<4; ++k) p[k][j-trimleft] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
       }
     }
   }

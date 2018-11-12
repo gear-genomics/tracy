@@ -163,7 +163,7 @@ namespace tracy {
     if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
 
     // Create trimmed trace and reference profile
-    typedef boost::multi_array<double, 2> TProfile;
+    typedef boost::multi_array<float, 2> TProfile;
     TProfile ptrace;
     createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
     TProfile prefslice;

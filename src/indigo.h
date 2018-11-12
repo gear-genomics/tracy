@@ -132,7 +132,7 @@ namespace tracy {
     if ((c.format == "align") || (c.format == "both")) traceTxtOut(c.outfile.string() + ".abif", bc, tr, c.trimLeft, c.trimRight);
 
     // Create trimmed trace profile
-    typedef boost::multi_array<double, 2> TProfile;
+    typedef boost::multi_array<float, 2> TProfile;
     TProfile ptrace;
     createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
 

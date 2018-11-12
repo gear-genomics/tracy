@@ -158,11 +158,11 @@ namespace tracy
     }
   }
 
-  template<typename TChar, typename TProfile>
+  template<typename TProfile>
   inline void
-  _createProfile(boost::multi_array<TChar, 2> const& a, TProfile& p)
+  _createProfile(boost::multi_array<char, 2> const& a, TProfile& p)
   {
-    typedef typename boost::multi_array<TChar, 2>::index TAIndex;
+    typedef typename boost::multi_array<char, 2>::index TAIndex;
     typedef typename TProfile::index TPIndex;
     p.resize(boost::extents[6][a.shape()[1]]);   // 'A', 'C', 'G', 'T', 'N', '-'
     for (TAIndex j = 0; j < (TAIndex) a.shape()[1]; ++j) {
@@ -179,6 +179,20 @@ namespace tracy
 	else --sum;
       }
       for(TPIndex k = 0; k<6; ++k) p[k][j] /= sum;
+    }
+  }
+
+  // Trace profile, should be regarded as single sequence!
+  template<typename TProfile>
+  inline void
+  _createProfile(boost::multi_array<float, 2> const& a, TProfile& p)
+  {
+    typedef typename boost::multi_array<float, 2>::index TAIndex;
+    p.resize(boost::extents[6][a.shape()[1]]);   // 'A', 'C', 'G', 'T', 'N', '-'
+    for (TAIndex j = 0; j < (TAIndex) a.shape()[1]; ++j) {
+      for(TAIndex i = 0; i < (TAIndex) a.shape()[0]; ++i) {
+	p[i][j] = a[i][j];
+      }
     }
   }
 
@@ -211,9 +225,9 @@ namespace tracy
     _createLocalAlignment(trace, s1, s2, align, 0, 0);
   }
 
-  template<typename TTrace, typename TChar, typename TAlign>
+  template<typename TTrace, typename TAlign>
   inline void
-  _createAlignment(TTrace const& trace, boost::multi_array<TChar, 2> const& a1, boost::multi_array<TChar, 2> const& a2, TAlign& align)
+  _createAlignment(TTrace const& trace, boost::multi_array<char, 2> const& a1, boost::multi_array<char, 2> const& a2, TAlign& align)
   {
     typedef typename TAlign::index TAIndex;
     TAIndex numN = a1.shape()[0];
@@ -240,6 +254,48 @@ namespace tracy
     }
   }
 
+  template<typename TProfile>
+  inline char
+  _profileConsChar(TProfile const& p, std::size_t const pos) {
+    uint32_t maxidx = 0;
+    double maxval = p[maxidx][pos];
+    for(uint32_t k = 1; k < 6; ++k) {
+      if (p[k][pos] > maxval) {
+	maxval = p[k][pos];
+	maxidx = k;
+      }
+    }
+    if (maxidx == 0) return 'A';
+    else if (maxidx == 1) return 'C';
+    else if (maxidx == 2) return 'G';
+    else if (maxidx == 3) return 'T';
+    else if (maxidx == 4) return 'N';
+    else return '-';
+  }
+    
+  // Trace to trace alignment yields sequence to sequence alignment
+  template<typename TTrace, typename TAlign>
+  inline void
+  _createAlignment(TTrace const& trace, boost::multi_array<float, 2> const& a1, boost::multi_array<float, 2> const& a2, TAlign& align)
+  {
+    align.resize(boost::extents[2][trace.size()]);
+    std::size_t row = 0;
+    std::size_t col = 0;
+    std::size_t ai = 0;
+    for(typename TTrace::const_reverse_iterator itT = trace.rbegin(); itT != trace.rend(); ++itT, ++ai) {
+      if (*itT == 's') {
+	align[0][ai] = _profileConsChar(a1, row++);
+	align[1][ai] = _profileConsChar(a2, col++);
+      } else if (*itT =='h') {
+	align[0][ai] = '-';
+	align[1][ai] = _profileConsChar(a2, col++);
+      } else {
+	align[0][ai] = _profileConsChar(a1, row++);
+	align[1][ai] = '-';
+      }
+    }
+  }
+  
 }
 
 #endif
