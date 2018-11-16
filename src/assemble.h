@@ -34,6 +34,7 @@ using namespace sdsl;
 namespace tracy {
   
   struct AssembleConfig {
+    bool hasReference;
     uint16_t linelimit;
     int32_t gapopen;
     int32_t gapext;
@@ -44,6 +45,7 @@ namespace tracy {
     float fractionCalled;
     std::string format;
     DnaScore<int32_t> aliscore;
+    boost::filesystem::path reference;
     boost::filesystem::path alignment;
     boost::filesystem::path outfile;
     std::vector<boost::filesystem::path> ab;
@@ -67,6 +69,7 @@ namespace tracy {
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
       ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9]")
       ("called,d", boost::program_options::value<float>(&c.fractionCalled)->default_value(0.1), "fraction of traces required for consensus")
+      ("reference,r", boost::program_options::value<boost::filesystem::path>(&c.reference), "reference-guided assembly (optional)")
       ;
 
     boost::program_options::options_description alignment("Alignment scoring options");
@@ -116,6 +119,10 @@ namespace tracy {
       }
     }
 
+    // Check reference
+    if (vm.count("reference")) c.hasReference = true;
+    else c.hasReference = false;
+
     // Alignment Scoring
     c.aliscore = DnaScore<int32_t>(c.match, c.mismatch, c.gapopen, c.gapext);
     
@@ -125,37 +132,131 @@ namespace tracy {
     std::cout << "tracy ";
     for(int i=0; i<argc; ++i) { std::cout << argv[i] << ' '; }
     std::cout << std::endl;
-    
-    // Load *.ab1 files
-    now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
-    std::vector<SequenceSegment> seqSegment;
-    for(uint32_t i = 0; i < c.ab.size(); ++i) {
-      Trace tr;
-      if (!readab(c.ab[i].string(), tr)) return -1;
 
-      // Call bases
-      BaseCalls bc;
-      basecall(tr, bc, c.pratio);
+    // Reference-guided
+    if (c.hasReference) {
+      // Load reference
+      std::string faname = "";
+      std::string seq = "";
+      loadSingleFasta(c.reference.string(), faname, seq);
 
-      // Append to trace set
-      uint32_t trimLeft = 0;
-      uint32_t trimRight = 0;
-      trimTrace(c, bc, trimLeft, trimRight);
-      seqSegment.push_back(SequenceSegment(bc.primary, trimLeft, trimRight, true));
+      // Reference profile
+      typedef boost::multi_array<float, 2> TProfile;
+      TProfile prefslice;
+      createProfile(seq, prefslice);
+      
+      // Traces and alignment score objects
+      std::vector<TProfile> traceProfiles;
+      typedef std::pair<int32_t, int32_t> TScoreIdx;
+      std::vector<TScoreIdx> scoreIdx;
+      std::vector<std::string> sequences;
+      
+      // Load *.ab1 files
+      now = boost::posix_time::second_clock::local_time();
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align ab1 files" << std::endl;
+      for(uint32_t i = 0; i < c.ab.size(); ++i) {
+	Trace tr;
+	if (!readab(c.ab[i].string(), tr)) return -1;
+
+	// Call bases
+	BaseCalls bc;
+	basecall(tr, bc, c.pratio);
+
+	// Get trim sizes
+	uint32_t trimLeft = 0;
+	uint32_t trimRight = 0;
+	trimTrace(c, bc, trimLeft, trimRight);
+	std::string primarySeq = trimmedSeq(bc.primary, trimLeft, trimRight);
+	
+	// Create Trace Profile
+	TProfile ptrace;
+	createProfile(tr, bc, ptrace, trimLeft, trimRight);
+	
+	// Align
+	AlignConfig<true, false> semiglobal;
+	int32_t gsFwd = gotohScore(ptrace, prefslice, semiglobal, c.aliscore);
+
+	// Reverse Alignment
+	TProfile prevtrace;
+	reverseProfile(ptrace, prevtrace);
+	int32_t gsRev = gotohScore(prevtrace, prefslice, semiglobal, c.aliscore);
+
+	// Final score
+	double seqsize = ptrace.shape()[1];
+	double scoreThreshold = seqsize * 0.6 * c.aliscore.match + seqsize * 0.4 * c.aliscore.mismatch; // 60% matches
+	if ((gsFwd > scoreThreshold) || (gsRev > scoreThreshold)) {
+	  int32_t bestScore = std::max(gsFwd, gsRev);
+	  scoreIdx.push_back(std::make_pair(-bestScore, traceProfiles.size()));
+	  if (gsFwd >= gsRev) {
+	    traceProfiles.push_back(ptrace);
+	    sequences.push_back(primarySeq);
+	  } else {
+	    traceProfiles.push_back(prevtrace);
+	    reverseComplement(primarySeq);
+	    sequences.push_back(primarySeq);
+	  }
+	} else {
+	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to the reference! Trace file will be excluded!" << std::endl;
+	}
+      }
+
+      // Sort score
+      std::sort(scoreIdx.begin(), scoreIdx.end());
+
+      // Align iteratively
+      if (scoreIdx.size()) {
+	typedef boost::multi_array<char, 2> TAlign;
+	TAlign align;
+	AlignConfig<true, false> semiglobal;
+	gotoh(traceProfiles[scoreIdx[0].second], prefslice, align, semiglobal, c.aliscore);
+	for(uint32_t i = 1; i < scoreIdx.size(); ++i) {
+
+	  typedef typename TAlign::index TAIndex;
+	  for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+	    for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	      std::cerr << align[i][j];
+	    }
+	    std::cerr << std::endl;
+	  }
+	  exit(-1);
+	  
+	  TAlign alignSeq;
+	  alignSeq.resize(boost::extents[1][sequences[scoreIdx[i].second].size()]);
+	  uint32_t ind = 0;
+	  for(typename std::string::const_iterator str = sequences[scoreIdx[i].second].begin(); str != sequences[scoreIdx[i].second].end(); ++str) alignSeq[0][ind++] = *str;
+	  TAlign alignNew;	  
+	  gotoh(alignSeq, align, alignNew, semiglobal, c.aliscore);
+	  align = alignNew;
+	}
+
+	// Consensus calling
+	std::string gapped;
+	std::string cs;
+	consensus(c, align, gapped, cs);
+
+	// Output vertical alignment
+	boost::iostreams::filtering_ostream rcfile;
+	rcfile.push(boost::iostreams::gzip_compressor());
+	rcfile.push(boost::iostreams::file_sink(c.alignment.c_str(), std::ios_base::out | std::ios_base::binary));
+	typedef typename TAlign::index TAIndex;
+	for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+	  for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	    rcfile << align[i][j];
+	  }
+	  rcfile << '|' << gapped[j] << std::endl;
+	}
+	rcfile.pop();
+      }
+    } else {
+      std::cerr << "De-novo assembly is not yet supported!" << std::endl;
+
+      //seqSegment.push_back(SequenceSegment(bc.primary, trimLeft, trimRight, true));
+      // Reverse Complement Sequences
+      //std::vector<std::string> traceSet;
+      //revSeqBasedOnDist(c, seqSegment, traceSet);
+      //std::string consensus;
+      //msa(c, traceSet, consensus);
     }
-
-    // Reverse Complement Sequences
-    now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Optimize layout/trimming" << std::endl;
-    std::vector<std::string> traceSet;
-    revSeqBasedOnDist(c, seqSegment, traceSet);
-
-    // Assemble Traces
-    now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;    
-    std::string consensus;
-    msa(c, traceSet, consensus);
     
     // Done
     now = boost::posix_time::second_clock::local_time();

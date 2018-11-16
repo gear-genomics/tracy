@@ -113,6 +113,24 @@ namespace tracy
     }
   }
 
+  template<typename TProfile>
+  inline void
+  reverseProfile(TProfile const& p, TProfile& out) {
+    out.resize(boost::extents[6][p.shape()[1]]);   // 'A', 'C', 'G', 'T', 'N', '-'
+    int32_t pIdx = p.shape()[1] - 1;
+    int32_t outIdx = 0;
+    while (pIdx >= 0) {
+      out[0][outIdx] = p[0][pIdx];
+      out[1][outIdx] = p[1][pIdx];
+      out[2][outIdx] = p[2][pIdx];
+      out[3][outIdx] = p[3][pIdx];
+      out[4][outIdx] = p[4][pIdx];
+      out[5][outIdx] = p[5][pIdx];
+      --pIdx;
+      ++outIdx;
+    }
+  }
+
 }
 
 #endif
