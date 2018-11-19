@@ -35,7 +35,6 @@ namespace tracy {
   
   struct AssembleConfig {
     bool hasReference;
-    uint16_t linelimit;
     int32_t gapopen;
     int32_t gapext;
     int32_t match;
@@ -43,11 +42,9 @@ namespace tracy {
     float pratio;
     float trimStringency;
     float fractionCalled;
-    std::string format;
     DnaScore<int32_t> aliscore;
     boost::filesystem::path reference;
     boost::filesystem::path alignment;
-    boost::filesystem::path outfile;
     std::vector<boost::filesystem::path> ab;
   };
 
@@ -59,6 +56,19 @@ namespace tracy {
     SequenceSegment(std::string s, int32_t tl, int32_t tr, bool f) : seq(s), trimLeft(tl), trimRight(tr), forward(f) {}
   };
 
+
+  template<typename TArray>
+  inline void
+  overwriteArray(TArray const& in, TArray& out) {
+    typedef typename TArray::index TAIndex;
+    out.resize(boost::extents[in.shape()[0]][in.shape()[1]]);
+    for(TAIndex i = 0; i < (TAIndex) in.shape()[0]; ++i) {
+      for(TAIndex j = 0; j < (TAIndex) in.shape()[1]; ++j) {
+	out[i][j] = in[i][j];
+      }
+    }
+  }
+  
   int assemble(int argc, char** argv) {
     AssembleConfig c;
   
@@ -82,10 +92,7 @@ namespace tracy {
     
     boost::program_options::options_description otp("Output options");
     otp.add_options()
-      ("linelimit,l", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
-      ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|align]")
       ("alignment,a", boost::program_options::value<boost::filesystem::path>(&c.alignment)->default_value("al.fa.gz"), "vertical alignment")
-      ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -210,23 +217,13 @@ namespace tracy {
 	AlignConfig<true, false> semiglobal;
 	gotoh(traceProfiles[scoreIdx[0].second], prefslice, align, semiglobal, c.aliscore);
 	for(uint32_t i = 1; i < scoreIdx.size(); ++i) {
-
-	  typedef typename TAlign::index TAIndex;
-	  for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
-	    for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
-	      std::cerr << align[i][j];
-	    }
-	    std::cerr << std::endl;
-	  }
-	  exit(-1);
-	  
 	  TAlign alignSeq;
 	  alignSeq.resize(boost::extents[1][sequences[scoreIdx[i].second].size()]);
 	  uint32_t ind = 0;
 	  for(typename std::string::const_iterator str = sequences[scoreIdx[i].second].begin(); str != sequences[scoreIdx[i].second].end(); ++str) alignSeq[0][ind++] = *str;
 	  TAlign alignNew;	  
 	  gotoh(alignSeq, align, alignNew, semiglobal, c.aliscore);
-	  align = alignNew;
+	  overwriteArray(alignNew, align);
 	}
 
 	// Consensus calling
