@@ -245,14 +245,36 @@ namespace tracy {
 	rcfile.pop();
       }
     } else {
-      std::cerr << "De-novo assembly is not yet supported!" << std::endl;
+      // Load *.ab1 files
+      now = boost::posix_time::second_clock::local_time();
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
+      std::vector<SequenceSegment> seqSegment;
+      for(uint32_t i = 0; i < c.ab.size(); ++i) {
+	Trace tr;
+	if (!readab(c.ab[i].string(), tr)) return -1;
 
-      //seqSegment.push_back(SequenceSegment(bc.primary, trimLeft, trimRight, true));
-      // Reverse Complement Sequences
-      //std::vector<std::string> traceSet;
-      //revSeqBasedOnDist(c, seqSegment, traceSet);
-      //std::string consensus;
-      //msa(c, traceSet, consensus);
+	// Call bases
+	BaseCalls bc;
+	basecall(tr, bc, c.pratio);
+
+	// Get trim sizes
+	uint32_t trimLeft = 0;
+	uint32_t trimRight = 0;
+	trimTrace(c, bc, trimLeft, trimRight);
+	seqSegment.push_back(SequenceSegment(bc.primary, trimLeft, trimRight, true));
+      }
+
+      // Optimize layout/trimming
+      now = boost::posix_time::second_clock::local_time();
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Optimize layout/trimming" << std::endl;
+      std::vector<std::string> traceSet;
+      revSeqBasedOnDist(c, seqSegment, traceSet);	
+
+      // Assemble
+      now = boost::posix_time::second_clock::local_time();
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;
+      std::string consensus;
+      msa(c, traceSet, consensus);
     }
     
     // Done
