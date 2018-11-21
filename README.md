@@ -79,6 +79,16 @@ You can also use a wildtype chromatogram for decomposition.
 `./tracy decompose -g wildtype.ab1 -f align -o outprefix mutated.ab1`
 
 
+Trace assembly
+--------------
+
+If you tiled a genomic region with multiple chromatogram files you can assemble all of these with tracy. The assemble method supports a reference-guided and a de novo assembly.
+
+`tracy assemble file1.ab1 file2.ab1 fileN.ab1`
+
+`tracy assemble -r <reference.fa> file1.ab1 file2.ab1 fileN.ab1`
+
+
 Questions
 ---------
 
