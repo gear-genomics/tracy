@@ -456,8 +456,17 @@ namespace tracy
       risize += c.trimLeft;
     }
     if (risize + c.trimRight < rs.refslice.size()) risize += c.trimRight;
+    int32_t oldlen = rs.refslice.size();
     rs.refslice = rs.refslice.substr(ri, risize);
-    rs.pos += ri;
+    if (rs.forward) rs.pos += ri;
+    else {
+      int32_t offset = oldlen - (int32_t) ri - (int32_t) risize;
+      if (offset < 0) {
+	std::cerr << "Warning: Offset smaller than zero!" << std::endl;
+      } else {
+	rs.pos += offset;
+      }
+    }
   }
   
 
