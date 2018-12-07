@@ -184,6 +184,9 @@ namespace tracy
     rfile << "}," << std::endl;
     rfile << "\"refchr\": \"" << rs.chr << "\"," << std::endl;
     rfile << "\"refpos\": " << (rs.pos + 1) << "," << std::endl;
+    rfile << "\"altalign\": \"";
+    for(uint32_t j = 0; j<align.shape()[1]; ++j) rfile << align[0][j];
+    rfile << "\"," << std::endl;
     rfile << "\"refalign\": \"";
     for(uint32_t j = 0; j<align.shape()[1]; ++j) rfile << align[1][j];
     rfile << "\"," << std::endl;
