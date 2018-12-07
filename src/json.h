@@ -195,7 +195,7 @@ namespace tracy
 
   template<typename TAlign, typename TDecomposition>
   inline void
-  traceAlleleAlignJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, TAlign const& align1, TAlign const& align2, TDecomposition const& dcp) {
+  traceAlleleAlignJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, TAlign const& align1, TAlign const& align2, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score) {
     // Output trace
     std::ofstream rfile(outfile.c_str());
     rfile << "{" << std::endl;
@@ -213,6 +213,7 @@ namespace tracy
     for(uint32_t j = 0; j<align1.shape()[1]; ++j) rfile << align1[1][j];
     rfile << "\"," << std::endl;
     rfile << "\"ref1forward\": " << rs1.forward << "," << std::endl;
+    rfile << "\"align1score\": " << a1Score << "," << std::endl;
 
     // Allele 2
     rfile << "\"ref2chr\": \"" << rs2.chr << "\"," << std::endl;
@@ -224,6 +225,7 @@ namespace tracy
     for(uint32_t j = 0; j<align2.shape()[1]; ++j) rfile << align2[1][j];
     rfile << "\"," << std::endl;
     rfile << "\"ref2forward\": " << rs2.forward << "," << std::endl;
+    rfile << "\"align2score\": " << a2Score << "," << std::endl;
 
     // Decomposition
     rfile << "\"decomposition\": " << "{" << std::endl;

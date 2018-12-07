@@ -214,7 +214,7 @@ namespace tracy {
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final1;
     AlignConfig<false, false> global;
-    gotoh(pri, allele1.refslice, final1, global, sc);
+    int32_t a1Score = gotoh(pri, allele1.refslice, final1, global, sc);
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final1, allele1, 1);
 
     // Allele2
@@ -225,12 +225,12 @@ namespace tracy {
     ReferenceSlice allele2(rs);
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
-    gotoh(sec, allele2.refslice, final2, global, sc);
+    int32_t a2Score = gotoh(sec, allele2.refslice, final2, global, sc);
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2);
 
     // Json output
-    if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp);
-    else if (c.format == "both") traceAlleleAlignJsonOut(c.outfile.string() + ".json", bc, tr, allele1, allele2, final1, final2, dcp);
+    if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score);
+    else if (c.format == "both") traceAlleleAlignJsonOut(c.outfile.string() + ".json", bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score);
       
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
