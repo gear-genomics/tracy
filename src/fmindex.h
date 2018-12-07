@@ -256,7 +256,6 @@ namespace tracy
   template<typename TConfig, typename TFMIndex>
   inline bool
   getReferenceSlice(TConfig const& c, TFMIndex const& fm_index, BaseCalls const& bc, ReferenceSlice& rs) {
-    uint32_t minKmerSupport = 3;
   
     // Get sequence lengths
     std::vector<uint32_t> seqlen;
@@ -286,11 +285,11 @@ namespace tracy
     int64_t bestRev;
     uint32_t freqRev = findMaxFreq(hitRev, bestRev);
     int64_t bestPos;
-    if ((freqFwd >= minKmerSupport) && (freqFwd > 2*freqRev)) {
+    if ((freqFwd >= c.minKmerSupport) && (freqFwd > 2*freqRev)) {
       rs.forward = true;
       rs.kmersupport = freqFwd;
       bestPos = bestFwd;
-    } else if ((freqRev >= minKmerSupport) && (freqRev > 2*freqFwd)) {
+    } else if ((freqRev >= c.minKmerSupport) && (freqRev > 2*freqFwd)) {
       rs.forward = false;
       rs.kmersupport = freqRev;
       bestPos = bestRev;
@@ -302,11 +301,11 @@ namespace tracy
       scanSequence(fm_index, rv, c.trimRight, c.trimLeft, c.kmer, hitRev, false);
       freqFwd = findMaxFreq(hitFwd, bestFwd);
       freqRev = findMaxFreq(hitRev, bestRev);
-      if ((freqFwd >= minKmerSupport) && (freqFwd > 2*freqRev)) {
+      if ((freqFwd >= c.minKmerSupport) && (freqFwd > 2*freqRev)) {
 	rs.forward = true;
 	rs.kmersupport = freqFwd;
 	bestPos = bestFwd;
-      } else if ((freqRev >= minKmerSupport) && (freqRev > 2*freqFwd)) {
+      } else if ((freqRev >= c.minKmerSupport) && (freqRev > 2*freqFwd)) {
 	rs.forward = false;
 	rs.kmersupport = freqRev;
 	bestPos = bestRev;
