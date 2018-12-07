@@ -215,7 +215,7 @@ namespace tracy {
     TAlign final1;
     AlignConfig<false, false> global;
     int32_t a1Score = gotoh(pri, allele1.refslice, final1, global, sc);
-    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final1, allele1, 1);
+    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final1, allele1, 1, a1Score);
 
     // Allele2
     TAlign alignSecondary;
@@ -226,7 +226,7 @@ namespace tracy {
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
     int32_t a2Score = gotoh(sec, allele2.refslice, final2, global, sc);
-    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2);
+    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2, a2Score);
 
     // Json output
     if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score);

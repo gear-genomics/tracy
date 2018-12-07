@@ -203,7 +203,7 @@ namespace tracy {
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final;
     AlignConfig<false, false> global;
-    gotoh(ptr, prs, final, global, sc);
+    int32_t alScore = gotoh(ptr, prs, final, global, sc);
     // Debug Alignment
     //for(uint32_t i = 0; i<final.shape()[0]; ++i) {
     //for(uint32_t j = 0; j<final.shape()[1]; ++j) std::cerr << final[i][j];
@@ -218,7 +218,7 @@ namespace tracy {
     // Output
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Output" << std::endl;
-    if (c.format == "align") plotAlignment(c, final, rs);
+    if (c.format == "align") plotAlignment(c, final, rs, alScore);
     else traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
 
 

@@ -345,7 +345,7 @@ namespace tracy
 
   template<typename TConfig, typename TAlign>
   inline void
-  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key) {
+  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key, int32_t const score) {
     typedef typename TAlign::index TAIndex;
     int32_t ri = rs.pos + 1;
     int32_t riend = rs.pos + rs.refslice.size();
@@ -377,6 +377,7 @@ namespace tracy
     }
     if (count % fald != 0) ofile << std::endl;
     ofile << std::endl;
+    ofile << "Alignment score: " << score << std::endl;
     ofile << "#";
     for(uint32_t i = 1; i < fald; ++i) ofile << "-";
     ofile << std::endl;
@@ -428,8 +429,8 @@ namespace tracy
 
   template<typename TConfig, typename TAlign>
   inline void
-  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs) {
-    plotAlignment(c, align, rs, 0);
+  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const score) {
+    plotAlignment(c, align, rs, 0, score);
   }
 
   template<typename TConfig, typename TAlign>
