@@ -213,8 +213,7 @@ namespace tracy {
     trimReferenceSlice(c, alignPrimary, allele1);
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final1;
-    AlignConfig<false, false> global;
-    int32_t a1Score = gotoh(pri, allele1.refslice, final1, global, sc);
+    int32_t a1Score = gotoh(pri, allele1.refslice, final1, semiglobal, sc);
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final1, allele1, 1, a1Score);
 
     // Allele2
@@ -225,7 +224,7 @@ namespace tracy {
     ReferenceSlice allele2(rs);
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
-    int32_t a2Score = gotoh(sec, allele2.refslice, final2, global, sc);
+    int32_t a2Score = gotoh(sec, allele2.refslice, final2, semiglobal, sc);
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2, a2Score);
 
     // Json output

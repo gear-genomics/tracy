@@ -199,11 +199,10 @@ namespace tracy {
     TProfile prs;
     createProfile(c, rs, prs);
     
-    // Global alignment
+    // Global alignment to trimmed reference
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final;
-    AlignConfig<false, false> global;
-    int32_t alScore = gotoh(ptr, prs, final, global, sc);
+    int32_t alScore = gotoh(ptr, prs, final, semiglobal, sc);
     // Debug Alignment
     //for(uint32_t i = 0; i<final.shape()[0]; ++i) {
     //for(uint32_t j = 0; j<final.shape()[1]; ++j) std::cerr << final[i][j];
