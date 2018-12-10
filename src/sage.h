@@ -202,7 +202,7 @@ namespace tracy {
     // Global alignment to trimmed reference
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final;
-    int32_t alScore = gotoh(ptr, prs, final, semiglobal, sc);
+    gotoh(ptr, prs, final, semiglobal, sc);
     // Debug Alignment
     //for(uint32_t i = 0; i<final.shape()[0]; ++i) {
     //for(uint32_t j = 0; j<final.shape()[1]; ++j) std::cerr << final[i][j];
@@ -217,8 +217,13 @@ namespace tracy {
     // Output
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Output" << std::endl;
-    if (c.format == "align") plotAlignment(c, final, rs, alScore);
-    else traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
+    if (c.format == "align") {
+      // For the command line we want to show the trimmed alignment (as in Indigo)
+      TAlign final1;
+      std::string pritrim = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
+      int32_t alTrimmedScore = gotoh(pritrim, rs.refslice, final1, semiglobal, sc);
+      plotAlignment(c, final1, rs, alTrimmedScore);
+    } else traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
 
 
 #ifdef PROFILE
