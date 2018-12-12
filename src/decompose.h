@@ -27,13 +27,6 @@ Contact: Tobias Rausch (rausch@embl.de)
 namespace tracy
 {
 
-  struct TraceBreakpoint {
-    bool indelshift;
-    bool traceleft;
-    uint32_t breakpoint;
-    float bestDiff;
-  };
-
   template<typename TProfile>
   inline void
   findBreakpoint(TProfile const& ptrace, TraceBreakpoint& bp) {

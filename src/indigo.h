@@ -141,7 +141,6 @@ namespace tracy {
     // Identify position of indel shift in Sanger trace
     TraceBreakpoint bp;
     findBreakpoint(ptrace, bp);
-    //std::cerr << "Breakpoint: " << bp.indelshift << ',' << bp.traceleft << ',' << bp.breakpoint << ',' << bp.bestDiff << std::endl;
     
     // Load reference
     csa_wt<> fm_index;
@@ -228,8 +227,8 @@ namespace tracy {
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2, a2Score);
 
     // Json output
-    if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score);
-    else if (c.format == "both") traceAlleleAlignJsonOut(c.outfile.string() + ".json", bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score);
+    if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
+    else if (c.format == "both") traceAlleleAlignJsonOut(c.outfile.string() + ".json", bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
       
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;

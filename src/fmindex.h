@@ -48,6 +48,13 @@ namespace tracy
       refslice = "";
     }
   };
+
+  struct TraceBreakpoint {
+    bool indelshift;
+    bool traceleft;
+    uint32_t breakpoint;
+    float bestDiff;
+  };
   
 
   template<typename TConfig, typename TFMIdx>
