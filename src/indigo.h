@@ -237,6 +237,9 @@ namespace tracy {
     int32_t a3Score = gotoh(pri, secrs.refslice, final3, global, sc);
     if (c.format == "align") plotAlignment(c, final3, secrs, 3, a3Score);
 
+    // Estimate allelic fractions (percentages) and find best viewpoint for SNPs (bp.indelshift == false)
+    // ToDo
+
     // Json output
     traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
 
