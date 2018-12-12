@@ -196,9 +196,13 @@ namespace tracy
   }
 
 
-  template<typename TAlign, typename TDecomposition>
+  template<typename TConfig, typename TAlign, typename TDecomposition>
   inline void
-  traceAlleleAlignJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, TAlign const& align1, TAlign const& align2, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, TraceBreakpoint const& bp) {
+  traceAlleleAlignJsonOut(TConfig const& c, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, TAlign const& align1, TAlign const& align2, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, TraceBreakpoint const& bp) {
+    // Output file name
+    std::string outfile = c.outfile.string();
+    if (c.format == "align") outfile = c.outfile.string() + ".json";    
+    
     // Output trace
     std::ofstream rfile(outfile.c_str());
     rfile << "{" << std::endl;
@@ -232,7 +236,7 @@ namespace tracy
 
     // Breakpoint
     rfile << "\"hetindel\": " << bp.indelshift << "," << std::endl;
-    //rfile << "\"hetindelbp\": " << bp.breakpoint << "," << std::endl;
+    rfile << "\"hetindelbp\": " << c.trimLeft + bp.breakpoint << "," << std::endl;
 
     // Decomposition
     rfile << "\"decomposition\": " << "{" << std::endl;

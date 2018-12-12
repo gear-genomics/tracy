@@ -131,7 +131,7 @@ namespace tracy {
     // Call bases
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
-    if ((c.format == "align") || (c.format == "both")) traceTxtOut(c.outfile.string() + ".abif", bc, tr, c.trimLeft, c.trimRight);
+    if (c.format == "align") traceTxtOut(c.outfile.string() + ".abif", bc, tr, c.trimLeft, c.trimRight);
 
     // Create trimmed trace profile
     typedef boost::multi_array<float, 2> TProfile;
@@ -197,7 +197,7 @@ namespace tracy {
     typedef std::vector<TIndelError> TDecomposition;
     TDecomposition dcp;
     if (!decomposeAlleles(c, align, bc, bp, rs, dcp)) return -1;
-    if ((c.format == "align") || (c.format == "both")) writeDecomposition(c, dcp);
+    if (c.format == "align") writeDecomposition(c, dcp);
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
@@ -213,7 +213,7 @@ namespace tracy {
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final1;
     int32_t a1Score = gotoh(pri, allele1.refslice, final1, semiglobal, sc);
-    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final1, allele1, 1, a1Score);
+    if (c.format == "align") plotAlignment(c, final1, allele1, 1, a1Score);
 
     // Allele2
     TAlign alignSecondary;
@@ -224,7 +224,7 @@ namespace tracy {
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
     int32_t a2Score = gotoh(sec, allele2.refslice, final2, semiglobal, sc);
-    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2, a2Score);
+    if (c.format == "align") plotAlignment(c, final2, allele2, 2, a2Score);
 
     // Allele1 vs. Allele2
     TAlign final3;
@@ -235,13 +235,11 @@ namespace tracy {
     secrs.pos = 0;
     secrs.chr = "Alt2";
     int32_t a3Score = gotoh(pri, secrs.refslice, final3, global, sc);
-    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final3, secrs, 3, a3Score);
-    
-    
+    if (c.format == "align") plotAlignment(c, final3, secrs, 3, a3Score);
+
     // Json output
-    if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
-    else if (c.format == "both") traceAlleleAlignJsonOut(c.outfile.string() + ".json", bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
-      
+    traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
+
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
     return 0;
