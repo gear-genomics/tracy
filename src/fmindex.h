@@ -362,7 +362,10 @@ namespace tracy
     std::string filename = c.outfile.string();
     if (key != 0) filename = filename + ".align" + boost::lexical_cast<std::string>(key);
     std::ofstream ofile(filename.c_str());
-    ofile << ">Alt" << std::endl;
+    if (key == 0) ofile << ">Alt" << std::endl;
+    else if (key == 1) ofile << ">Alt1" << std::endl;
+    else if (key == 2) ofile << ">Alt2" << std::endl;
+    else ofile << ">Alt1" << std::endl;
     int32_t count = 0;
     for(TAIndex j = 0; j< (TAIndex) align.shape()[1]; ++j) {
       if (align[0][j] != '-')  {
@@ -372,8 +375,12 @@ namespace tracy
       }
     }
     if (count % fald != 0) ofile << std::endl;
-    if (rs.forward) ofile << ">Ref " << rs.chr << ":" << ri << "-" << riend << " forward" << std::endl;
-    else ofile << ">Ref " << rs.chr << ":" << rs.pos + rs.refslice.size() - (riend - rs.pos) + 1 << "-" << rs.pos + rs.refslice.size() - (ri - rs.pos) + 1 << " reversecomplement" << std::endl;
+    if (key != 3) {
+      if (rs.forward) ofile << ">Ref " << rs.chr << ":" << ri << "-" << riend << " forward" << std::endl;
+      else ofile << ">Ref " << rs.chr << ":" << rs.pos + rs.refslice.size() - (riend - rs.pos) + 1 << "-" << rs.pos + rs.refslice.size() - (ri - rs.pos) + 1 << " reversecomplement" << std::endl;
+    } else {
+      ofile << ">Alt2" << std::endl;
+    }
     count = 0;
     for(TAIndex j = 0; j< (TAIndex) align.shape()[1]; ++j) {
       if (align[1][j] != '-') {
@@ -394,7 +401,8 @@ namespace tracy
     int32_t s = 0;
     int32_t e = (TAIndex) align.shape()[1];
     while (s < e) {
-      ofile << "Alt" << std::setw(10) << vi << ' ';
+      if (key != 3) ofile << "Alt" << std::setw(10) << vi << ' ';
+      else ofile << "Alt1" << std::setw(9) << vi << ' ';
       for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
 	ofile << align[0][j];
 	if (align[0][j] != '-') ++vi;
@@ -406,8 +414,12 @@ namespace tracy
 	else ofile << " ";
       }
       ofile << std::endl;
-      if (rs.forward) ofile << "Ref" << std::setw(10) << ri << ' ';
-      else ofile << "Ref" << std::setw(10) << rs.pos + rs.refslice.size() - (ri - rs.pos) + 1 << ' ';
+      if (key != 3) {
+	if (rs.forward) ofile << "Ref" << std::setw(10) << ri << ' ';
+	else ofile << "Ref" << std::setw(10) << rs.pos + rs.refslice.size() - (ri - rs.pos) + 1 << ' ';
+      } else {
+	ofile << "Alt2" << std::setw(9) << ri << ' ';
+      }
       for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
 	ofile << align[1][j];
 	if (align[1][j] != '-') ++ri;

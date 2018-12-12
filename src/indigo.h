@@ -226,6 +226,18 @@ namespace tracy {
     int32_t a2Score = gotoh(sec, allele2.refslice, final2, semiglobal, sc);
     if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final2, allele2, 2, a2Score);
 
+    // Allele1 vs. Allele2
+    TAlign final3;
+    AlignConfig<false, false> global;
+    ReferenceSlice secrs;
+    secrs.refslice = sec;
+    secrs.forward = 1;
+    secrs.pos = 0;
+    secrs.chr = "Alt2";
+    int32_t a3Score = gotoh(pri, secrs.refslice, final3, global, sc);
+    if ((c.format == "align") || (c.format == "both")) plotAlignment(c, final3, secrs, 3, a3Score);
+    
+    
     // Json output
     if (c.format == "json") traceAlleleAlignJsonOut(c.outfile.string(), bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
     else if (c.format == "both") traceAlleleAlignJsonOut(c.outfile.string() + ".json", bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
