@@ -407,16 +407,213 @@ namespace tracy
   }
   
   template<typename TConfig>
-  inline void
+  inline std::pair<double, double>
   allelicFraction(TConfig const& c, Trace const& tr, BaseCalls const& bc) {
     std::string pri = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
-    std::string rest = trimmedSeq(bc.secondary, c.trimLeft, c.trimRight);
-    for(uint32_t i = 0; ((i < pri.size()) && (i < rest.size())); ++i) {
-      if (pri[i] != rest[i]) {
-	uint32_t tracePos = bc.bcPos[i+c.trimLeft];
-	std::cout << pri[i] << ',' << rest[i] << ':' << tr.traceACGT[0][tracePos] << ',' << tr.traceACGT[1][tracePos] << ',' << tr.traceACGT[2][tracePos] << ',' << tr.traceACGT[3][tracePos] << std::endl;
+    std::string sec = trimmedSeq(bc.secDecompose, c.trimLeft, c.trimRight);
+    uint32_t diffnuc = 0;
+    for(uint32_t i = 0; ((i < pri.size()) && (i < sec.size())); ++i) {
+      if (pri[i] != sec[i]) ++diffnuc;
+    }
+
+    double bestSSE = 0;
+    double bestI = 0.5;
+    double bestJ = 0.5;
+    double bestK = 0;
+    double bestL = 0;
+    if (diffnuc) {
+      // Get the max. 4 possible alleles
+      uint32_t nucpos = 0;
+      typedef boost::multi_array<double, 2> TProfile;
+      TProfile tp(boost::extents[4][diffnuc]);  // A,C,G,T
+      TProfile prip(boost::extents[4][diffnuc]);  // A,C,G,T
+      TProfile secp(boost::extents[4][diffnuc]);  // A,C,G,T
+      TProfile terp(boost::extents[4][diffnuc]);  // A,C,G,T
+      TProfile quap(boost::extents[4][diffnuc]);  // A,C,G,T
+      for(uint32_t i = 0; i<4; ++i) {
+	for(uint32_t j = 0; j<diffnuc; ++j) {
+	  tp[i][j] = 0;
+	  prip[i][j] = 0;
+	  secp[i][j] = 0;
+	  terp[i][j] = 0;
+	  quap[i][j] = 0;
+	}
+      }
+      for(uint32_t i = 0; ((i < pri.size()) && (i < sec.size())); ++i) {
+	if (pri[i] != sec[i]) {
+	  uint32_t tracePos = bc.bcPos[i+c.trimLeft];
+	  double sigsum = tr.traceACGT[0][tracePos] + tr.traceACGT[1][tracePos] + tr.traceACGT[2][tracePos] + tr.traceACGT[3][tracePos];
+	  for(uint32_t k = 0; k<4; ++k) tp[k][nucpos] = (double) (tr.traceACGT[k][tracePos]) / sigsum;	  
+	  //std::cout << pri[i] << ',' << sec[i] << ':' << tr.traceACGT[0][tracePos] << ',' << tr.traceACGT[1][tracePos] << ',' << tr.traceACGT[2][tracePos] << ',' << tr.traceACGT[3][tracePos] << std::endl;
+	  if ((pri[i] == 'A') && (sec[i] =='C')) {
+	    prip[0][nucpos] = 1;
+	    secp[1][nucpos] = 1;
+	    if (tr.traceACGT[2][tracePos] > tr.traceACGT[3][tracePos]) {
+	      terp[2][nucpos] = 1;
+	      quap[3][nucpos] = 1;
+	    } else {
+	      terp[3][nucpos] = 1;
+	      quap[2][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'A') && (sec[i] =='G')) {
+	    prip[0][nucpos] = 1;
+	    secp[2][nucpos] = 1;
+	    if (tr.traceACGT[1][tracePos] > tr.traceACGT[3][tracePos]) {
+	      terp[1][nucpos] = 1;
+	      quap[3][nucpos] = 1;
+	    } else {
+	      terp[3][nucpos] = 1;
+	      quap[1][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'A') && (sec[i] =='T')) {
+	    prip[0][nucpos] = 1;
+	    secp[3][nucpos] = 1;
+	    if (tr.traceACGT[1][tracePos] > tr.traceACGT[2][tracePos]) {
+	      terp[1][nucpos] = 1;
+	      quap[2][nucpos] = 1;
+	    } else {
+	      terp[2][nucpos] = 1;
+	      quap[1][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'C') && (sec[i] =='A')) {
+	    prip[1][nucpos] = 1;
+	    secp[0][nucpos] = 1;
+	    if (tr.traceACGT[2][tracePos] > tr.traceACGT[3][tracePos]) {
+	      terp[2][nucpos] = 1;
+	      quap[3][nucpos] = 1;
+	    } else {
+	      terp[3][nucpos] = 1;
+	      quap[2][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'C') && (sec[i] =='G')) {
+	    prip[1][nucpos] = 1;
+	    secp[2][nucpos] = 1;
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[3][tracePos]) {
+	      terp[0][nucpos] = 1;
+	      quap[3][nucpos] = 1;
+	    } else {
+	      terp[3][nucpos] = 1;
+	      quap[0][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'C') && (sec[i] =='T')) {
+	    prip[1][nucpos] = 1;
+	    secp[3][nucpos] = 1;
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[2][tracePos]) {
+	      terp[0][nucpos] = 1;
+	      quap[2][nucpos] = 1;
+	    } else {
+	      terp[2][nucpos] = 1;
+	      quap[0][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'G') && (sec[i] =='A')) {
+	    prip[2][nucpos] = 1;
+	    secp[0][nucpos] = 1;
+	    if (tr.traceACGT[1][tracePos] > tr.traceACGT[3][tracePos]) {
+	      terp[1][nucpos] = 1;
+	      quap[3][nucpos] = 1;
+	    } else {
+	      terp[3][nucpos] = 1;
+	      quap[1][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'G') && (sec[i] =='C')) {
+	    prip[2][nucpos] = 1;
+	    secp[1][nucpos] = 1;
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[3][tracePos]) {
+	      terp[0][nucpos] = 1;
+	      quap[3][nucpos] = 1;
+	    } else {
+	      terp[3][nucpos] = 1;
+	      quap[0][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'G') && (sec[i] =='T')) {
+	    prip[2][nucpos] = 1;
+	    secp[3][nucpos] = 1;
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[1][tracePos]) {
+	      terp[0][nucpos] = 1;
+	      quap[1][nucpos] = 1;
+	    } else {
+	      terp[1][nucpos] = 1;
+	      quap[0][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'T') && (sec[i] =='A')) {
+	    prip[3][nucpos] = 1;
+	    secp[0][nucpos] = 1;
+	    if (tr.traceACGT[1][tracePos] > tr.traceACGT[2][tracePos]) {
+	      terp[1][nucpos] = 1;
+	      quap[2][nucpos] = 1;
+	    } else {
+	      terp[2][nucpos] = 1;
+	      quap[1][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'T') && (sec[i] =='C')) {
+	    prip[3][nucpos] = 1;
+	    secp[1][nucpos] = 1;
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[2][tracePos]) {
+	      terp[0][nucpos] = 1;
+	      quap[2][nucpos] = 1;
+	    } else {
+	      terp[2][nucpos] = 1;
+	      quap[0][nucpos] = 1;
+	    }
+	  } else if ((pri[i] == 'T') && (sec[i] =='G')) {
+	    prip[3][nucpos] = 1;
+	    secp[2][nucpos] = 1;
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[1][tracePos]) {
+	      terp[0][nucpos] = 1;
+	      quap[1][nucpos] = 1;
+	    } else {
+	      terp[1][nucpos] = 1;
+	      quap[0][nucpos] = 1;
+	    }
+	  }
+	  ++nucpos;
+	}	  
+      }
+
+      // Debug
+      //for(uint32_t m = 0; m<4; ++m) {
+      //for(uint32_t n = 0; n<diffnuc; ++n) {
+      //  std::cout << tp[m][n] << ',';
+      //}
+      //std::cout << std::endl;
+      //}
+      
+      // This is all tiny just do it brute-force
+      for(uint32_t m = 0; m<4; ++m) {
+	for(uint32_t n = 0; n<diffnuc; ++n) {
+	  double pred = bestI * prip[m][n] + bestJ * secp[m][n] + bestK * terp[m][n] + bestL * quap[m][n];
+	  bestSSE += (pred - tp[m][n]) * (pred - tp[m][n]);
+	}
+      }
+      for(double i = 0; i <= 1; i += 0.01) {
+	for(double j = 0; j <= 1; j += 0.01) {
+	  if (i + j <= 1) {
+	    for(double k = 0; k <= 1; k += 0.01) {
+	      if (i + j + k <= 1) {
+		double l = 1 - (i + j + k);
+		double sse = 0;
+		for(uint32_t m = 0; m<4; ++m) {
+		  for(uint32_t n = 0; n<diffnuc; ++n) {
+		    double pred = i * prip[m][n] + j * secp[m][n] + k * terp[m][n] + l * quap[m][n];
+		    sse += (pred - tp[m][n]) * (pred - tp[m][n]);
+		    if (sse >= bestSSE) break;
+		  }
+		}
+		if (sse < bestSSE) {
+		  bestSSE = sse;
+		  bestL = l;
+		  bestK = k;
+		  bestJ = j;
+		  bestI = i;
+		}
+	      }
+	    }
+	  }
+	}
       }
     }
+    //std::cout << bestSSE << ',' << bestI << ',' << bestJ << ',' << bestK << ',' << bestL << std::endl;
+    return std::make_pair(bestI, bestJ);
   }
     
   

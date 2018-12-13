@@ -352,7 +352,7 @@ namespace tracy
 
   template<typename TConfig, typename TAlign>
   inline void
-  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key, int32_t const score) {
+    plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key, int32_t const score, std::pair<double, double> const a1a2) {
     typedef typename TAlign::index TAIndex;
     int32_t ri = rs.pos + 1;
     int32_t riend = rs.pos + rs.refslice.size();
@@ -363,9 +363,9 @@ namespace tracy
     if (key != 0) filename = filename + ".align" + boost::lexical_cast<std::string>(key);
     std::ofstream ofile(filename.c_str());
     if (key == 0) ofile << ">Alt" << std::endl;
-    else if (key == 1) ofile << ">Alt1" << std::endl;
-    else if (key == 2) ofile << ">Alt2" << std::endl;
-    else ofile << ">Alt1" << std::endl;
+    else if (key == 1) ofile << ">Alt1 (Estimated allelic Fraction: " << a1a2.first << ")" << std::endl;
+    else if (key == 2) ofile << ">Alt2 (Estimated allelic Fraction: " << a1a2.second << ")" << std::endl;
+    else ofile << ">Alt1 (Estimated allelic Fraction: " << a1a2.first << ")" << std::endl;
     int32_t count = 0;
     for(TAIndex j = 0; j< (TAIndex) align.shape()[1]; ++j) {
       if (align[0][j] != '-')  {
@@ -379,7 +379,7 @@ namespace tracy
       if (rs.forward) ofile << ">Ref " << rs.chr << ":" << ri << "-" << riend << " forward" << std::endl;
       else ofile << ">Ref " << rs.chr << ":" << rs.pos + rs.refslice.size() - (riend - rs.pos) + 1 << "-" << rs.pos + rs.refslice.size() - (ri - rs.pos) + 1 << " reversecomplement" << std::endl;
     } else {
-      ofile << ">Alt2" << std::endl;
+      ofile << ">Alt2 (Estimated allelic Fraction: " << a1a2.second << ")" << std::endl;
     }
     count = 0;
     for(TAIndex j = 0; j< (TAIndex) align.shape()[1]; ++j) {
@@ -449,7 +449,7 @@ namespace tracy
   template<typename TConfig, typename TAlign>
   inline void
   plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const score) {
-    plotAlignment(c, align, rs, 0, score);
+    plotAlignment(c, align, rs, 0, score, std::make_pair(0, 0));
   }
 
   template<typename TConfig, typename TAlign>

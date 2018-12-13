@@ -202,6 +202,12 @@ namespace tracy {
 
     // Generate plain nucleotide sequence for second allele
     generateSecondaryDecomposed(tr, bc);
+
+    // Estimate allelic fractions
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Estimate allelic fractions" << std::endl;
+    typedef std::pair<double, double> TFractions;
+    TFractions a1a2 = allelicFraction(c, tr, bc);
     
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
@@ -217,7 +223,7 @@ namespace tracy {
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final1;
     int32_t a1Score = gotoh(pri, allele1.refslice, final1, semiglobal, sc);
-    if (c.format == "align") plotAlignment(c, final1, allele1, 1, a1Score);
+    if (c.format == "align") plotAlignment(c, final1, allele1, 1, a1Score, a1a2);
 
     // Allele2
     TAlign alignSecondary;
@@ -228,7 +234,7 @@ namespace tracy {
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
     int32_t a2Score = gotoh(sec, allele2.refslice, final2, semiglobal, sc);
-    if (c.format == "align") plotAlignment(c, final2, allele2, 2, a2Score);
+    if (c.format == "align") plotAlignment(c, final2, allele2, 2, a2Score, a1a2);
 
     // Allele1 vs. Allele2
     TAlign final3;
@@ -239,7 +245,7 @@ namespace tracy {
     secrs.pos = 0;
     secrs.chr = "Alt2";
     int32_t a3Score = gotoh(pri, secrs.refslice, final3, global, sc);
-    if (c.format == "align") plotAlignment(c, final3, secrs, 3, a3Score);
+    if (c.format == "align") plotAlignment(c, final3, secrs, 3, a3Score, a1a2);
 
     // Any het. InDel
     if (!bp.indelshift) {
@@ -248,11 +254,8 @@ namespace tracy {
       bp.breakpoint = nearestSNP(c, bc, reliableTracePos);
     }
 
-    // Estimate allelic fractions
-    //allelicFraction(c, tr, bc);
-
     // Json output
-    traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp);
+    traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp, a1a2);
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
