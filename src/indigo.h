@@ -241,7 +241,7 @@ namespace tracy {
     // ToDo
 
     // Json output
-    traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, final1, final2, dcp, a1Score, a2Score, bp);
+    traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp);
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;

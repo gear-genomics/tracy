@@ -97,9 +97,9 @@ namespace tracy
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }
-    rfile << "},";
-    rfile << "\"primarySeq\": \"" << bc.primary << "\",";
-    rfile << "\"secondarySeq\": \"" << bc.secondary << "\"";
+    rfile << "}," << std::endl;
+    rfile << "\"primarySeq\": \"" << bc.primary << "\"," << std::endl;
+    rfile << "\"secondarySeq\": \"" << bc.secondary << "\"" << std::endl;
   }
   
   inline void
@@ -198,7 +198,7 @@ namespace tracy
 
   template<typename TConfig, typename TAlign, typename TDecomposition>
   inline void
-  traceAlleleAlignJsonOut(TConfig const& c, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, TAlign const& align1, TAlign const& align2, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, TraceBreakpoint const& bp) {
+    traceAlleleAlignJsonOut(TConfig const& c, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, ReferenceSlice const&, TAlign const& align1, TAlign const& align2, TAlign const& align3, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, int32_t const a3Score, TraceBreakpoint const& bp) {
     // Output file name
     std::string outfile = c.outfile.string();
     if (c.format == "align") outfile = c.outfile.string() + ".json";    
@@ -234,10 +234,19 @@ namespace tracy
     rfile << "\"ref2forward\": " << rs2.forward << "," << std::endl;
     rfile << "\"align2score\": " << a2Score << "," << std::endl;
 
+    // Alt1 vs. Alt2
+    rfile << "\"allele1align\": \"";
+    for(uint32_t j = 0; j<align3.shape()[1]; ++j) rfile << align3[0][j];
+    rfile << "\"," << std::endl;
+    rfile << "\"allele2align\": \"";
+    for(uint32_t j = 0; j<align3.shape()[1]; ++j) rfile << align3[1][j];
+    rfile << "\"," << std::endl;
+    rfile << "\"align3score\": " << a3Score << "," << std::endl;
+
     // Breakpoint
     rfile << "\"hetindel\": " << bp.indelshift << "," << std::endl;
     rfile << "\"hetindelbp\": " << c.trimLeft + bp.breakpoint << "," << std::endl;
-
+    
     // Decomposition
     rfile << "\"decomposition\": " << "{" << std::endl;
     rfile << "\"x\": [";
