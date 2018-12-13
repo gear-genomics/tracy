@@ -210,6 +210,15 @@ namespace tracy
     _traceJsonOut(rfile, bc, tr);
     rfile << "," << std::endl;
 
+    // Provide x-window
+    int32_t lb = bc.bcPos[c.trimLeft + bp.breakpoint];
+    if (lb < 300) lb = 1;
+    else lb -= 300;
+    int32_t ub = bc.bcPos[c.trimLeft + bp.breakpoint];
+    if (ub + 300 < bc.bcPos[bc.bcPos.size() - 1]) ub += 300;
+    else ub = bc.bcPos[bc.bcPos.size() - 1];
+    rfile << "\"chartConfig\": { \"x\": { \"axis\": { \"range\": [" << lb << ", " << ub << "] }}}," << std::endl;
+    
     // Allele1
     rfile << "\"ref1chr\": \"" << rs1.chr << "\"," << std::endl;
     rfile << "\"ref1pos\": " << (rs1.pos + 1) << "," << std::endl;

@@ -27,6 +27,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #define BOOST_DISABLE_ASSERTS
 #include <boost/multi_array.hpp>
 #include "decompose.h"
+#include "trim.h"
 
 using namespace sdsl;
 
@@ -237,8 +238,14 @@ namespace tracy {
     int32_t a3Score = gotoh(pri, secrs.refslice, final3, global, sc);
     if (c.format == "align") plotAlignment(c, final3, secrs, 3, a3Score);
 
-    // Estimate allelic fractions (percentages) and find best viewpoint for SNPs (bp.indelshift == false)
-    // ToDo
+    // Any het. InDel
+    if (!bp.indelshift) {
+      // Center on first SNP
+      uint32_t reliableTracePos = findBestTraceSection(bc);
+      bp.breakpoint = nearestSNP(c, bc, reliableTracePos);
+    }
+
+    // Estimate allelic fractions (percentages), ToDo!
 
     // Json output
     traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp);

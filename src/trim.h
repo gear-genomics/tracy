@@ -32,13 +32,31 @@ Contact: Tobias Rausch (rausch@embl.de)
 namespace tracy {
 
   template<typename TConfig>
-  inline void
-  trimTrace(TConfig const& c, BaseCalls const& bc, uint32_t& leftTrim, uint32_t& rightTrim) {
-    std::vector<int32_t> penalty(bc.secondary.size(), 0);
-
-    // Screening window
-    uint32_t win = 10;
-    
+  inline uint32_t
+  nearestSNP(TConfig const& c, BaseCalls const& bc, uint32_t const rtp) {
+    bool deadEnd = false;
+    uint32_t offset = 0;
+    while (!deadEnd) {
+      deadEnd = true;
+      if ((rtp + offset + c.trimRight < bc.secondary.size()) && (rtp + offset + c.trimRight < bc.primary.size())) {
+	if (c.trimLeft < rtp + offset) {
+	  if (bc.primary[rtp+offset] != bc.secondary[rtp+offset]) return (rtp + offset - c.trimLeft);
+	}
+	deadEnd = false;
+      }
+      if (offset + c.trimLeft < rtp) {
+	if (bc.primary[rtp-offset] != bc.secondary[rtp-offset]) return (rtp - offset - c.trimLeft);
+	deadEnd = false;
+      }
+      ++offset;
+    }
+    // No SNP found
+    if (rtp > c.trimLeft) return rtp - c.trimLeft;
+    else return c.trimLeft; 
+  }
+  
+  inline std::pair<uint32_t, double>
+  findBestTraceSection(BaseCalls const& bc, std::vector<int32_t>& penalty, uint32_t const win) {
     // Secondary basecalls != [ACGT]
     uint32_t halfwin = (uint32_t) (win / 2);
     int32_t ambiguous = 0;
@@ -91,11 +109,33 @@ namespace tracy {
 	bestIdx = i + (int32_t) (sourcewin / 2);
       }
     }
+    double perBasePenalty = ((double) bestVal / (double) sourcewin);
+    return std::make_pair(bestIdx, perBasePenalty);
+  }
+
+  inline uint32_t
+  findBestTraceSection(BaseCalls const& bc) {
+    uint32_t win = 10;
+    std::vector<int32_t> penalty(bc.secondary.size(), 0);
+    typedef std::pair<uint32_t, double> TIdxVal;
+    TIdxVal idxval = findBestTraceSection(bc, penalty, win);
+    return idxval.first;
+  }
+  
+  template<typename TConfig>
+  inline void
+  trimTrace(TConfig const& c, BaseCalls const& bc, uint32_t& leftTrim, uint32_t& rightTrim) {
+    // Screening window
+    uint32_t win = 10;
+    std::vector<int32_t> penalty(bc.secondary.size(), 0);
+    typedef std::pair<uint32_t, double> TIdxVal;
+    TIdxVal idxval = findBestTraceSection(bc, penalty, win);
+    uint32_t bestIdx = idxval.first;
+    double perBasePenalty = c.trimStringency * idxval.second;
 
     // Walk outwards to estimate trim position
     rightTrim = bc.secondary.size();
     leftTrim = 0;
-    double perBasePenalty = c.trimStringency * ((double) bestVal / (double) sourcewin);
     double localPenalty = 0;
     for(uint32_t i = bestIdx; ((i < bestIdx + win) && (i < bc.secondary.size())); ++i) localPenalty += penalty[i];
     for(uint32_t i = bestIdx; ((i + win) < bc.secondary.size()); ++i) {
