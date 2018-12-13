@@ -200,6 +200,9 @@ namespace tracy {
     if (!decomposeAlleles(c, align, bc, bp, rs, dcp)) return -1;
     if (c.format == "align") writeDecomposition(c, dcp);
 
+    // Generate plain nucleotide sequence for second allele
+    generateSecondaryDecomposed(tr, bc);
+    
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
     
@@ -218,7 +221,7 @@ namespace tracy {
 
     // Allele2
     TAlign alignSecondary;
-    std::string sec = trimmedSeq(bc.secondary, c.trimLeft, c.trimRight);
+    std::string sec = trimmedSeq(bc.secDecompose, c.trimLeft, c.trimRight);
     gotoh(sec, rs.refslice, alignSecondary, semiglobal, sc);
     // Trim initial reference slice
     ReferenceSlice allele2(rs);
@@ -245,7 +248,8 @@ namespace tracy {
       bp.breakpoint = nearestSNP(c, bc, reliableTracePos);
     }
 
-    // Estimate allelic fractions (percentages), ToDo!
+    // Estimate allelic fractions
+    //allelicFraction(c, tr, bc);
 
     // Json output
     traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp);

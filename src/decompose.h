@@ -372,6 +372,55 @@ namespace tracy
     return true;
   }
 
+  inline void
+  generateSecondaryDecomposed(Trace const& tr, BaseCalls& bc) {
+    bc.secDecompose.resize(bc.secondary.size());
+    for(uint32_t i = 0; ((i < bc.primary.size()) && (i < bc.secondary.size())); ++i) {
+      if (bc.primary[i] == bc.secondary[i]) bc.secDecompose[i] = bc.primary[i];
+      else {
+	if (!isAmbiguous(bc.secondary[i])) bc.secDecompose[i] = bc.secondary[i];
+	else {
+	  uint32_t tracePos = bc.bcPos[i];
+	  // Select higher peak
+	  if (bc.secondary[i] == 'R') {
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[2][tracePos]) bc.secDecompose[i] = 'A';
+	    else bc.secDecompose[i] = 'G';
+	  } else if (bc.secondary[i] == 'Y') {
+	    if (tr.traceACGT[1][tracePos] > tr.traceACGT[3][tracePos]) bc.secDecompose[i] = 'C';
+	    else bc.secDecompose[i] = 'T';
+	  } else if (bc.secondary[i] == 'S') {
+	    if (tr.traceACGT[1][tracePos] > tr.traceACGT[2][tracePos]) bc.secDecompose[i] = 'C';
+	    else bc.secDecompose[i] = 'G';
+	  } else if (bc.secondary[i] == 'W') {
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[3][tracePos]) bc.secDecompose[i] = 'A';
+	    else bc.secDecompose[i] = 'T';
+	  } else if (bc.secondary[i] == 'K') {
+	    if (tr.traceACGT[2][tracePos] > tr.traceACGT[3][tracePos]) bc.secDecompose[i] = 'G';
+	    else bc.secDecompose[i] = 'T';
+	  } else if (bc.secondary[i] == 'M') {
+	    if (tr.traceACGT[0][tracePos] > tr.traceACGT[1][tracePos]) bc.secDecompose[i] = 'A';
+	    else bc.secDecompose[i] = 'C';
+	  } else bc.secDecompose[i] = 'N';
+	}
+      }
+    }
+  }
+  
+  template<typename TConfig>
+  inline void
+  allelicFraction(TConfig const& c, Trace const& tr, BaseCalls const& bc) {
+    std::string pri = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
+    std::string rest = trimmedSeq(bc.secondary, c.trimLeft, c.trimRight);
+    for(uint32_t i = 0; ((i < pri.size()) && (i < rest.size())); ++i) {
+      if (pri[i] != rest[i]) {
+	uint32_t tracePos = bc.bcPos[i+c.trimLeft];
+	std::cout << pri[i] << ',' << rest[i] << ':' << tr.traceACGT[0][tracePos] << ',' << tr.traceACGT[1][tracePos] << ',' << tr.traceACGT[2][tracePos] << ',' << tr.traceACGT[3][tracePos] << std::endl;
+      }
+    }
+  }
+    
+  
+
   template<typename TConfig, typename TDecomp>
   inline void
   writeDecomposition(TConfig const& c, TDecomp const& dcp) {

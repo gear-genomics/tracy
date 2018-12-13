@@ -69,6 +69,7 @@ struct BaseCalls {
   std::string consensus;
   std::string primary;
   std::string secondary;
+  std::string secDecompose;
   TPosition bcPos;
 };
 
