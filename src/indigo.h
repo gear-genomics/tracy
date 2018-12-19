@@ -264,8 +264,9 @@ namespace tracy {
     // Variant Calling
     if (c.callvariants) {
       std::string response;
-      variantsInRegion("17:80348215-80348333", response);
-      std::cout << response << std::endl;
+      if (!variantsInRegion("17:80348215-80348333", response)) {
+	parseJSON(response);
+      }
     }
     
     // Json output

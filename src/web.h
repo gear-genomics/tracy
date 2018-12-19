@@ -25,6 +25,8 @@ Contact: Tobias Rausch (rausch@embl.de)
 #define WEB_H
 
 #include <boost/asio.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -65,11 +67,11 @@ namespace tracy {
       std::string status_message;
       std::getline(response_stream, status_message);
       if ((!response_stream) || (http_version.substr(0, 5) != "HTTP/")) {
-	std::cout << "Invalid response" << std::endl;
+	std::cerr << "Invalid response" << std::endl;
 	return 1;
       }
       if (status_code != 200) {
-	std::cout << "Response returned with status code " << status_code << "\n";
+	std::cerr << "Response returned with status code " << status_code << "\n";
 	return 1;
       }
       
@@ -78,7 +80,7 @@ namespace tracy {
       std::string header;
       while(std::getline(response_stream, header) && header != "\r") {
 	// Debug
-	//std::cout << header << std::endl;
+	//std::cerr << header << std::endl;
       }
       
       // Content
@@ -101,12 +103,25 @@ namespace tracy {
 	throw boost::system::system_error(error);
       }
     } catch (std::exception& e) {
-      std::cout << "Exception: " << e.what() << std::endl;
+      std::cerr << "Exception: " << e.what() << std::endl;
     }
       
     return 0;
   }
-  
+
+
+  inline int32_t
+  parseJSON(std::string const& json) {
+    //Debug
+    //std::cerr << json << std::endl;
+    
+    std::stringstream ss;
+    ss << json;
+    boost::property_tree::ptree root;
+    boost::property_tree::read_json(ss, root);
+    return 0;
+  }
+    
 
 }
 
