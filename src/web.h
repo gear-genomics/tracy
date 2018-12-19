@@ -119,6 +119,10 @@ namespace tracy {
     ss << json;
     boost::property_tree::ptree root;
     boost::property_tree::read_json(ss, root);
+    std::vector<std::string> variants;
+    for(boost::property_tree::ptree::value_type &var : root.get_child(".")) {
+      variants.push_back(var.second.data());
+    }
     return 0;
   }
     
