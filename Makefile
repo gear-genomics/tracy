@@ -5,6 +5,7 @@ STATIC ?= 0
 PWD = $(shell pwd)
 SDSL_ROOT ?= ${PWD}/src/sdslLite/
 EBROOTHTSLIB ?= ${PWD}/src/htslib/
+BOOST_LIB_SUFFIX=-mt
 
 # Install dir
 prefix = ${PWD}
