@@ -14,7 +14,7 @@ bindir ?= $(exec_prefix)/bin
 # Flags
 CXX=g++
 CXXFLAGS += -std=c++11 -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
-LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -lsdsl -ldivsufsort -ldivsufsort64 -ldl -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib
+LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -lboost_thread -lsdsl -ldivsufsort -ldivsufsort64 -ldl -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -lpthread
 
 ifeq (${STATIC}, 1)
 	LDFLAGS += -static -static-libgcc -pthread -lhts -lz -llzma -lbz2

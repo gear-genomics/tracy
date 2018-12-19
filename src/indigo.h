@@ -28,12 +28,14 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include <boost/multi_array.hpp>
 #include "decompose.h"
 #include "trim.h"
+#include "web.h"
 
 using namespace sdsl;
 
 namespace tracy {
   
   struct IndigoConfig {
+    bool callvariants;
     uint16_t linelimit;
     uint16_t trimLeft;
     uint16_t trimRight;
@@ -62,6 +64,7 @@ namespace tracy {
       ("maxindel,m", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
       ("trimLeft,l", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
       ("trimRight,r", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
+      ("callVariants,v", "call variants in trace")
       ;
     
     boost::program_options::options_description otp("Output options");
@@ -96,6 +99,10 @@ namespace tracy {
     }
     if (c.maxindel < 1) c.maxindel = 1;
 
+    // Variant calling
+    if (vm.count("callVariants")) c.callvariants = true;
+    else c.callvariants = false;
+    
     // Check ab1
     if (!(boost::filesystem::exists(c.ab) && boost::filesystem::is_regular_file(c.ab) && boost::filesystem::file_size(c.ab))) {
       std::cerr << "Trace file is missing: " << c.ab.string() << std::endl;
@@ -254,6 +261,13 @@ namespace tracy {
       bp.breakpoint = nearestSNP(c, bc, reliableTracePos);
     }
 
+    // Variant Calling
+    if (c.callvariants) {
+      std::string response;
+      variantsInRegion("17:80348215-80348333", response);
+      std::cout << response << std::endl;
+    }
+    
     // Json output
     traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp, a1a2);
 
