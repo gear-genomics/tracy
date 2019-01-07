@@ -27,6 +27,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include <boost/progress.hpp>
 #include "abif.h"
 #include "fmindex.h"
+#include "version.h"
 
 namespace tracy
 {
@@ -36,6 +37,20 @@ namespace tracy
   #endif  
 
 
+  template<typename TStream, typename TConfig>
+  inline void
+  _metaOut(TStream& rfile, TConfig const& c) {
+    rfile << "\"meta\": {";
+    rfile << "\"program\": \"tracy\", ";
+    rfile << "\"version\": \"" << tracyVersionNumber << "\", ";
+    rfile << "\"arguments\": {";
+    rfile << "\"trimLeft\": " << c.trimLeft << ", ";
+    rfile << "\"trimRight\": " << c.trimRight << ", ";
+    rfile << "\"pratio\": " << c.pratio << ", ";
+    rfile << "\"genome\": \"" << c.genome.string() << "\", ";
+    rfile << "\"input\": \"" << c.ab.string() << "\"";
+    rfile << "}}," << std::endl;
+  }
 
   template<typename TStream>
   inline void
@@ -206,6 +221,10 @@ namespace tracy
     // Output trace
     std::ofstream rfile(outfile.c_str());
     rfile << "{" << std::endl;
+
+    // Meta output
+    _metaOut(rfile, c);
+    
     // Trace Output
     _traceJsonOut(rfile, bc, tr);
     rfile << "," << std::endl;
