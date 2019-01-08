@@ -38,7 +38,6 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "sage.h"
 #include "indigo.h"
 #include "assemble.h"
-#include "variants.h"
 
 using namespace tracy;
 

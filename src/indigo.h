@@ -29,6 +29,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "decompose.h"
 #include "trim.h"
 #include "web.h"
+#include "variants.h"
 
 using namespace sdsl;
 
@@ -263,10 +264,20 @@ namespace tracy {
 
     // Variant Calling
     if (c.callvariants) {
+      typedef std::vector<Variant> TVariants;
+      TVariants var;
+      callVariants(c, final1, allele1, var);
+      callVariants(c, final2, allele2, var);
       std::string response;
       if (!variantsInRegion("17:80348215-80348333", response)) {
 	parseJSON(response);
       }
+
+      // Sort variants
+      std::sort(var.begin(), var.end(), SortVariant<Variant>());
+
+      // VCF output
+      vcfOutput(c, var, rs);
     }
     
     // Json output
