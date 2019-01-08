@@ -56,13 +56,13 @@ namespace tracy {
     int32_t idx = -1;
     for(uint32_t i = 0; i < var.size(); ++i) {
       if ((var[i].pos == pos) && (var[i].chr == chr) && (var[i].ref == ref) && (var[i].alt == alt)) {
-	idx = 1;
+	idx = i;
 	break;
       }
     }
     if (idx != -1) {
-      // Update GT
-      ++var[idx].gt;
+      // Update GT, homozygous variant
+      var[idx].gt += 1;
     } else {
       // Insert variant
       var.push_back(Variant(pos, bc, gt, chr, ref, alt));
@@ -237,8 +237,19 @@ namespace tracy {
 	bcf_update_info_int32(hdr, rec, "BASENUM", &tmpi, 1);
 
 	// Add genotyping information
-	gts[0] = bcf_gt_missing;
-	gts[1] = bcf_gt_missing;
+	if (var[i].gt == 0) {
+	  gts[0] = bcf_gt_unphased(0);
+	  gts[1] = bcf_gt_unphased(0);
+	} else if (var[i].gt == 1) {
+	  gts[0] = bcf_gt_unphased(0);
+	  gts[1] = bcf_gt_unphased(1);
+	} else if (var[i].gt == 2) {
+	  gts[0] = bcf_gt_unphased(1);
+	  gts[1] = bcf_gt_unphased(1);
+	} else {
+	  gts[0] = bcf_gt_missing;
+	  gts[1] = bcf_gt_missing;
+	}
 	gqval[0] = 0;
 	bcf_update_genotypes(hdr, rec, gts, bcf_hdr_nsamples(hdr) * 2);
 	bcf_update_format_int32(hdr, rec, "GQ", gqval, bcf_hdr_nsamples(hdr));
