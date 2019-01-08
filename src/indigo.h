@@ -264,14 +264,20 @@ namespace tracy {
 
     // Variant Calling
     if (c.callvariants) {
+      now = boost::posix_time::second_clock::local_time();
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Calling" << std::endl;
+      
       typedef std::vector<Variant> TVariants;
       TVariants var;
       callVariants(c, final1, allele1, var);
       callVariants(c, final2, allele2, var);
-      std::string response;
-      if (!variantsInRegion("17:80348215-80348333", response)) {
-	parseJSON(response);
-      }
+
+      now = boost::posix_time::second_clock::local_time();
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation" << std::endl;
+      //std::string response;
+      //if (!variantsInRegion("17:80348215-80348333", response)) {
+      //parseJSON(response);
+      //}
 
       // Sort variants
       std::sort(var.begin(), var.end(), SortVariant<Variant>());

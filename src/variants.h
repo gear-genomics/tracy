@@ -143,6 +143,18 @@ namespace tracy {
   }
 
 
+  inline std::string
+  variantType(std::string const& ref, std::string const& alt) {
+    if ((ref.size() == 1) && (alt.size() == 1)) {
+      return "SNV";
+    } else {
+      if (ref.size() > alt.size()) return "Deletion";
+      else if (ref.size() < alt.size()) return "Insertion";
+      else return "Complex";
+    }
+  }
+  
+
   template<typename TConfig>
   inline void
   vcfOutput(TConfig const& c, std::vector<Variant> const& var, ReferenceSlice const& rs) {
@@ -172,12 +184,12 @@ namespace tracy {
     bcf_hdr_append(hdr, refloc.c_str());
 
     // Add contig info
-    faidx_t* fai = NULL;
     if (rs.filetype) {
       std::string refname("##contig=<ID=");
       refname += rs.chr + ",length=" + boost::lexical_cast<std::string>(rs.refslice.size()) + ">";
       bcf_hdr_append(hdr, refname.c_str());
     } else {
+      faidx_t* fai = NULL;
       fai = fai_load(c.genome.string().c_str());
       for(int32_t refIndex = 0; refIndex < faidx_nseq(fai); ++refIndex) {
 	std::string seqname(faidx_iseq(fai, refIndex));
@@ -186,6 +198,7 @@ namespace tracy {
 	refname += seqname + ",length=" + boost::lexical_cast<std::string>(seqlen) + ">";
 	bcf_hdr_append(hdr, refname.c_str());
       }
+      fai_destroy(fai);
     }
     
     // Add samples
@@ -215,7 +228,7 @@ namespace tracy {
 	bcf_update_filter(hdr, rec, &tmpi, 1);
       
 	// Add INFO fields
-	std::string vartype = "SNV";
+	std::string vartype = variantType(var[i].ref, var[i].alt);
 	bcf_update_info_string(hdr, rec, "TYPE", vartype.c_str());
 	std::string tracyVersion("EMBL.TRACYv");
 	tracyVersion += tracyVersionNumber;
