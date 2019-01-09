@@ -416,12 +416,13 @@ namespace tracy
       if (pri[i] != sec[i]) ++diffnuc;
     }
 
-    double bestSSE = 0;
     double bestI = 0.5;
     double bestJ = 0.5;
-    double bestK = 0;
-    double bestL = 0;
     if (diffnuc) {
+      double bestSSE = 0;
+      double bestK = 0;
+      double bestL = 0;
+
       // Get the max. 4 possible alleles
       uint32_t nucpos = 0;
       typedef boost::multi_array<double, 2> TProfile;
@@ -611,8 +612,8 @@ namespace tracy
 	  }
 	}
       }
+      //std::cout << bestSSE << ',' << bestI << ',' << bestJ << ',' << bestK << ',' << bestL << std::endl;
     }
-    //std::cout << bestSSE << ',' << bestI << ',' << bestJ << ',' << bestK << ',' << bestL << std::endl;
     return std::make_pair(bestI, bestJ);
   }
     

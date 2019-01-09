@@ -39,14 +39,7 @@ namespace tracy
     std::string chr;
     std::string refslice;
 
-    ReferenceSlice() {
-      forward = true;
-      filetype = 0;
-      kmersupport = 0;
-      pos = 0;
-      chr = "";
-      refslice = "";
-    }
+    ReferenceSlice() : forward(true), filetype(0), kmersupport(0), pos(0), chr(""), refslice("") {}
   };
 
   struct TraceBreakpoint {
@@ -352,7 +345,7 @@ namespace tracy
 
   template<typename TConfig, typename TAlign>
   inline void
-    plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key, int32_t const score, std::pair<double, double> const a1a2) {
+    plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key, int32_t const score, std::pair<double, double> const& a1a2) {
     typedef typename TAlign::index TAIndex;
     int32_t ri = rs.pos + 1;
     int32_t riend = rs.pos + rs.refslice.size();

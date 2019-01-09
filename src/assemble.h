@@ -53,7 +53,7 @@ namespace tracy {
     int32_t trimLeft;
     int32_t trimRight;
     bool forward;
-    SequenceSegment(std::string s, int32_t tl, int32_t tr, bool f) : seq(s), trimLeft(tl), trimRight(tr), forward(f) {}
+    SequenceSegment(std::string const& s, int32_t tl, int32_t tr, bool f) : seq(s), trimLeft(tl), trimRight(tr), forward(f) {}
   };
 
 

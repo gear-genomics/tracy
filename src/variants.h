@@ -190,8 +190,7 @@ namespace tracy {
       refname += rs.chr + ",length=" + boost::lexical_cast<std::string>(rs.refslice.size()) + ">";
       bcf_hdr_append(hdr, refname.c_str());
     } else {
-      faidx_t* fai = NULL;
-      fai = fai_load(c.genome.string().c_str());
+      faidx_t* fai = fai_load(c.genome.string().c_str());
       for(int32_t refIndex = 0; refIndex < faidx_nseq(fai); ++refIndex) {
 	std::string seqname(faidx_iseq(fai, refIndex));
         uint32_t seqlen = faidx_seq_len(fai, seqname.c_str()) + 1;
