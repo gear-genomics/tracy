@@ -70,9 +70,9 @@ namespace tracy {
   }
 
   
-  template<typename TConfig, typename TAlign>
+  template<typename TAlign>
   inline void
-  callVariants(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, std::vector<Variant>& var) {
+  callVariants(TAlign const& align, ReferenceSlice const& rs, std::vector<Variant>& var) {
     int32_t ri = rs.pos;
     
     // Get leading and trailing gaps

@@ -265,14 +265,14 @@ namespace tracy {
     }
 
     // Variant Calling
+    typedef std::vector<Variant> TVariants;
+    TVariants var;
     if (c.callvariants) {
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Calling" << std::endl;
       
-      typedef std::vector<Variant> TVariants;
-      TVariants var;
-      callVariants(c, final1, allele1, var);
-      callVariants(c, final2, allele2, var);
+      callVariants(final1, allele1, var);
+      callVariants(final2, allele2, var);
 
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation" << std::endl;
@@ -289,7 +289,7 @@ namespace tracy {
     }
     
     // Json output
-    traceAlleleAlignJsonOut(c, bc, tr, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp, a1a2);
+    traceAlleleAlignJsonOut(c, bc, tr, var, allele1, allele2, secrs, final1, final2, final3, dcp, a1Score, a2Score, a3Score, bp, a1a2);
 
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;

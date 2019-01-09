@@ -28,6 +28,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "abif.h"
 #include "fmindex.h"
 #include "version.h"
+#include "variants.h"
 
 namespace tracy
 {
@@ -213,7 +214,7 @@ namespace tracy
 
   template<typename TConfig, typename TAlign, typename TDecomposition>
   inline void
-    traceAlleleAlignJsonOut(TConfig const& c, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs1, ReferenceSlice const& rs2, ReferenceSlice const&, TAlign const& align1, TAlign const& align2, TAlign const& align3, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, int32_t const a3Score, TraceBreakpoint const& bp, std::pair<double, double> const& a1a2) {
+  traceAlleleAlignJsonOut(TConfig const& c, BaseCalls& bc, Trace const& tr, std::vector<Variant> const& var, ReferenceSlice const& rs1, ReferenceSlice const& rs2, ReferenceSlice const&, TAlign const& align1, TAlign const& align2, TAlign const& align3, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, int32_t const a3Score, TraceBreakpoint const& bp, std::pair<double, double> const& a1a2) {
     // Output file name
     std::string outfile = c.outfile.string();
     if (c.format == "align") outfile = c.outfile.string() + ".json";    
@@ -291,7 +292,38 @@ namespace tracy
       rfile << dcp[i].second;
     }
     rfile << "]" << std::endl;
-    rfile << "}" << std::endl;
+    if (var.empty()) rfile << "}" << std::endl;
+    else rfile << "}," << std::endl;
+
+    // Variants
+    if (!var.empty()) {
+      rfile << "\"variants\": {" <<  std::endl;
+      rfile << "\"columns\": [";
+      rfile << "\"chr\", \"pos\", \"id\", \"ref\", \"alt\", \"qual\", \"filter\", \"type\", \"basenum\", \"genotype\"" << std::endl;
+      rfile << "]," << std::endl;
+      rfile << "\"rows\": [" << std::endl;
+      for(uint32_t i = 0; i < var.size(); ++i) {
+	if (i > 0) rfile << "," << std::endl;
+	rfile << "[";
+	rfile << "\"" << var[i].chr << "\", ";
+	rfile << var[i].pos << ", ";
+	rfile << "\".\", ";
+	rfile << "\"" << var[i].ref << "\", ";
+	rfile << "\"" << var[i].alt << "\", ";
+	rfile << (int32_t) bc.estQual[var[i].basenum] << ", ";
+	if ((int32_t) bc.estQual[var[i].basenum] < c.qualCut) rfile << "\"LowQual\", ";
+	else rfile << "\"PASS\", ";
+	rfile << "\"" << variantType(var[i].ref, var[i].alt) << "\", ";
+	rfile << var[i].basenum << ", ";
+	if (var[i].gt == 0) rfile << "\"hom. REF\"";
+	else if (var[i].gt == 1) rfile << "\"het.\"";
+	else if (var[i].gt == 2) rfile << "\"hom. ALT\"";
+	else rfile << "\"missing\"";
+	rfile << "]";
+      }
+      rfile << "]" << std::endl;
+      rfile << "}" << std::endl;
+    }
     
     // Close
     rfile << "}" << std::endl;
