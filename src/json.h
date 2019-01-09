@@ -331,7 +331,7 @@ namespace tracy
       for(uint32_t i = 0; i < var.size(); ++i) {
 	if (i > 0) rfile << "," << std::endl;
 	rfile << "[";
-	std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, var[i].basenum);
+	std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + var[i].basenum);
 	rfile << xwin.first << ", " << xwin.second;
     	rfile << "]";	
       }
