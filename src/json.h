@@ -211,7 +211,17 @@ namespace tracy
     rfile.close();  
   }
 
-
+  inline std::pair<int32_t, int32_t>
+  xWindowViewport(BaseCalls const& bc, int32_t const pos) {
+    int32_t lb = bc.bcPos[pos];
+    if (lb <= 300) lb = 1;
+    else lb -= 300;
+    int32_t ub = bc.bcPos[pos];
+    if (ub + 300 < bc.bcPos[bc.bcPos.size() - 1]) ub += 300;
+    else ub = bc.bcPos[bc.bcPos.size() - 1];
+    return std::make_pair(lb, ub);
+  }
+  
   template<typename TConfig, typename TAlign, typename TDecomposition>
   inline void
   traceAlleleAlignJsonOut(TConfig const& c, BaseCalls& bc, Trace const& tr, std::vector<Variant> const& var, ReferenceSlice const& rs1, ReferenceSlice const& rs2, ReferenceSlice const&, TAlign const& align1, TAlign const& align2, TAlign const& align3, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, int32_t const a3Score, TraceBreakpoint const& bp, std::pair<double, double> const& a1a2) {
@@ -231,13 +241,8 @@ namespace tracy
     rfile << "," << std::endl;
 
     // Provide x-window
-    int32_t lb = bc.bcPos[c.trimLeft + bp.breakpoint];
-    if (lb < 300) lb = 1;
-    else lb -= 300;
-    int32_t ub = bc.bcPos[c.trimLeft + bp.breakpoint];
-    if (ub + 300 < bc.bcPos[bc.bcPos.size() - 1]) ub += 300;
-    else ub = bc.bcPos[bc.bcPos.size() - 1];
-    rfile << "\"chartConfig\": { \"x\": { \"axis\": { \"range\": [" << lb << ", " << ub << "] }}}," << std::endl;
+    std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + bp.breakpoint);
+    rfile << "\"chartConfig\": { \"x\": { \"axis\": { \"range\": [" << xwin.first << ", " << xwin.second << "] }}}," << std::endl;
     
     // Allele1
     rfile << "\"ref1chr\": \"" << rs1.chr << "\"," << std::endl;
@@ -319,7 +324,16 @@ namespace tracy
 	else if (var[i].gt == 1) rfile << "\"het.\"";
 	else if (var[i].gt == 2) rfile << "\"hom. ALT\"";
 	else rfile << "\"missing\"";
-	rfile << "]";
+	rfile << "]";	
+      }
+      rfile << "]," << std::endl;
+      rfile << "\"xranges\": [" << std::endl;
+      for(uint32_t i = 0; i < var.size(); ++i) {
+	if (i > 0) rfile << "," << std::endl;
+	rfile << "[";
+	std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, var[i].basenum);
+	rfile << xwin.first << ", " << xwin.second;
+    	rfile << "]";	
       }
       rfile << "]" << std::endl;
       rfile << "}" << std::endl;
