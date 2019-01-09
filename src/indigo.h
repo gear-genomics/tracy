@@ -44,6 +44,7 @@ namespace tracy {
     uint16_t maxindel;
     uint16_t madc;
     uint16_t minKmerSupport;
+    uint16_t qualCut;
     float pratio;
     std::string format;
     boost::filesystem::path outfile;
@@ -78,6 +79,7 @@ namespace tracy {
     boost::program_options::options_description hidden("Hidden options");
     hidden.add_options()
       ("madc,c", boost::program_options::value<uint16_t>(&c.madc)->default_value(5), "MAD cutoff")
+      ("qualCut,q",  boost::program_options::value<uint16_t>(&c.qualCut)->default_value(45), "variant calling quality threshold")
       ("input-file", boost::program_options::value<boost::filesystem::path>(&c.ab), "ab1")
       ;
     
@@ -283,7 +285,7 @@ namespace tracy {
       std::sort(var.begin(), var.end(), SortVariant<Variant>());
 
       // VCF output
-      vcfOutput(c, var, rs);
+      vcfOutput(c, bc, var, rs);
     }
     
     // Json output

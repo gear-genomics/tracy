@@ -65,12 +65,14 @@ struct Trace {
 struct BaseCalls {
   typedef Trace::TValue TValue;
   typedef std::vector<TValue> TPosition;
+  typedef std::vector<uint8_t> TEstQual;
   
   std::string consensus;
   std::string primary;
   std::string secondary;
   std::string secDecompose;
   TPosition bcPos;
+  TEstQual estQual;
 };
 
 
@@ -174,7 +176,99 @@ iupac(char const one, char const two) {
   }
   return iupac(p);
 }
-  
+
+
+  inline std::pair<uint32_t, double>
+  findBestTraceSection(BaseCalls const& bc, std::vector<int32_t>& penalty, uint32_t const win) {
+    // Secondary basecalls != [ACGT]
+    uint32_t halfwin = (uint32_t) (win / 2);
+    int32_t ambiguous = 0;
+    for (uint32_t i = 0; ((i < win) && (i < bc.secondary.size())); ++i) {
+      if (isAmbiguous(bc.secondary[i])) ++ambiguous;
+    }
+    for(uint32_t i = 0; ((i < halfwin) && (i < bc.secondary.size())); ++i) penalty[i] = ambiguous;
+    for(uint32_t i = win; i < bc.secondary.size(); ++i) {
+      if (isAmbiguous(bc.secondary[i-win])) --ambiguous;
+      if (isAmbiguous(bc.secondary[i])) ++ambiguous;
+      penalty[i - halfwin] = ambiguous;
+    }
+    for(uint32_t i = bc.secondary.size() - halfwin; i < bc.secondary.size(); ++i) penalty[i] = ambiguous;
+
+    // Mean basecall distance
+    double meanDist = 0;
+    for(uint32_t i = 1; i < bc.secondary.size(); ++i) meanDist += (bc.bcPos[i] - bc.bcPos[i-1]);
+    meanDist /= (bc.secondary.size() - 1);
+    
+    // Peak distance
+    uint32_t peakVar = 0;
+    for(uint32_t i = 0; (i + win < bc.secondary.size()); ++i) {
+      uint32_t oldPos = 0;
+      if (i>0) oldPos = bc.bcPos[i-1];
+      uint32_t minDist = bc.bcPos[bc.secondary.size() - 1];
+      uint32_t maxDist = 0;
+      for(uint32_t k = 0; k < win; ++k) {
+	uint32_t dist = bc.bcPos[i+k] - oldPos;
+	oldPos = bc.bcPos[i+k];
+	if (dist < minDist) minDist = dist;
+	if (dist > maxDist) maxDist = dist;
+      }
+      peakVar = (int32_t) ( (std::abs((double) maxDist - meanDist) + std::abs((double) minDist - meanDist)) / 2);
+      penalty[i + halfwin] += peakVar;
+      if (i == 0) {
+	for(uint32_t k = 0; k < halfwin; ++k) penalty[k] += peakVar;
+      }
+    }
+    for(uint32_t i = bc.secondary.size() - halfwin; i < bc.secondary.size(); ++i) penalty[i] += peakVar;
+
+    // Try to identify best 10% window
+    uint32_t sourcewin = (int32_t) (0.1 * bc.secondary.size());
+    uint32_t bestIdx = 0;
+    int32_t bestVal = 99999999;
+    for(uint32_t i = 0; ((i + sourcewin) < bc.secondary.size()); ++i) {
+      int32_t penval = 0;
+      for(uint32_t k = 0; k < sourcewin; ++k) penval += penalty[i+k];
+      if (penval < bestVal) {
+	bestVal = penval;
+	bestIdx = i + (int32_t) (sourcewin / 2);
+      }
+    }
+    double perBasePenalty = ((double) bestVal / (double) sourcewin);
+    return std::make_pair(bestIdx, perBasePenalty);
+  }
+
+  inline uint32_t
+  findBestTraceSection(BaseCalls const& bc) {
+    uint32_t win = 10;
+    std::vector<int32_t> penalty(bc.secondary.size(), 0);
+    typedef std::pair<uint32_t, double> TIdxVal;
+    TIdxVal idxval = findBestTraceSection(bc, penalty, win);
+    return idxval.first;
+  }
+
+
+  inline void
+  estimateQualities(BaseCalls& bc) {
+    bc.estQual.resize(bc.primary.size(), 0);
+    
+    // Screening window
+    uint32_t win = 10;
+    std::vector<int32_t> penalty(bc.secondary.size(), 0);
+    findBestTraceSection(bc, penalty, win);
+
+    // Rescale estimated penalties
+    int32_t maxVal = 0;
+    for(uint32_t i = 0; i < penalty.size(); ++i) {
+      if (penalty[i] >= maxVal) maxVal = penalty[i];
+    }
+    double scaling = 60.0 / (double) maxVal;
+    for(uint32_t i = 0; i < penalty.size(); ++i) {
+      int32_t newVal = int(60.0 - scaling * (double) penalty[i]);
+      if (newVal < 0) newVal = 0;
+      if (newVal > 60) newVal = 60;
+      bc.estQual[i] = (uint8_t) newVal;
+    }
+  }
+ 
 
 inline std::string
 readBinStr(std::vector<char> const& buffer, int32_t pos, int32_t len) {
@@ -408,6 +502,9 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
   bc.primary = std::string(primary.begin(), primary.end());
   bc.secondary = std::string(secondary.begin(), secondary.end());
   bc.consensus = std::string(consensus.begin(), consensus.end());
+
+  // Estimate base qualities
+  estimateQualities(bc);
 }
 
 inline void

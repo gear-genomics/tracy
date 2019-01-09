@@ -157,7 +157,7 @@ namespace tracy {
 
   template<typename TConfig>
   inline void
-  vcfOutput(TConfig const& c, std::vector<Variant> const& var, ReferenceSlice const& rs) {
+  vcfOutput(TConfig const& c, BaseCalls const& bc, std::vector<Variant> const& var, ReferenceSlice const& rs) {
     // Output file name
     std::string outfile = c.outfile.string();
     if (c.format == "align") outfile = c.outfile.string() + ".bcf";
@@ -172,6 +172,7 @@ namespace tracy {
     std::string datestr("##fileDate=");
     datestr += boost::gregorian::to_iso_string(today);
     bcf_hdr_append(hdr, datestr.c_str());
+    bcf_hdr_append(hdr, "##FILTER=<ID=LowQual,Description=\"Low quality variant call.\">");
     bcf_hdr_append(hdr, "##INFO=<ID=BASENUM,Number=1,Type=Integer,Description=\"Trace base number\">");
     bcf_hdr_append(hdr, "##INFO=<ID=TYPE,Number=1,Type=String,Description=\"Variant type\">");
     bcf_hdr_append(hdr, "##INFO=<ID=METHOD,Number=1,Type=String,Description=\"Type of approach used to detect variant\">");
@@ -219,12 +220,13 @@ namespace tracy {
 	// Output main vcf fields
 	rec->rid = bcf_hdr_name2id(hdr, var[i].chr.c_str());
 	rec->pos = var[i].pos;
-	rec->qual = 0;
+	rec->qual = (int) bc.estQual[var[i].basenum];
 	std::string id(".");
 	bcf_update_id(hdr, rec, id.c_str());
 	std::string alleles = var[i].ref + "," + var[i].alt;
 	bcf_update_alleles_str(hdr, rec, alleles.c_str());
 	int32_t tmpi = bcf_hdr_id2int(hdr, BCF_DT_ID, "PASS");
+	if (rec->qual < c.qualCut) tmpi = bcf_hdr_id2int(hdr, BCF_DT_ID, "LowQual");
 	bcf_update_filter(hdr, rec, &tmpi, 1);
       
 	// Add INFO fields
@@ -250,7 +252,7 @@ namespace tracy {
 	  gts[0] = bcf_gt_missing;
 	  gts[1] = bcf_gt_missing;
 	}
-	gqval[0] = 0;
+	gqval[0] = (int) bc.estQual[var[i].basenum];
 	bcf_update_genotypes(hdr, rec, gts, bcf_hdr_nsamples(hdr) * 2);
 	bcf_update_format_int32(hdr, rec, "GQ", gqval, bcf_hdr_nsamples(hdr));
 
