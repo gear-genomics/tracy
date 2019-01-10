@@ -49,6 +49,7 @@ namespace tracy {
     float pratio;
     std::string annotate;
     std::string format;
+    std::string host;
     boost::filesystem::path outfile;
     boost::filesystem::path ab;
     boost::filesystem::path genome;
@@ -68,7 +69,7 @@ namespace tracy {
       ("maxindel,m", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
       ("trimLeft,l", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
       ("trimRight,r", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
-      ("annotate,a", boost::program_options::value<std::string>(&c.annotate), "annotate variants [human]")
+      ("annotate,a", boost::program_options::value<std::string>(&c.annotate), "annotate variants [homo_sapiens|homo_sapiens_hg19|mus_musculus|danio_rerio|...]")
       ("callVariants,v", "call variants in trace")
       ;
     
@@ -111,6 +112,16 @@ namespace tracy {
     if (vm.count("annotate")) {
       c.annotatevariants = true;
       c.callvariants = true;
+      c.host = "rest.ensembl.org";
+      // hg19 workaround
+      if (c.annotate == "homo_sapiens_hg19") {
+	c.host = "grch37.rest.ensembl.org";
+	c.annotate = "homo_sapiens";
+      }
+      if (!speciesExist(c.annotate)) {
+	std::cerr << "Warning: Species does not exist: " << c.annotate << "!" << std::endl;
+	c.annotatevariants = false;
+      }
     } else c.annotatevariants = false;
     
     // Check ab1
@@ -286,7 +297,7 @@ namespace tracy {
 	std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation" << std::endl;
 	std::string region = rs.chr + ":" + boost::lexical_cast<std::string>(rs.pos) + "-" + boost::lexical_cast<std::string>(rs.pos + rs.refslice.size());
 	std::string response;
-	if (!variantsInRegion(region, response)) {
+	if (!variantsInRegion(c, region, response)) {
 	  std::vector<KnownVariation> kv;
 	  int32_t numVar = parseKnownVariants(response, kv);
 	  if (numVar > 0) {
