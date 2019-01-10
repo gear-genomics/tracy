@@ -173,7 +173,9 @@ namespace tracy {
     datestr += boost::gregorian::to_iso_string(today);
     bcf_hdr_append(hdr, datestr.c_str());
     bcf_hdr_append(hdr, "##FILTER=<ID=LowQual,Description=\"Low quality variant call.\">");
-    bcf_hdr_append(hdr, "##INFO=<ID=BASENUM,Number=1,Type=Integer,Description=\"Trace base number\">");
+    bcf_hdr_append(hdr, "##INFO=<ID=ALIGNPOS,Number=1,Type=Integer,Description=\"Alignment position\">");
+    bcf_hdr_append(hdr, "##INFO=<ID=BASEPOS,Number=1,Type=Integer,Description=\"Basecall position in trace\">");
+    bcf_hdr_append(hdr, "##INFO=<ID=SIGNALPOS,Number=1,Type=Integer,Description=\"Trace signal position\">");
     bcf_hdr_append(hdr, "##INFO=<ID=TYPE,Number=1,Type=String,Description=\"Variant type\">");
     bcf_hdr_append(hdr, "##INFO=<ID=METHOD,Number=1,Type=String,Description=\"Type of approach used to detect variant\">");
     bcf_hdr_append(hdr, "##FORMAT=<ID=GT,Number=1,Type=String,Description=\"Genotype\">");
@@ -235,8 +237,12 @@ namespace tracy {
 	tracyVersion += tracyVersionNumber;
 	bcf_update_info_string(hdr,rec, "METHOD", tracyVersion.c_str());
 	tmpi = var[i].basenum;
-	bcf_update_info_int32(hdr, rec, "BASENUM", &tmpi, 1);
-
+	bcf_update_info_int32(hdr, rec, "ALIGNPOS", &tmpi, 1);
+	tmpi = c.trimLeft + var[i].basenum;
+	bcf_update_info_int32(hdr, rec, "BASEPOS", &tmpi, 1);
+	tmpi = bc.bcPos[c.trimLeft + var[i].basenum];
+	bcf_update_info_int32(hdr, rec, "SIGNALPOS", &tmpi, 1);
+	
 	// Add genotyping information
 	if (var[i].gt == 0) {
 	  gts[0] = bcf_gt_unphased(0);

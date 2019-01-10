@@ -214,10 +214,10 @@ namespace tracy
   inline std::pair<int32_t, int32_t>
   xWindowViewport(BaseCalls const& bc, int32_t const pos) {
     int32_t lb = bc.bcPos[pos];
-    if (lb <= 300) lb = 1;
-    else lb -= 300;
+    if (lb <= 150) lb = 1;
+    else lb -= 150;
     int32_t ub = bc.bcPos[pos];
-    if (ub + 300 < bc.bcPos[bc.bcPos.size() - 1]) ub += 300;
+    if (ub + 150 < bc.bcPos[bc.bcPos.size() - 1]) ub += 150;
     else ub = bc.bcPos[bc.bcPos.size() - 1];
     return std::make_pair(lb, ub);
   }
@@ -304,7 +304,7 @@ namespace tracy
     if (!var.empty()) {
       rfile << "\"variants\": {" <<  std::endl;
       rfile << "\"columns\": [";
-      rfile << "\"chr\", \"pos\", \"id\", \"ref\", \"alt\", \"qual\", \"filter\", \"type\", \"basenum\", \"genotype\"" << std::endl;
+      rfile << "\"chr\", \"pos\", \"id\", \"ref\", \"alt\", \"qual\", \"filter\", \"type\", \"genotype\", \"alignpos\", \"basepos\", \"signalpos\"";
       rfile << "]," << std::endl;
       rfile << "\"rows\": [" << std::endl;
       for(uint32_t i = 0; i < var.size(); ++i) {
@@ -319,11 +319,13 @@ namespace tracy
 	if ((int32_t) bc.estQual[var[i].basenum] < c.qualCut) rfile << "\"LowQual\", ";
 	else rfile << "\"PASS\", ";
 	rfile << "\"" << variantType(var[i].ref, var[i].alt) << "\", ";
+	if (var[i].gt == 0) rfile << "\"hom. REF\", ";
+	else if (var[i].gt == 1) rfile << "\"het.\", ";
+	else if (var[i].gt == 2) rfile << "\"hom. ALT\", ";
+	else rfile << "\"missing\", ";
 	rfile << var[i].basenum << ", ";
-	if (var[i].gt == 0) rfile << "\"hom. REF\"";
-	else if (var[i].gt == 1) rfile << "\"het.\"";
-	else if (var[i].gt == 2) rfile << "\"hom. ALT\"";
-	else rfile << "\"missing\"";
+	rfile << c.trimLeft + var[i].basenum << ", ";
+	rfile << bc.bcPos[c.trimLeft + var[i].basenum];
 	rfile << "]";	
       }
       rfile << "]," << std::endl;
