@@ -24,6 +24,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #ifndef WEB_H
 #define WEB_H
 
+#include <boost/tokenizer.hpp>
 #include <boost/asio.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -46,7 +47,8 @@ namespace tracy {
   };
 
   std::string speciesArray[] = {"ciona_savignyi", "erinaceus_europaeus", "mastacembelus_armatus", "cavia_porcellus", "homo_sapiens", "pelodiscus_sinensis", "meleagris_gallopavo", "chlorocebus_sabaeus", "sphenodon_punctatus", "saimiri_boliviensis_boliviensis", "carlito_syrichta", "poecilia_mexicana", "chrysemys_picta_bellii", "poecilia_formosa", "mus_musculus_lpj", "cercocebus_atys", "tupaia_belangeri", "saccharomyces_cerevisiae", "oryzias_latipes", "tursiops_truncatus", "papio_anubis", "propithecus_coquereli", "myotis_lucifugus", "pan_paniscus", "mus_musculus_129s1svimj", "gorilla_gorilla", "amphilophus_citrinellus", "maylandia_zebra", "rhinopithecus_roxellana", "bos_taurus", "oryctolagus_cuniculus", "poecilia_reticulata", "otolemur_garnettii", "mus_musculus", "mus_musculus_casteij", "mesocricetus_auratus", "cebus_capucinus", "drosophila_melanogaster", "mola_mola", "sarcophilus_harrisii", "gasterosteus_aculeatus", "cricetulus_griseus_chok1gshd", "loxodonta_africana", "chinchilla_lanigera", "felis_catus", "mus_musculus_cbaj", "sorex_araneus", "taeniopygia_guttata", "heterocephalus_glaber_female", "mus_musculus_balbcj", "nomascus_leucogenys", "rhinopithecus_bieti", "mus_caroli", "mus_musculus_nodshiltj", "haplochromis_burtoni", "pongo_abelii", "heterocephalus_glaber_male", "danio_rerio", "caenorhabditis_elegans", "seriola_lalandi_dorsalis", "eptatretus_burgeri", "tetraodon_nigroviridis", "oryzias_melastigma", "fundulus_heteroclitus", "canis_lupus_dingo", "ficedula_albicollis", "xiphophorus_couchianus", "mustela_putorius_furo", "mus_musculus_dba2j", "acanthochromis_polyacanthus", "hippocampus_comes", "mus_spretus", "pygocentrus_nattereri", "amphiprion_ocellaris", "mus_musculus_akrj", "takifugu_rubripes", "procavia_capensis", "oreochromis_niloticus", "latimeria_chalumnae", "astyanax_mexicanus", "labrus_bergylta", "aotus_nancymaae", "seriola_dumerili", "stegastes_partitus", "ovis_aries", "cricetulus_griseus_crigri", "canis_familiaris", "mus_musculus_fvbnj", "gambusia_affinis", "amphiprion_percula", "periophthalmus_magnuspinnatus", "mus_musculus_aj", "vulpes_vulpes", "equus_asinus_asinus", "octodon_degus", "callithrix_jacchus", "mandrillus_leucophaeus", "ciona_intestinalis", "mus_pahari", "anabas_testudineus", "rattus_norvegicus", "notamacropus_eugenii", "monodelphis_domestica", "equus_caballus", "gopherus_agassizii", "panthera_pardus", "petromyzon_marinus", "scleropages_formosus", "microcebus_murinus", "pundamilia_nyererei", "anas_platyrhynchos", "astatotilapia_calliptera", "ictalurus_punctatus", "capra_hircus", "dipodomys_ordii", "ursus_maritimus", "macaca_mulatta", "pan_troglodytes", "poecilia_latipinna", "ursus_americanus", "macaca_fascicularis", "cyprinodon_variegatus", "peromyscus_maniculatus_bairdii", "choloepus_hoffmanni", "xiphophorus_maculatus", "nannospalax_galili", "panthera_tigris_altaica", "anolis_carolinensis", "mus_musculus_wsbeij", "microtus_ochrogaster", "jaculus_jaculus", "ornithorhynchus_anatinus", "phascolarctos_cinereus", "scophthalmus_maximus", "sus_scrofa", "mus_musculus_pwkphj", "ailuropoda_melanoleuca", "fukomys_damarensis", "esox_lucius", "xenopus_tropicalis", "cynoglossus_semilaevis", "dasypus_novemcinctus", "gallus_gallus", "oryzias_latipes_hni", "paramormyrops_kingsleyae", "vicugna_pacos", "mus_musculus_nzohlltj", "colobus_angolensis_palliatus", "monopterus_albus", "kryptolebias_marmoratus", "oryzias_latipes_hsok", "mus_musculus_c3hhej", "pteropus_vampyrus", "neolamprologus_brichardi", "cavia_aperea", "gadus_morhua", "lepisosteus_oculatus", "macaca_nemestrina", "echinops_telfairi", "ochotona_princeps", "ictidomys_tridecemlineatus", "mus_musculus_c57bl6nj"};
-  
+
+
   inline bool
   speciesExist(std::string const& tiger) {
     //curl -o species -X GET --header 'Accept: application/json' http://rest.ensembl.org/info/species
@@ -56,6 +58,26 @@ namespace tracy {
     else return false;
   }
 
+  inline std::string
+  fixSpeciesName(std::string const& sp) {
+    if (speciesExist(sp)) return sp;
+    else {
+      std::string stem = boost::to_lower_copy(boost::filesystem::path(sp).stem().string());
+      boost::char_separator<char> sep(".");
+      typedef boost::tokenizer< boost::char_separator<char> > Tokenizer;
+      Tokenizer tokens(stem, sep);
+      Tokenizer::iterator tokIter = tokens.begin();
+      if (tokIter!=tokens.end()) {
+	std::string newsp=*tokIter++;
+	if (tokIter!=tokens.end()) {
+	  std::string version=*tokIter;
+	  if ((newsp == "homo_sapiens") && (version == "grch37")) return "homo_sapiens_hg19";
+	  if (speciesExist(newsp)) return newsp;
+	}
+      }
+      return sp;
+    }
+  }
 
   template<typename TConfig>
   inline int32_t

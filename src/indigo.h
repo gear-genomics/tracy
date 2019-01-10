@@ -113,6 +113,7 @@ namespace tracy {
       c.annotatevariants = true;
       c.callvariants = true;
       c.host = "rest.ensembl.org";
+      c.annotate = fixSpeciesName(c.annotate);
       // hg19 workaround
       if (c.annotate == "homo_sapiens_hg19") {
 	c.host = "grch37.rest.ensembl.org";
@@ -294,7 +295,7 @@ namespace tracy {
 
       if (c.annotatevariants) {
 	now = boost::posix_time::second_clock::local_time();
-	std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation" << std::endl;
+	std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation (" << c.annotate << ")" << std::endl;
 	std::string region = rs.chr + ":" + boost::lexical_cast<std::string>(rs.pos) + "-" + boost::lexical_cast<std::string>(rs.pos + rs.refslice.size());
 	std::string response;
 	if (!variantsInRegion(c, region, response)) {
