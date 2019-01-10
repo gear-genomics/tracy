@@ -108,8 +108,10 @@ namespace tracy {
     // Variant calling
     if (vm.count("callVariants")) c.callvariants = true;
     else c.callvariants = false;
-    if (vm.count("annotate")) c.annotatevariants = true;
-    else c.annotatevariants = false;
+    if (vm.count("annotate")) {
+      c.annotatevariants = true;
+      c.callvariants = true;
+    } else c.annotatevariants = false;
     
     // Check ab1
     if (!(boost::filesystem::exists(c.ab) && boost::filesystem::is_regular_file(c.ab) && boost::filesystem::file_size(c.ab))) {
@@ -285,7 +287,11 @@ namespace tracy {
 	std::string region = rs.chr + ":" + boost::lexical_cast<std::string>(rs.pos) + "-" + boost::lexical_cast<std::string>(rs.pos + rs.refslice.size());
 	std::string response;
 	if (!variantsInRegion(region, response)) {
-	  parseJSON(response);
+	  std::vector<KnownVariation> kv;
+	  int32_t numVar = parseKnownVariants(response, kv);
+	  if (numVar > 0) {
+	    annotateVariants(kv, var);
+	  }
 	} else {
 	  std::cerr << "Warning: Variant annotation failed." << std::endl;
 	  c.annotatevariants = false;

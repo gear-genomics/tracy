@@ -312,7 +312,7 @@ namespace tracy
 	rfile << "[";
 	rfile << "\"" << var[i].chr << "\", ";
 	rfile << var[i].pos << ", ";
-	rfile << "\".\", ";
+	rfile << "\"" << var[i].id << "\", ";
 	rfile << "\"" << var[i].ref << "\", ";
 	rfile << "\"" << var[i].alt << "\", ";
 	rfile << (int32_t) bc.estQual[var[i].basenum] << ", ";

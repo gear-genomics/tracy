@@ -36,8 +36,9 @@ namespace tracy {
     std::string chr;
     std::string ref;
     std::string alt;
-
-    Variant(int32_t const p, int32_t const bc, int32_t const g, std::string const& c, std::string const& r, std::string const& a) : pos(p), basenum(bc), gt(g), chr(c), ref(r), alt(a) {}
+    std::string id;
+    
+    Variant(int32_t const p, int32_t const bc, int32_t const g, std::string const& c, std::string const& r, std::string const& a) : pos(p), basenum(bc), gt(g), chr(c), ref(r), alt(a), id(".") {}
   };
 
   template<typename TVar>
@@ -219,7 +220,7 @@ namespace tracy {
 	rec->rid = bcf_hdr_name2id(hdr, var[i].chr.c_str());
 	rec->pos = var[i].pos;
 	rec->qual = (int) bc.estQual[var[i].basenum];
-	std::string id(".");
+	std::string id(var[i].id);
 	bcf_update_id(hdr, rec, id.c_str());
 	std::string alleles = var[i].ref + "," + var[i].alt;
 	bcf_update_alleles_str(hdr, rec, alleles.c_str());

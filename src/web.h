@@ -36,14 +36,13 @@ namespace tracy {
 
 
   struct KnownVariation {
-    int32_t start;
-    int32_t end;
-    int32_t strand;
+    typedef std::vector<std::string> TAlleles;
+    int32_t pos;
     std::string id;
     std::string chr;
-    std::string ref;
-    std::string alt;
-    std::string consequence_type;
+    TAlleles alleles;
+
+    KnownVariation(int32_t const p, std::string const& name, std::string const& c, std::vector<std::string> const& a) : pos(p), id(name), chr(c), alleles(a) {}
   };
   
 
@@ -127,9 +126,35 @@ namespace tracy {
     return 0;
   }
 
+  inline void
+  annotateVariants(std::vector<KnownVariation> const& kv, std::vector<Variant>& var) {
+    for(uint32_t i = 0; i < var.size(); ++i) {
+      for(uint32_t j = 0; j < kv.size(); ++j) {
+	if (var[i].pos == kv[j].pos) {
+	  if (var[i].chr == kv[j].chr) {
+	    // Debug
+	    //std::cout << var[i].ref << ',' << var[i].alt << std::endl;
+	    //for(uint32_t k = 0; k < kv[j].alleles.size(); ++k) {
+	    //std::cout << kv[j].alleles[k] << ',';
+	    //}
+	    //std::cout << std::endl;
+	    // Match alleles
+	    if (var[i].ref == kv[j].alleles[0]) {
+	      for(uint32_t k = 1; k < kv[j].alleles.size(); ++k) {
+		if (var[i].alt == kv[j].alleles[k]) {
+		  var[i].id = kv[j].id;
+		  break;
+		}
+	      }
+	    }	  
+	  }
+	}
+      }
+    }
+  }
 
   inline int32_t
-  parseJSON(std::string const& jsonString) {
+  parseKnownVariants(std::string const& jsonString, std::vector<KnownVariation>& kv) {
     auto j = nlohmann::json::parse(jsonString);
     //std::cout << std::setw(4) << j << std::endl;
 
@@ -141,19 +166,25 @@ namespace tracy {
 	int32_t strand = var["strand"];
 	// Fwd strand
 	if (strand == 1) {
-	  std::string ref = var["alleles"][0];
-	  std::string alt = var["alleles"][1];
-	  std::string chr = var["seq_region_name"];
-	  std::string ct = var["consequence_type"];
 	  int32_t start = var["start"];
 	  int32_t end = var["end"];
-	  std::string id = var["id"];
-	  std::cout << chr << ',' << start << ',' << end << ',' << id << ',' << ref << ',' << alt << ',' << ct << std::endl;
+	  // Only SNPs
+	  if (start == end) {
+	    std::string chr = var["seq_region_name"];
+	    std::string id = var["id"];
+	    std::vector<std::string> alleles;
+	    for(uint32_t i = 0; i <  var["alleles"].size(); ++i) {
+	      if (var["alleles"][i] != "-") {
+		std::string al = var["alleles"][i];
+		if (al.size() == 1) alleles.push_back(al);
+	      }
+	    }
+	    if (alleles.size() > 1) kv.push_back(KnownVariation(start, id, chr, alleles));
+	  }
 	}
       }
     }
-
-    return 0;
+    return kv.size();
   }
     
 
