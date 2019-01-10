@@ -37,6 +37,7 @@ namespace tracy {
   
   struct IndigoConfig {
     bool callvariants;
+    bool annotatevariants;
     uint16_t linelimit;
     uint16_t trimLeft;
     uint16_t trimRight;
@@ -46,6 +47,7 @@ namespace tracy {
     uint16_t minKmerSupport;
     uint16_t qualCut;
     float pratio;
+    std::string annotate;
     std::string format;
     boost::filesystem::path outfile;
     boost::filesystem::path ab;
@@ -66,6 +68,7 @@ namespace tracy {
       ("maxindel,m", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
       ("trimLeft,l", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
       ("trimRight,r", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
+      ("annotate,a", boost::program_options::value<std::string>(&c.annotate), "annotate variants [human]")
       ("callVariants,v", "call variants in trace")
       ;
     
@@ -105,6 +108,8 @@ namespace tracy {
     // Variant calling
     if (vm.count("callVariants")) c.callvariants = true;
     else c.callvariants = false;
+    if (vm.count("annotate")) c.annotatevariants = true;
+    else c.annotatevariants = false;
     
     // Check ab1
     if (!(boost::filesystem::exists(c.ab) && boost::filesystem::is_regular_file(c.ab) && boost::filesystem::file_size(c.ab))) {
@@ -274,12 +279,18 @@ namespace tracy {
       callVariants(final1, allele1, var);
       callVariants(final2, allele2, var);
 
-      now = boost::posix_time::second_clock::local_time();
-      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation" << std::endl;
-      //std::string response;
-      //if (!variantsInRegion("17:80348215-80348333", response)) {
-      //parseJSON(response);
-      //}
+      if (c.annotatevariants) {
+	now = boost::posix_time::second_clock::local_time();
+	std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation" << std::endl;
+	std::string region = rs.chr + ":" + boost::lexical_cast<std::string>(rs.pos) + "-" + boost::lexical_cast<std::string>(rs.pos + rs.refslice.size());
+	std::string response;
+	if (!variantsInRegion(region, response)) {
+	  parseJSON(response);
+	} else {
+	  std::cerr << "Warning: Variant annotation failed." << std::endl;
+	  c.annotatevariants = false;
+	}	  
+      }
 
       // Sort variants
       std::sort(var.begin(), var.end(), SortVariant<Variant>());

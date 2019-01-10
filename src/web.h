@@ -28,6 +28,8 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include "nlohmann/json.hpp"
+
 using boost::asio::ip::tcp;
 
 namespace tracy {
@@ -48,6 +50,8 @@ namespace tracy {
       // Request
       boost::asio::streambuf request;
       std::ostream request_stream(&request);
+
+      // Debug
       request_stream << "GET " << "/overlap/region/human/" << locus << "?feature=variation; HTTP/1.0\r\n";
       request_stream << "Host: " << host << "\r\n";
       request_stream << "Accept: application/json\r\n";
@@ -76,6 +80,7 @@ namespace tracy {
       }
       
       // Response header
+      boost::system::error_code error;
       boost::asio::read_until(socket, response, "\r\n\r\n");
       std::string header;
       while(std::getline(response_stream, header) && header != "\r") {
@@ -85,19 +90,18 @@ namespace tracy {
       
       // Content
       if (response.size() > 0) {
-	std::istream rstream(&response);
-	std::string resplocal;
-	rstream >> resplocal;
-	respstr += resplocal;
+	std::ostringstream rstream;
+	rstream << &response;
+	respstr += rstream.str();
       }
-
+      
       // Until EOF
-      boost::system::error_code error;
       while(boost::asio::read(socket, response, boost::asio::transfer_at_least(1), error)) {
-	std::istream rstream(&response);
-	std::string resplocal;
-	rstream >> resplocal;
-	respstr += resplocal;
+	if (response.size() > 0) {
+	  std::ostringstream rstream;
+	  rstream << &response;
+	  respstr += rstream.str();
+	}
       }
       if (error != boost::asio::error::eof) {
 	throw boost::system::system_error(error);
@@ -111,18 +115,27 @@ namespace tracy {
 
 
   inline int32_t
-  parseJSON(std::string const& json) {
-    //Debug
-    //std::cerr << json << std::endl;
-    
-    std::stringstream ss;
-    ss << json;
-    boost::property_tree::ptree root;
-    boost::property_tree::read_json(ss, root);
-    std::vector<std::string> variants;
-    for(boost::property_tree::ptree::value_type &var : root.get_child(".")) {
-      variants.push_back(var.second.data());
+  parseJSON(std::string const& jsonString) {
+    auto j = nlohmann::json::parse(jsonString);
+    //std::cout << std::setw(4) << j << std::endl;
+
+    // Collect annotated variants
+    for(auto it = j.begin(); it != j.end(); ++it) {
+      //std::cout << std::setw(4) << *it << std::endl;
+      auto var = *it;
+      if (var["alleles"].size() > 1) {
+	std::string ref = var["alleles"][0];
+	std::string alt = var["alleles"][1];
+	std::string chr = var["seq_region_name"];
+	std::string ct = var["consequence_type"];
+	int32_t start = var["start"];
+	int32_t end = var["end"];
+	int32_t strand = var["strand"];
+	std::string id = var["id"];
+	std::cout << chr << ',' << start << ',' << ref << ',' << alt << std::endl;
+      }
     }
+
     return 0;
   }
     
