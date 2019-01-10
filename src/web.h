@@ -34,6 +34,20 @@ using boost::asio::ip::tcp;
 
 namespace tracy {
 
+
+  struct KnownVariation {
+    int32_t start;
+    int32_t end;
+    int32_t strand;
+    std::string id;
+    std::string chr;
+    std::string ref;
+    std::string alt;
+    std::string consequence_type;
+  };
+  
+
+  
   inline int32_t
   variantsInRegion(std::string const& locus, std::string& respstr) {
     try {
@@ -124,15 +138,18 @@ namespace tracy {
       //std::cout << std::setw(4) << *it << std::endl;
       auto var = *it;
       if (var["alleles"].size() > 1) {
-	std::string ref = var["alleles"][0];
-	std::string alt = var["alleles"][1];
-	std::string chr = var["seq_region_name"];
-	std::string ct = var["consequence_type"];
-	int32_t start = var["start"];
-	int32_t end = var["end"];
 	int32_t strand = var["strand"];
-	std::string id = var["id"];
-	std::cout << chr << ',' << start << ',' << ref << ',' << alt << std::endl;
+	// Fwd strand
+	if (strand == 1) {
+	  std::string ref = var["alleles"][0];
+	  std::string alt = var["alleles"][1];
+	  std::string chr = var["seq_region_name"];
+	  std::string ct = var["consequence_type"];
+	  int32_t start = var["start"];
+	  int32_t end = var["end"];
+	  std::string id = var["id"];
+	  std::cout << chr << ',' << start << ',' << end << ',' << id << ',' << ref << ',' << alt << ',' << ct << std::endl;
+	}
       }
     }
 

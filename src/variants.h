@@ -29,17 +29,6 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 namespace tracy {
 
-  struct KnownVariation {
-    int32_t start;
-    int32_t end;
-    int32_t strand;
-    std::string id;
-    std::string chr;
-    std::string ref;
-    std::string alt;
-    std::string consequence_type;
-  };
-  
   struct Variant {
     int32_t pos;
     int32_t basenum;
