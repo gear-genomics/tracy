@@ -241,7 +241,7 @@ namespace tracy
     rfile << "," << std::endl;
 
     // Provide x-window
-    std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + bp.breakpoint - 1);
+    std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + bp.breakpoint);
     rfile << "\"chartConfig\": { \"x\": { \"axis\": { \"range\": [" << xwin.first << ", " << xwin.second << "] }}}," << std::endl;
     
     // Allele1
