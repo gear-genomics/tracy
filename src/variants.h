@@ -240,7 +240,7 @@ namespace tracy {
 	bcf_update_info_int32(hdr, rec, "ALIGNPOS", &tmpi, 1);
 	tmpi = c.trimLeft + var[i].basenum;
 	bcf_update_info_int32(hdr, rec, "BASEPOS", &tmpi, 1);
-	tmpi = bc.bcPos[c.trimLeft + var[i].basenum];
+	tmpi = bc.bcPos[c.trimLeft + var[i].basenum - 1] + 1;
 	bcf_update_info_int32(hdr, rec, "SIGNALPOS", &tmpi, 1);
 	
 	// Add genotyping information

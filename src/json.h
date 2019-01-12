@@ -213,10 +213,10 @@ namespace tracy
 
   inline std::pair<int32_t, int32_t>
   xWindowViewport(BaseCalls const& bc, int32_t const pos) {
-    int32_t lb = bc.bcPos[pos];
+    int32_t lb = bc.bcPos[pos] + 1;
     if (lb <= 150) lb = 1;
     else lb -= 150;
-    int32_t ub = bc.bcPos[pos];
+    int32_t ub = bc.bcPos[pos] + 1;
     if (ub + 150 < bc.bcPos[bc.bcPos.size() - 1]) ub += 150;
     else ub = bc.bcPos[bc.bcPos.size() - 1];
     return std::make_pair(lb, ub);
@@ -241,7 +241,7 @@ namespace tracy
     rfile << "," << std::endl;
 
     // Provide x-window
-    std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + bp.breakpoint);
+    std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + bp.breakpoint - 1);
     rfile << "\"chartConfig\": { \"x\": { \"axis\": { \"range\": [" << xwin.first << ", " << xwin.second << "] }}}," << std::endl;
     
     // Allele1
@@ -325,15 +325,15 @@ namespace tracy
 	else rfile << "\"missing\", ";
 	rfile << var[i].basenum << ", ";
 	rfile << c.trimLeft + var[i].basenum << ", ";
-	rfile << bc.bcPos[c.trimLeft + var[i].basenum];
-	rfile << "]";	
+	rfile << bc.bcPos[c.trimLeft + var[i].basenum - 1] + 1;
+	rfile << "]";
       }
       rfile << "]," << std::endl;
       rfile << "\"xranges\": [" << std::endl;
       for(uint32_t i = 0; i < var.size(); ++i) {
 	if (i > 0) rfile << "," << std::endl;
 	rfile << "[";
-	std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + var[i].basenum);
+	std::pair<int32_t, int32_t> xwin = xWindowViewport(bc, c.trimLeft + var[i].basenum - 1);
 	rfile << xwin.first << ", " << xwin.second;
     	rfile << "]";	
       }
