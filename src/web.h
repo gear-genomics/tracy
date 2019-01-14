@@ -29,7 +29,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 using boost::asio::ip::tcp;
 
