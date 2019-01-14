@@ -5,6 +5,7 @@ STATIC ?= 0
 PWD = $(shell pwd)
 SDSL_ROOT ?= ${PWD}/src/sdslLite/
 EBROOTHTSLIB ?= ${PWD}/src/htslib/
+JLIB ?= ${PWD}/src/jlib/
 
 # Install dir
 prefix = ${PWD}
@@ -13,7 +14,7 @@ bindir ?= $(exec_prefix)/bin
 
 # Flags
 CXX=g++
-CXXFLAGS += -std=c++11 -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
+CXXFLAGS += -std=c++11 -isystem ${JLIB} -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
 LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -lsdsl -ldivsufsort -ldivsufsort64 -ldl -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -lpthread
 
 ifeq (${STATIC}, 1)
