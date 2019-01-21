@@ -49,7 +49,7 @@ displayUsage() {
   std::cout << "    index        index FASTA reference file" << std::endl;
   std::cout << "    basecall     basecall Chromatogram trace file" << std::endl;
   std::cout << "    align        alignment of a trace file to a genome" << std::endl;
-  std::cout << "    decompose    separate a mutated and wildtype allele" << std::endl;
+  std::cout << "    decompose    variant calling and indel decomposition" << std::endl;
   std::cout << "    assemble     assemble a set of trace files" << std::endl;
   std::cout << std::endl;
   std::cout << std::endl;
