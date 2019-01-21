@@ -79,6 +79,18 @@ You can also use a wildtype chromatogram for decomposition.
 `./tracy decompose -g wildtype.ab1 -f align -o outprefix mutated.ab1`
 
 
+SNV & InDel Variant Calling and Annotation
+--------------------------------------------
+
+Tracy can call and annotate variants with respect to a reference genome.
+
+`./tracy decompose -v -a homo_sapiens -g hg19.fa.gz -f align -o outprefix input.ab1`
+
+This command produces a variant call file in binary BCF format. It can be converted to VCF using bcftools.
+
+`bcftools view outprefix.bcf`
+
+
 Trace assembly
 --------------
 
