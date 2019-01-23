@@ -257,7 +257,8 @@ namespace tracy
 	    hits.push_back(locations[0] - k);
 	  }
 	} else {
-	  if (occs > 0) {
+	  // Exclude ubiquitously mapping k-mers
+	  if ((occs > 0) && (occs < 1000)) {
 	    auto locations = locate(fm_index, seq.begin(), seq.end());
 	    for(std::size_t m = 0; m < occs; ++m) {
 	      hits.push_back(locations[m] - k);
