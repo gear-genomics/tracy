@@ -25,7 +25,7 @@ The easiest way to get Tracy is to download a statically linked binary from the 
 Running Tracy
 -------------
 
-`./tracy -h`
+`tracy -h`
 
 
 Basecalling a Trace File
@@ -33,13 +33,13 @@ Basecalling a Trace File
 
 To get the primary sequence (highest peak) of a trace file in FASTA or FASTQ format.
 
-`./tracy basecall -f fasta -o out.fasta input.ab1`
+`tracy basecall -f fasta -o out.fasta input.ab1`
 
-`./tracy basecall -f fastq -o out.fastq input.ab1`
+`tracy basecall -f fastq -o out.fastq input.ab1`
 
 To get full trace information, including primary and secondary basecalls for heterozygous variants.
 
-`./tracy basecall -f tsv -o out.tsv input.ab1`
+`tracy basecall -f tsv -o out.tsv input.ab1`
 
 
 Alignment to a Fasta Slice
@@ -47,7 +47,7 @@ Alignment to a Fasta Slice
 
 Alignment of a trace file to a FASTA reference slice.
 
-`./tracy align -f align -o out.align -g ref_slice.fa input.ab1`
+`tracy align -f align -o out.align -g ref_slice.fa input.ab1`
 
 
 Alignment to an indexed reference genome
@@ -55,13 +55,13 @@ Alignment to an indexed reference genome
 
 Alignment to a large reference genome requires a pre-built index on a bgzip compressed genome.
 
-`./tracy index -o hg19.fa.fm9 hg19.fa.gz`
+`tracy index -o hg19.fa.fm9 hg19.fa.gz`
 
 `samtools faidx hg19.fa.gz`
 
 Once the index has been built you can align to the indexed genome.
 
-`./tracy align -g hg19.fa.gz input.ab1`
+`tracy align -g hg19.fa.gz input.ab1`
 
 
 Separating heterozygous variants
@@ -69,7 +69,7 @@ Separating heterozygous variants
 
 Double-peaks in the Chromatogram can cause alignment issues. Tracy supports deconvolution of heterozygous variants into two separate alleles.
 
-`./tracy decompose -g hg19.fa.gz -f align -o outprefix input.ab1`
+`tracy decompose -g hg19.fa.gz -f align -o outprefix input.ab1`
 
 The two alleles are then separately aligned.
 
@@ -77,7 +77,7 @@ The two alleles are then separately aligned.
 
 You can also use a wildtype chromatogram for decomposition.
 
-`./tracy decompose -g wildtype.ab1 -f align -o outprefix mutated.ab1`
+`tracy decompose -g wildtype.ab1 -f align -o outprefix mutated.ab1`
 
 
 SNV & InDel Variant Calling and Annotation
@@ -85,7 +85,7 @@ SNV & InDel Variant Calling and Annotation
 
 Tracy can call and annotate variants with respect to a reference genome.
 
-`./tracy decompose -v -a homo_sapiens -g hg19.fa.gz -f align -o outprefix input.ab1`
+`tracy decompose -v -a homo_sapiens -g hg19.fa.gz -f align -o outprefix input.ab1`
 
 This command produces a variant call file in binary BCF format. It can be converted to VCF using bcftools.
 
