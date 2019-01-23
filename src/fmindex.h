@@ -46,7 +46,25 @@ namespace tracy
     uint32_t breakpoint;
     float bestDiff;
   };
-  
+
+
+  inline void
+  _fixReferenceName(std::string& s) {
+    // Disallow any weird characters
+    boost::erase_all(s, "\\");
+    boost::erase_all(s, ",");
+    boost::erase_all(s, "'");
+    boost::erase_all(s, "\"");
+    boost::erase_all(s, "(");
+    boost::erase_all(s, ")");
+    boost::erase_all(s, "[");
+    boost::erase_all(s, "]");
+    boost::erase_all(s, "{");
+    boost::erase_all(s, "}");
+    boost::erase_all(s, "<");
+    boost::erase_all(s, ">");
+    boost::erase_all(s, ":");
+  }
 
   template<typename TConfig, typename TFMIdx>
   inline bool
@@ -143,6 +161,7 @@ namespace tracy
                 } else {
 		  rs.chr = line.substr(1);
                 }
+		_fixReferenceName(rs.chr);  // Replace special characters
 	      } else {
                 if (line.at(line.length() - 1) == '\r' ){
                   tmpfasta += boost::to_upper_copy(line.substr(0, line.length() - 1));

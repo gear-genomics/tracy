@@ -90,7 +90,7 @@ namespace tracy {
     int32_t delStart = 0;
     std::string ins = "";
     int32_t insStart = 0;
-    char lastRefChar = '-';
+    char lastRefChar = 'N';  // Leading insertion so we don't know the preceeding character
     for(int32_t j = viStart; j <= viEnd; ++j) {
       if ((!del.empty()) && (align[0][j] != '-')) {
 	// End of deletion
