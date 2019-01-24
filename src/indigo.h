@@ -117,10 +117,7 @@ namespace tracy {
 	c.host = "grch37.rest.ensembl.org";
 	c.annotate = "homo_sapiens";
       }
-      if (!speciesExist(c.annotate)) {
-	std::cerr << "Warning: Species does not exist: " << c.annotate << "!" << std::endl;
-	c.annotatevariants = false;
-      }
+      if (!speciesExist(c.annotate)) c.annotatevariants = false;
     } else c.annotatevariants = false;
     
     // Check ab1
