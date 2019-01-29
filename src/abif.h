@@ -440,7 +440,16 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
     TMountains pVal;
     TMountains pIdx;
     peak(tr.traceACGT, st[i], ed[i], pVal, pIdx);
-    if ((pVal[0] == 0) && (pVal[1] == 0) && (pVal[2] == 0) && (pVal[3] == 0)) continue;
+    if ((pVal[0] == 0) && (pVal[1] == 0) && (pVal[2] == 0) && (pVal[3] == 0)) {
+      // No peaks found, replace by midpoint
+      int32_t midpoint = (int32_t) ((st[i] + ed[i]) / 2.0);
+      if (midpoint > std::floor(ed[i])) midpoint = std::floor(ed[i]);
+      if (midpoint < std::floor(st[i]) + 1) midpoint = std::floor(st[i]) + 1;
+      for(uint32_t k = 0; k<4; ++k) {
+	pIdx[k] = midpoint;
+	pVal[k] = tr.traceACGT[k][midpoint];
+      }
+    }
     TValue maxVal = 0;
     for(uint32_t k = 0; k<4; ++k)
       if (pVal[k] > maxVal) maxVal = pVal[k];
