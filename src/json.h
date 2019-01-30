@@ -279,7 +279,6 @@ namespace tracy
 
     // Breakpoint
     rfile << "\"hetindel\": " << bp.indelshift << "," << std::endl;
-    rfile << "\"hetindelbp\": " << c.trimLeft + bp.breakpoint << "," << std::endl;
     
     // Decomposition
     rfile << "\"decomposition\": " << "{" << std::endl;
