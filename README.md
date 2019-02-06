@@ -55,13 +55,13 @@ Alignment to an indexed reference genome
 
 Alignment to a large reference genome requires a pre-built index on a bgzip compressed genome.
 
-`tracy index -o hg19.fa.fm9 hg19.fa.gz`
+`tracy index -o hg38.fa.fm9 hg38.fa.gz`
 
-`samtools faidx hg19.fa.gz`
+`samtools faidx hg38.fa.gz`
 
 Once the index has been built you can align to the indexed genome.
 
-`tracy align -g hg19.fa.gz input.ab1`
+`tracy align -g hg38.fa.gz input.ab1`
 
 
 Separating heterozygous variants
@@ -69,7 +69,7 @@ Separating heterozygous variants
 
 Double-peaks in the Chromatogram can cause alignment issues. Tracy supports deconvolution of heterozygous variants into two separate alleles.
 
-`tracy decompose -g hg19.fa.gz -f align -o outprefix input.ab1`
+`tracy decompose -g hg38.fa.gz -f align -o outprefix input.ab1`
 
 The two alleles are then separately aligned.
 
@@ -85,11 +85,29 @@ SNV & InDel Variant Calling and Annotation
 
 Tracy can call and annotate variants with respect to a reference genome.
 
-`tracy decompose -v -a homo_sapiens -g hg19.fa.gz -f align -o outprefix input.ab1`
+`tracy decompose -v -a homo_sapiens -g hg38.fa.gz -f align -o outprefix input.ab1`
 
 This command produces a variant call file in binary BCF format. It can be converted to VCF using bcftools.
 
 `bcftools view outprefix.bcf`
+
+
+Using forward & reverse ab1 files to improve variant calling
+------------------------------------------------------------
+
+If you do have forward and reverse trace files for the same expected genomic variant you can merge variant files and check consistency of calls and genotypes.
+
+Forward trace decomposition:
+
+`tracy decompose -f align -o forward -a homo_sapiens -g hg38.fa.gz forward.ab1`
+
+Reverse trace decomposition:
+
+`tracy decompose -f align -o reverse -a homo_sapiens -g hg38.fa.gz reverse.ab1`
+
+Merging of variant files:
+
+`bcftools merge --force-samples forward.bcf reverse.bcf`
 
 
 Trace assembly
