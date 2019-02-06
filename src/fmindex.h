@@ -29,6 +29,23 @@ Contact: Tobias Rausch (rausch@embl.de)
 namespace tracy
 {
 
+  inline void
+  reverseComplement(std::string& sequence) {
+    std::string rev = boost::to_upper_copy(std::string(sequence.rbegin(), sequence.rend()));
+    std::size_t i = 0;
+    for(std::string::iterator revIt = rev.begin(); revIt != rev.end(); ++revIt, ++i) {
+      switch (*revIt) {
+      case 'A': sequence[i]='T'; break;
+      case 'C': sequence[i]='G'; break;
+      case 'G': sequence[i]='C'; break;
+      case 'T': sequence[i]='A'; break;
+      case 'N': sequence[i]='N'; break;
+      default: break;
+      }
+    }
+  }
+  
+
   struct ReferenceSlice {
     bool forward;
     uint32_t filetype;   //0: *fa.gz, 1: *.fa, 2: *.ab1
@@ -39,6 +56,18 @@ namespace tracy
 
     ReferenceSlice() : forward(true), filetype(0), kmersupport(0), pos(0), chr(""), refslice("") {}
   };
+
+
+  inline void
+  _reverseReferenceSlize(ReferenceSlice const& in, ReferenceSlice& out) {
+    out.forward = !in.forward;
+    out.filetype = in.filetype;
+    out.kmersupport = in.kmersupport;
+    out.pos = in.pos;
+    out.chr = in.chr;
+    out.refslice = in.refslice;
+    reverseComplement(out.refslice);
+  }
 
   struct TraceBreakpoint {
     bool indelshift;
@@ -192,23 +221,6 @@ namespace tracy
   }
 
 
-  inline void
-  reverseComplement(std::string& sequence) {
-    std::string rev = boost::to_upper_copy(std::string(sequence.rbegin(), sequence.rend()));
-    std::size_t i = 0;
-    for(std::string::iterator revIt = rev.begin(); revIt != rev.end(); ++revIt, ++i) {
-      switch (*revIt) {
-      case 'A': sequence[i]='T'; break;
-      case 'C': sequence[i]='G'; break;
-      case 'G': sequence[i]='C'; break;
-      case 'T': sequence[i]='A'; break;
-      case 'N': sequence[i]='N'; break;
-      default: break;
-      }
-    }
-  }
-  
-  
   template<typename THits, typename TValue>
   inline uint32_t
   findMaxFreq(THits& hits, TValue& gpos) {

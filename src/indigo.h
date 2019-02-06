@@ -28,6 +28,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "trim.h"
 #include "web.h"
 #include "variants.h"
+#include "fmindex.h"
 
 using namespace sdsl;
 
@@ -284,9 +285,28 @@ namespace tracy {
     if (c.callvariants) {
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Calling" << std::endl;
-      
-      callVariants(final1, allele1, var);
-      callVariants(final2, allele2, var);
+
+      if (rs.forward) {
+	callVariants(final1, allele1, var);
+	callVariants(final2, allele2, var);
+      } else {
+	// Reverse complement
+	std::string revPri(pri);
+	reverseComplement(revPri);
+	ReferenceSlice allele1Rev;
+	_reverseReferenceSlize(allele1, allele1Rev);
+	TAlign final1Rev;
+	gotoh(revPri, allele1Rev.refslice, final1Rev, semiglobal, sc);
+	callVariants(final1Rev, allele1Rev, var);
+	std::string revSec(sec);
+	reverseComplement(revSec);
+	ReferenceSlice allele2Rev;
+	_reverseReferenceSlize(allele2, allele2Rev);
+	TAlign final2Rev;
+	gotoh(revSec, allele2Rev.refslice, final2Rev, semiglobal, sc);
+	callVariants(final2Rev, allele2Rev, var);
+      }
+	
 
       if (c.annotatevariants) {
 	now = boost::posix_time::second_clock::local_time();
