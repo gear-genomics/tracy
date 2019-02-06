@@ -217,7 +217,7 @@ namespace tracy {
 
 	// Output main vcf fields
 	rec->rid = bcf_hdr_name2id(hdr, var[i].chr.c_str());
-	rec->pos = var[i].pos;
+	rec->pos = var[i].pos - 1;
 	rec->qual = (int) bc.estQual[var[i].basenum];
 	std::string id(var[i].id);
 	bcf_update_id(hdr, rec, id.c_str());
