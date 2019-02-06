@@ -301,7 +301,7 @@ namespace tracy
     if (!var.empty()) {
       rfile << "\"variants\": {" <<  std::endl;
       rfile << "\"columns\": [";
-      rfile << "\"chr\", \"pos\", \"id\", \"ref\", \"alt\", \"qual\", \"filter\", \"type\", \"genotype\", \"alignpos\", \"basepos\", \"signalpos\"";
+      rfile << "\"chr\", \"pos\", \"id\", \"ref\", \"alt\", \"qual\", \"filter\", \"type\", \"genotype\", \"basepos\", \"signalpos\"";
       rfile << "]," << std::endl;
       rfile << "\"rows\": [" << std::endl;
       for(uint32_t i = 0; i < var.size(); ++i) {
@@ -320,9 +320,10 @@ namespace tracy
 	else if (var[i].gt == 1) rfile << "\"het.\", ";
 	else if (var[i].gt == 2) rfile << "\"hom. ALT\", ";
 	else rfile << "\"missing\", ";
-	rfile << var[i].basenum << ", ";
-	rfile << c.trimLeft + var[i].basenum << ", ";
-	rfile << bc.bcPos[c.trimLeft + var[i].basenum - 1] + 1;
+	if (rs1.forward) rfile << c.trimLeft + var[i].basenum << ", ";
+	else rfile << bc.primary.size() - (c.trimRight + var[i].basenum) + 1 << ", ";
+	if (rs1.forward) rfile << bc.bcPos[c.trimLeft + var[i].basenum - 1] + 1;
+	else rfile << bc.bcPos[bc.primary.size() - (c.trimRight + var[i].basenum)] + 1;
 	rfile << "]";
       }
       rfile << "]," << std::endl;
