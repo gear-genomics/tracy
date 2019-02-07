@@ -93,6 +93,9 @@ namespace tracy
     boost::erase_all(s, "<");
     boost::erase_all(s, ">");
     boost::erase_all(s, ":");
+    boost::erase_all(s, "\t");
+    boost::erase_all(s, "\r");
+    boost::erase_all(s, "#");
   }
 
   template<typename TConfig, typename TFMIdx>
