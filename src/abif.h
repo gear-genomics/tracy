@@ -450,7 +450,7 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
 	pVal[k] = tr.traceACGT[k][midpoint];
       }
     }
-    TValue maxVal = 0;
+    TValue maxVal = 1;
     for(uint32_t k = 0; k<4; ++k)
       if (pVal[k] > maxVal) maxVal = pVal[k];
     std::vector<float> srat;
@@ -458,7 +458,7 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
       srat.push_back((float) pVal[k] / (float) maxVal);
     float bestRat = sigratio;
     int32_t selACGT = -1;
-    TValue selPos = 0;
+    TValue selPos = pIdx[0];
     int32_t validBases = 0;
     for(uint32_t k = 0; k<4; ++k) {
       if (srat[k] >= sigratio) {
