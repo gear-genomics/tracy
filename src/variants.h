@@ -62,8 +62,10 @@ namespace tracy {
       // Update GT, homozygous variant
       var[idx].gt += 1;
     } else {
-      // Insert variant
-      var.push_back(Variant(pos, bc, gt, chr, ref, alt));
+      if (pos > 0) {
+	// Insert variant
+	var.push_back(Variant(pos, bc, gt, chr, ref, alt));
+      }
     }
   }
 

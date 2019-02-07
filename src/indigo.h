@@ -307,8 +307,7 @@ namespace tracy {
 	callVariants(final2Rev, allele2Rev, var);
       }
 	
-
-      if (c.annotatevariants) {
+      if ((c.annotatevariants) && (rs.filetype == 0)) {
 	now = boost::posix_time::second_clock::local_time();
 	std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Variant Annotation (" << c.annotate << ")" << std::endl;
 	std::string region = rs.chr + ":" + boost::lexical_cast<std::string>(rs.pos) + "-" + boost::lexical_cast<std::string>(rs.pos + rs.refslice.size());
