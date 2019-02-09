@@ -105,9 +105,15 @@ Reverse trace decomposition:
 
 `tracy decompose -f align -o reverse -a homo_sapiens -g hg38.fa.gz reverse.ab1`
 
-Merging of variant files:
+Left-alignment of InDels:
 
-`bcftools merge --force-samples forward.bcf reverse.bcf`
+`bcftools norm -O b -o forward.norm.bcf -f hg38.fa.gz forward.bcf`
+
+`bcftools norm -O b -o reverse.norm.bcf -f hg38.fa.gz reverse.bcf`
+
+Merging of normalized variant files:
+
+`bcftools merge --force-samples forward.norm.bcf reverse.norm.bcf`
 
 
 Trace assembly
