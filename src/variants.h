@@ -182,7 +182,7 @@ namespace tracy {
 
     // Add reference
     std::string refloc("##reference=");
-    refloc += c.genome.string();
+    refloc += c.genome.filename().string();
     bcf_hdr_append(hdr, refloc.c_str());
 
     // Add contig info

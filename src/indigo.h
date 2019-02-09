@@ -129,7 +129,7 @@ namespace tracy {
     
     // Check reference
     if (!(boost::filesystem::exists(c.genome) && boost::filesystem::is_regular_file(c.genome) && boost::filesystem::file_size(c.genome))) {
-      std::cerr << "Reference file is missing: " << c.genome.string() << std::endl;
+      std::cerr << "Reference file is missing: " << c.genome.filename().string() << std::endl;
       return 1;
     }
     

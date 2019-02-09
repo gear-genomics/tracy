@@ -46,8 +46,8 @@ namespace tracy
     rfile << "\"trimLeft\": " << c.trimLeft << ", ";
     rfile << "\"trimRight\": " << c.trimRight << ", ";
     rfile << "\"pratio\": " << c.pratio << ", ";
-    rfile << "\"genome\": \"" << c.genome.string() << "\", ";
-    rfile << "\"input\": \"" << c.ab.string() << "\"";
+    rfile << "\"genome\": \"" << c.genome.filename().string() << "\", ";
+    rfile << "\"input\": \"" << c.ab.filename().string() << "\"";
     rfile << "}}," << std::endl;
   }
 
