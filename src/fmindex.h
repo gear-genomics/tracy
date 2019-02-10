@@ -500,7 +500,7 @@ namespace tracy
       ri -= c.trimLeft;
       risize += c.trimLeft;
     }
-    if (risize + c.trimRight < rs.refslice.size()) risize += c.trimRight;
+    if (ri + risize + c.trimRight < rs.refslice.size()) risize += c.trimRight;
     int32_t oldlen = rs.refslice.size();
     rs.refslice = rs.refslice.substr(ri, risize);
     if (rs.forward) rs.pos += ri;
