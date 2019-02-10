@@ -49,19 +49,21 @@ namespace tracy
     bp.traceleft = true;
     bp.breakpoint = 0;
     uint32_t minWindow = 25;
-    for(uint32_t i = minWindow; i < sigratio.size() - minWindow; ++i) {
-      double leftSum = 0;
-      for(uint32_t k = i-minWindow; k < i; ++k) leftSum += sigratio[k];
-      double left = leftSum / (double) minWindow;
-      double rightSum = 0;
-      for(uint32_t k = i; k < i + minWindow; ++k) rightSum += sigratio[k];
-      double right = rightSum / (double) minWindow;
-      double diff = std::abs(right - left);
-      if (diff > bp.bestDiff) {
-	bp.breakpoint = i;
-	bp.bestDiff = diff;
-	if (left < right) bp.traceleft = false;
-	else bp.traceleft = true;
+    if (minWindow < sigratio.size()) {
+      for(uint32_t i = minWindow; i < sigratio.size() - minWindow; ++i) {
+	double leftSum = 0;
+	for(uint32_t k = i-minWindow; k < i; ++k) leftSum += sigratio[k];
+	double left = leftSum / (double) minWindow;
+	double rightSum = 0;
+	for(uint32_t k = i; k < i + minWindow; ++k) rightSum += sigratio[k];
+	double right = rightSum / (double) minWindow;
+	double diff = std::abs(right - left);
+	if (diff > bp.bestDiff) {
+	  bp.breakpoint = i;
+	  bp.bestDiff = diff;
+	  if (left < right) bp.traceleft = false;
+	  else bp.traceleft = true;
+	}
       }
     }
     bp.indelshift = true;

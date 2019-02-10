@@ -260,7 +260,7 @@ namespace tracy
     int32_t ncount = 0;
     for(uint16_t i = trimLeft; ((i < trimLeft + kmer) && (i < consensus.size())); ++i)
       if (consensus[i] == 'N') ++ncount;
-    for(uint16_t k = trimLeft + kmer; k < (consensus.size() - trimRight); ++k) {
+    for(uint16_t k = trimLeft + kmer; ((k < (consensus.size() - trimRight)) && (k < consensus.size())); ++k) {
       if (consensus[k-kmer] == 'N') --ncount;
       if (consensus[k] == 'N') ++ncount;
       if (ncount == 0) {
