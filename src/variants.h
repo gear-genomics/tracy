@@ -47,6 +47,15 @@ namespace tracy {
     }
   };
   
+
+  inline bool
+  strInclN(std::string const& ref) {
+    for(uint32_t i = 0; i < ref.size(); ++i) {
+      if ((ref[i] == 'n') || (ref[i] == 'N')) return true;
+    }
+    return false;
+  }
+
   
   inline void
   insertVariant(std::vector<Variant>& var, int32_t const pos, int32_t const bc, int32_t const gt, std::string const& chr, std::string const& ref, std::string const& alt) {
@@ -64,7 +73,7 @@ namespace tracy {
     } else {
       if (pos > 0) {
 	// Insert variant
-	var.push_back(Variant(pos, bc, gt, chr, ref, alt));
+	if (!strInclN(ref)) var.push_back(Variant(pos, bc, gt, chr, ref, alt));
       }
     }
   }
@@ -220,7 +229,9 @@ namespace tracy {
 	// Output main vcf fields
 	rec->rid = bcf_hdr_name2id(hdr, var[i].chr.c_str());
 	rec->pos = var[i].pos - 1;
-	rec->qual = (int) bc.estQual[var[i].basenum];
+	// For ALT alleles with Ns set quality to 0
+	if (strInclN(var[i].alt)) rec->qual = 0;
+	else rec->qual = (int) bc.estQual[var[i].basenum]; 
 	std::string id(var[i].id);
 	bcf_update_id(hdr, rec, id.c_str());
 	std::string alleles = var[i].ref + "," + var[i].alt;
