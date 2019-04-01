@@ -12,8 +12,6 @@ Installing Tracy
 
 The easiest way to get Tracy is to download a statically linked binary from the [Tracy release page](https://github.com/gear-genomics/tracy/releases) or to download Tracy from [Bioconda](https://anaconda.org/bioconda/tracy). Building from source is also possible:
 
-`apt-get install -y build-essential g++ cmake zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev`
-
 `git clone --recursive https://github.com/gear-genomics/tracy.git`
 
 `cd tracy/`
@@ -21,6 +19,16 @@ The easiest way to get Tracy is to download a statically linked binary from the 
 `make all`
 
 `make install`
+
+Tracy requires some system libraries such as bzip2, zlib and boost. For Ubuntu Linux you install these using:
+
+
+`apt-get install -y build-essential g++ cmake zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev`
+
+The Mac OSX versions of these packages are:
+
+`brew install zlib readline xz bzip2 gsl libtool pkg-config boost`
+
 
 Running Tracy
 -------------
