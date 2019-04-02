@@ -27,7 +27,13 @@ Tracy requires some system libraries such as bzip2, zlib and boost. For Ubuntu L
 
 The Mac OSX versions of these packages are:
 
-`brew install zlib readline xz bzip2 gsl libtool pkg-config boost`
+`brew install cmake zlib readline xz bzip2 gsl libtool pkg-config boost`
+
+For Mac OSX you also often need to set the library path to HTSlib.
+
+`cd tracy/`
+
+`export DYLD_LIBRARY_PATH=`pwd`/src/htslib/`
 
 
 Running Tracy
