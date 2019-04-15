@@ -345,7 +345,7 @@ readab(std::string const& filename, Trace& tr) {
       abi.push_back(ab);
       //std::cout << ab.key << "\t" << ab.name << "\t" << ab.number << "\t" << ab.etype << "\t" << ab.esize << "\t" << ab.nelements << "\t" << ab.dsize << "\t" << ab.doffset << std::endl;
     }
-
+    
     // Get what we need and dump the rest of this stupid format
     for(uint32_t i = 0; i < abi.size(); ++i) {
       int32_t ofs = i * esize + offset;

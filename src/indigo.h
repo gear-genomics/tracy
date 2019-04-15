@@ -154,6 +154,12 @@ namespace tracy {
       return -1;
     }
 
+    // Any basecalls
+    if (!tr.basecallpos.size()) {
+      std::cerr << "Trace file lacks basecalls!" << std::endl;
+      return -1;
+    }
+
     // Call bases
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
