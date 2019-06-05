@@ -93,6 +93,53 @@ namespace tracy {
     else rightTrim = 0;
   }
 
+
+  inline void
+  trimTrace(Trace const& tr, BaseCalls const& bc, uint32_t const trimLeft, uint32_t const trimRight, Trace& ntr, BaseCalls& nbc) {
+    typedef Trace::TMountains TMountains; 
+    typedef Trace::TValue TValue;
+
+    // Last basecall
+    uint32_t len = bc.primary.size() - trimRight;
+    
+    // Rewrite arrays
+    uint32_t bcpos = 0;
+    TValue idx = bc.bcPos[0];
+    ntr.traceACGT.resize(4, TMountains());
+    TValue leftOffset = tr.traceACGT[0].size();
+    TValue rightOffset = tr.traceACGT[0].size();
+    TValue newTracePos = 0;
+    for(TValue tracePos = 0; tracePos < (TValue) tr.traceACGT[0].size(); ++tracePos) {
+      if (idx == tracePos) {
+	if ((tracePos >= leftOffset) && (tracePos <= rightOffset)) {
+	  nbc.bcPos.push_back(newTracePos);
+	  nbc.primary.push_back(bc.primary[bcpos]);
+	  nbc.secondary.push_back(bc.secondary[bcpos]);
+	  nbc.consensus.push_back(bc.consensus[bcpos]);
+	}
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+	if (bcpos == trimLeft) {
+	  TValue prevVal = 0;
+	  if (bcpos > 0) prevVal = bc.bcPos[bcpos - 1];
+	  leftOffset = (TValue) ((prevVal + idx) / 2);
+	}
+	if (bcpos + 1 == len) {
+	  TValue nextVal = tr.traceACGT[0].size();
+	  if (bcpos + 1 < bc.primary.size()) nextVal = bc.bcPos[bcpos + 1];
+	  rightOffset = (TValue) ((idx + nextVal) / 2);
+	}
+      }
+      if ((tracePos >= leftOffset) && (tracePos <= rightOffset)) {
+	ntr.traceACGT[0].push_back(tr.traceACGT[0][tracePos]);        
+	ntr.traceACGT[1].push_back(tr.traceACGT[1][tracePos]);
+	ntr.traceACGT[2].push_back(tr.traceACGT[2][tracePos]);
+	ntr.traceACGT[3].push_back(tr.traceACGT[3][tracePos]);
+	ntr.qual.push_back(tr.qual[tracePos]);
+	++newTracePos;
+      }
+    }
+  }
+
 }
 
 #endif

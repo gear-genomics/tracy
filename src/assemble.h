@@ -186,12 +186,15 @@ namespace tracy {
 	reverseProfile(ptrace, prevtrace);
 	int32_t gsRev = gotohScore(prevtrace, prefslice, semiglobal, c.aliscore);
 
+	// Debug
+	//std::cerr << gsFwd << ',' << gsRev << ',' << c.ab[i] << std::endl;
+	
 	// Final score
 	double seqsize = ptrace.shape()[1];
 	double scoreThreshold = seqsize * 0.6 * c.aliscore.match + seqsize * 0.4 * c.aliscore.mismatch; // 60% matches
 	if ((gsFwd > scoreThreshold) || (gsRev > scoreThreshold)) {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
-	  scoreIdx.push_back(std::make_pair(-bestScore, traceProfiles.size()));
+	  scoreIdx.push_back(std::make_pair(-bestScore, i));
 	  if (gsFwd >= gsRev) {
 	    traceProfiles.push_back(ptrace);
 	    sequences.push_back(primarySeq);
@@ -202,6 +205,9 @@ namespace tracy {
 	  }
 	} else {
 	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to the reference! Trace file will be excluded!" << std::endl;
+	  // Push-back empty trace to keep the input file order
+	  TProfile empty;
+	  traceProfiles.push_back(empty);
 	}
       }
 
@@ -229,6 +235,30 @@ namespace tracy {
 	std::string cs;
 	consensus(c, align, gapped, cs);
 
+	// Create gapped traces
+	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
+	  Trace tr;
+	  if (!readab(c.ab[scoreIdx[0].second].string(), tr)) return -1;
+
+	  // Call bases
+	  BaseCalls bc;
+	  basecall(tr, bc, c.pratio);
+
+	  // Get trim sizes
+	  uint32_t trimLeft = 0;
+	  uint32_t trimRight = 0;
+	  trimTrace(c, bc, trimLeft, trimRight);
+
+	  // Hard trim of the trace data structures
+	  BaseCalls nbc;
+	  Trace ntr;
+	  trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
+
+	  // Debug
+	  //traceTxtOut("debug.trimmed.trace.txt", nbc, ntr);
+	  //alignmentTracePadding(final, tr, bc, i+1, ntr, nbc);
+	}
+	
 	// Output vertical alignment
 	boost::iostreams::filtering_ostream rcfile;
 	rcfile.push(boost::iostreams::gzip_compressor());

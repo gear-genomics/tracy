@@ -23,6 +23,9 @@ Contact: Tobias Rausch (rausch@embl.de)
 #define JSON_H
 
 #include <boost/progress.hpp>
+
+#include <nlohmann/json.hpp>
+
 #include "abif.h"
 #include "fmindex.h"
 #include "version.h"
@@ -453,6 +456,8 @@ namespace tracy
     }
   }
 
+
+  
 }
 
 #endif
