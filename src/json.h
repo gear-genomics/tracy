@@ -24,8 +24,6 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 #include <boost/progress.hpp>
 
-#include <nlohmann/json.hpp>
-
 #include "abif.h"
 #include "fmindex.h"
 #include "version.h"
@@ -212,6 +210,90 @@ namespace tracy
     rfile.close();  
   }
 
+
+  template<typename TOFStream, typename TAlign>
+  inline void
+  msa(TOFStream& rfile, TAlign const& align) {
+    rfile << "\"msa\": {" << std::endl;
+    for(uint32_t i = 0; i<align.shape()[0]; ++i) {
+      if (i!=0) rfile << "," << std::endl;
+      rfile << "\"altalign\": \"";
+      for(uint32_t j = 0; j<align.shape()[1]; ++j) rfile << align[i][j];
+      rfile << "\"" << std::endl;
+    }
+    rfile << "}," << std::endl;
+  }
+  
+  template<typename TOFStream>
+  inline void
+  assemblyTrace(TOFStream& rfile, BaseCalls& bc, Trace const& tr, std::string const& traceFileName) {
+    typedef Trace::TValue TValue;
+    
+    // Output trace
+    rfile << "{" << std::endl;
+    rfile << "\"traceFileName\": \"" << traceFileName << "\"," << std::endl;
+    rfile << "\"pos\": [";
+    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+      if (i!=0) rfile << ", ";
+      rfile << (i+1);
+    }
+    rfile << "]," << std::endl;
+    rfile << "\"peakA\": [";
+    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[0][i];
+    }
+    rfile << "]," << std::endl;
+    rfile << "\"peakC\": [";
+    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[1][i];
+    }
+    rfile << "]," << std::endl;
+    rfile << "\"peakG\": [";
+    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[2][i];
+    }
+    rfile << "]," << std::endl;
+    rfile << "\"peakT\": [";
+    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
+      if (i!=0) rfile << ", ";
+      rfile << tr.traceACGT[3][i];
+    }
+    rfile << "]," << std::endl;
+    
+    // Basecalls
+    uint32_t bcpos = 0;
+    TValue idx = bc.bcPos[0];
+    rfile << "\"basecallPos\": [";
+    for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
+      if (idx == i) {
+	if (i!=bc.bcPos[0]) rfile << ", ";
+	rfile << (i+1);
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+      }
+    }
+    rfile << "]," << std::endl;
+    bcpos = 0;
+    idx = bc.bcPos[0];
+    uint32_t gaplessbcpos = 0;
+    rfile << "\"basecalls\": {";
+    for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
+      if (idx == i) {
+	if (i!=bc.bcPos[0]) rfile << ", ";
+	if (bc.primary[bcpos] != '-') {
+	  rfile << "\"" << (i+1) << "\"" << ":" << "\"" << (++gaplessbcpos) << ":" <<  bc.primary[bcpos];
+	  if (bc.primary[bcpos] != bc.secondary[bcpos]) rfile << "|" << bc.secondary[bcpos];
+	  rfile << "\"";
+	} else rfile << "\"" << (i+1) << "\"" << ":" << "\"-\"";
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+      }
+    }
+    rfile << "}" << std::endl;
+    rfile << "}" << std::endl;
+  }
+
   inline std::pair<int32_t, int32_t>
   xWindowViewport(BaseCalls const& bc, int32_t const pos) {
     int32_t lb = bc.bcPos[pos] + 1;
@@ -351,7 +433,7 @@ namespace tracy
   
   template<typename TAlign>
   inline void
-  alignmentTracePadding(TAlign const& align, Trace const& tr, BaseCalls const& bc, Trace& ntr, BaseCalls& nbc) {
+    alignmentTracePadding(TAlign const& align, Trace const& tr, BaseCalls const& bc, uint32_t const alignRow, Trace& ntr, BaseCalls& nbc) {
     typedef Trace::TMountains TMountains; 
     typedef Trace::TValue TValue;
     typedef std::vector<uint32_t> TVecVal;
@@ -372,7 +454,7 @@ namespace tracy
     bool ingap = false;
     uint32_t gapsize = 0;    
     for(uint32_t j = 0; j<align.shape()[1]; ++j) {
-      if (align[0][j] == '-') {
+      if (align[alignRow][j] == '-') {
 	if (ingap) ++gapsize;
 	else {
 	  gapsize = 1;
@@ -456,7 +538,11 @@ namespace tracy
     }
   }
 
-
+  template<typename TAlign>
+  inline void
+  alignmentTracePadding(TAlign const& align, Trace const& tr, BaseCalls const& bc, Trace& ntr, BaseCalls& nbc) {
+    alignmentTracePadding(align, tr, bc, 0, ntr, nbc);
+  }
   
 }
 

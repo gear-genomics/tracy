@@ -43,6 +43,7 @@ namespace tracy {
     DnaScore<int32_t> aliscore;
     boost::filesystem::path reference;
     boost::filesystem::path alignment;
+    boost::filesystem::path outfile;
     std::vector<boost::filesystem::path> ab;
   };
 
@@ -91,6 +92,7 @@ namespace tracy {
     boost::program_options::options_description otp("Output options");
     otp.add_options()
       ("alignment,a", boost::program_options::value<boost::filesystem::path>(&c.alignment)->default_value("al.fa.gz"), "vertical alignment")
+      ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -196,9 +198,11 @@ namespace tracy {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
 	  scoreIdx.push_back(std::make_pair(-bestScore, i));
 	  if (gsFwd >= gsRev) {
+	    std::cerr << "Forward alignment" << std::endl;
 	    traceProfiles.push_back(ptrace);
 	    sequences.push_back(primarySeq);
 	  } else {
+	    std::cerr << "Reverse alignment" << std::endl;
 	    traceProfiles.push_back(prevtrace);
 	    reverseComplement(primarySeq);
 	    sequences.push_back(primarySeq);
@@ -235,8 +239,14 @@ namespace tracy {
 	std::string cs;
 	consensus(c, align, gapped, cs);
 
-	// Create gapped traces
+	// Output gapped traces
+	std::ofstream rfile(c.outfile.c_str());
+	rfile << "{" << std::endl;
+	msa(rfile, align);
+	rfile << "\"gappedTraces\": " << std::endl;
+	rfile << "[" << std::endl;
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
+	  if (i!=0) rfile << ", ";
 	  Trace tr;
 	  if (!readab(c.ab[scoreIdx[0].second].string(), tr)) return -1;
 
@@ -256,8 +266,18 @@ namespace tracy {
 
 	  // Debug
 	  //traceTxtOut("debug.trimmed.trace.txt", nbc, ntr);
-	  //alignmentTracePadding(final, tr, bc, i+1, ntr, nbc);
+
+	  // Trace padding with gaps
+	  BaseCalls padbc;
+	  Trace padtr;
+	  alignmentTracePadding(align, ntr, nbc, i+1, padtr, padbc);
+
+	  // Append gapped trace to output
+	  assemblyTrace(rfile, padbc, padtr, c.ab[scoreIdx[i].second].stem().string());
 	}
+	rfile << "]" << std::endl;
+	rfile << "}" << std::endl;
+	rfile.close();
 	
 	// Output vertical alignment
 	boost::iostreams::filtering_ostream rcfile;

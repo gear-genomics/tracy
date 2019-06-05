@@ -116,6 +116,7 @@ namespace tracy {
 	  nbc.primary.push_back(bc.primary[bcpos]);
 	  nbc.secondary.push_back(bc.secondary[bcpos]);
 	  nbc.consensus.push_back(bc.consensus[bcpos]);
+	  ntr.qual.push_back(tr.qual[bcpos]);
 	}
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
 	if (bcpos == trimLeft) {
@@ -134,7 +135,6 @@ namespace tracy {
 	ntr.traceACGT[1].push_back(tr.traceACGT[1][tracePos]);
 	ntr.traceACGT[2].push_back(tr.traceACGT[2][tracePos]);
 	ntr.traceACGT[3].push_back(tr.traceACGT[3][tracePos]);
-	ntr.qual.push_back(tr.qual[tracePos]);
 	++newTracePos;
       }
     }
