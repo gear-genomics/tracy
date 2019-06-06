@@ -239,16 +239,26 @@ namespace tracy {
 	std::string cs;
 	consensus(c, align, gapped, cs);
 
-	// Output gapped traces
+	// Output MSA and gapped traces
 	std::ofstream rfile(c.outfile.c_str());
 	rfile << "{" << std::endl;
-	msa(rfile, align);
+	rfile << "\"gapFreeConsensus\": \"" << cs << "\"," << std::endl;
+	rfile << "\"gappedConsensus\": \"" << gapped << "\"," << std::endl;
+	rfile << "\"msa\": " << std::endl;
+	rfile << "[" << std::endl;
+	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
+	  if (i!=0) rfile << ',' << std::endl;
+	  alignedTraceByRow(rfile, align, scoreIdx.size()-i-1, c.ab[scoreIdx[i].second].stem().string(), false);
+	}
+	rfile << ',' << std::endl;
+	alignedTraceByRow(rfile, align, scoreIdx.size(), "", true);
+	rfile << "]," << std::endl;
 	rfile << "\"gappedTraces\": " << std::endl;
 	rfile << "[" << std::endl;
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
 	  if (i!=0) rfile << ", ";
 	  Trace tr;
-	  if (!readab(c.ab[scoreIdx[0].second].string(), tr)) return -1;
+	  if (!readab(c.ab[scoreIdx[i].second].string(), tr)) return -1;
 
 	  // Call bases
 	  BaseCalls bc;
@@ -265,12 +275,13 @@ namespace tracy {
 	  trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
 
 	  // Debug
-	  //traceTxtOut("debug.trimmed.trace.txt", nbc, ntr);
+	  std::string filename = c.ab[scoreIdx[i].second].stem().string() + ".txt";
+	  traceTxtOut(filename, nbc, ntr);
 
 	  // Trace padding with gaps
 	  BaseCalls padbc;
 	  Trace padtr;
-	  alignmentTracePadding(align, ntr, nbc, i+1, padtr, padbc);
+	  alignmentTracePadding(align, ntr, nbc, scoreIdx.size()-i-1, padtr, padbc);
 
 	  // Append gapped trace to output
 	  assemblyTrace(rfile, padbc, padtr, c.ab[scoreIdx[i].second].stem().string());

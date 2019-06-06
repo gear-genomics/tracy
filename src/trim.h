@@ -107,6 +107,7 @@ namespace tracy {
     TValue idx = bc.bcPos[0];
     ntr.traceACGT.resize(4, TMountains());
     TValue leftOffset = tr.traceACGT[0].size();
+    if (trimLeft == 0) leftOffset = 0;
     TValue rightOffset = tr.traceACGT[0].size();
     TValue newTracePos = 0;
     for(TValue tracePos = 0; tracePos < (TValue) tr.traceACGT[0].size(); ++tracePos) {

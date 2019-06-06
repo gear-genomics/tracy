@@ -213,15 +213,15 @@ namespace tracy
 
   template<typename TOFStream, typename TAlign>
   inline void
-  msa(TOFStream& rfile, TAlign const& align) {
-    rfile << "\"msa\": {" << std::endl;
-    for(uint32_t i = 0; i<align.shape()[0]; ++i) {
-      if (i!=0) rfile << "," << std::endl;
-      rfile << "\"altalign\": \"";
-      for(uint32_t j = 0; j<align.shape()[1]; ++j) rfile << align[i][j];
-      rfile << "\"" << std::endl;
-    }
-    rfile << "}," << std::endl;
+  alignedTraceByRow(TOFStream& rfile, TAlign const& align, uint32_t const row, std::string const& traceFileName, bool const ref) {
+    rfile << "{" << std::endl;
+    if (ref) rfile << "\"reference\": true," << std::endl;
+    else rfile << "\"reference\": false," << std::endl;
+    rfile << "\"traceFileName\": \"" << traceFileName << "\"," << std::endl;
+    rfile << "\"align\": \"";
+    for(uint32_t j = 0; j<align.shape()[1]; ++j) rfile << align[row][j];
+    rfile << "\"" << std::endl;
+    rfile << "}" << std::endl;
   }
   
   template<typename TOFStream>
