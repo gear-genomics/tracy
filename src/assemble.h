@@ -140,6 +140,12 @@ namespace tracy {
     for(int i=0; i<argc; ++i) { std::cout << argv[i] << ' '; }
     std::cout << std::endl;
 
+    // Multiple sequence alignment
+    typedef boost::multi_array<char, 2> TAlign;
+    TAlign align;
+    std::string gapped;
+    std::string cs;
+    
     // Reference-guided
     if (c.hasReference) {
       // Load reference
@@ -220,8 +226,6 @@ namespace tracy {
 
       // Align iteratively
       if (scoreIdx.size()) {
-	typedef boost::multi_array<char, 2> TAlign;
-	TAlign align;
 	AlignConfig<true, false> semiglobal;
 	gotoh(traceProfiles[scoreIdx[0].second], prefslice, align, semiglobal, c.aliscore);
 	for(uint32_t i = 1; i < scoreIdx.size(); ++i) {
@@ -235,8 +239,6 @@ namespace tracy {
 	}
 
 	// Consensus calling
-	std::string gapped;
-	std::string cs;
 	consensus(c, align, gapped, cs);
 
 	// Output MSA and gapped traces
@@ -289,21 +291,10 @@ namespace tracy {
 	rfile << "]" << std::endl;
 	rfile << "}" << std::endl;
 	rfile.close();
-	
-	// Output vertical alignment
-	boost::iostreams::filtering_ostream rcfile;
-	rcfile.push(boost::iostreams::gzip_compressor());
-	rcfile.push(boost::iostreams::file_sink(c.alignment.c_str(), std::ios_base::out | std::ios_base::binary));
-	typedef typename TAlign::index TAIndex;
-	for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
-	  for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
-	    rcfile << align[i][j];
-	  }
-	  rcfile << '|' << gapped[j] << std::endl;
-	}
-	rcfile.pop();
       }
     } else {
+      // De-novo assembly
+      
       // Load *.ab1 files
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
@@ -335,6 +326,19 @@ namespace tracy {
       std::string consensus;
       msa(c, traceSet, consensus);
     }
+
+    // Output vertical alignment
+    boost::iostreams::filtering_ostream rcfile;
+    rcfile.push(boost::iostreams::gzip_compressor());
+    rcfile.push(boost::iostreams::file_sink(c.alignment.c_str(), std::ios_base::out | std::ios_base::binary));
+    typedef typename TAlign::index TAIndex;
+    for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+      for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	rcfile << align[i][j];
+      }
+      rcfile << '|' << gapped[j] << std::endl;
+    }
+    rcfile.pop();
     
     // Done
     now = boost::posix_time::second_clock::local_time();
