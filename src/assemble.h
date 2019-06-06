@@ -268,10 +268,10 @@ namespace tracy {
 	rfile << "[" << std::endl;
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
 	  if (i!=0) rfile << ',' << std::endl;
-	  alignedTraceByRow(rfile, align, scoreIdx.size()-i-1, c.ab[scoreIdx[i].idx].stem().string(), false);
+	  alignedTraceByRow(rfile, align, scoreIdx.size()-i-1, c.ab[scoreIdx[i].idx].stem().string(), scoreIdx[i].forward, false);
 	}
 	rfile << ',' << std::endl;
-	alignedTraceByRow(rfile, align, scoreIdx.size(), "", true);
+	alignedTraceByRow(rfile, align, scoreIdx.size(), "", true, true);
 	rfile << "]," << std::endl;
 	rfile << "\"gappedTraces\": " << std::endl;
 	rfile << "[" << std::endl;
@@ -294,14 +294,21 @@ namespace tracy {
 	  Trace ntr;
 	  trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
 
-	  // Debug
-	  //std::string filename = c.ab[scoreIdx[i].idx].stem().string() + ".txt";
-	  //traceTxtOut(filename, nbc, ntr);
-
-	  // Trace padding with gaps
+	  // Reverse complement trace if necessary
 	  BaseCalls padbc;
 	  Trace padtr;
-	  alignmentTracePadding(align, ntr, nbc, scoreIdx.size()-i-1, padtr, padbc);
+	  if (scoreIdx[i].forward) {
+	    // Debug
+	    //std::string filename = c.ab[scoreIdx[i].idx].stem().string() + ".txt";
+	    //traceTxtOut(filename, nbc, ntr);
+	    alignmentTracePadding(align, ntr, nbc, scoreIdx.size()-i-1, padtr, padbc);
+	  } else {
+	    BaseCalls tbc;
+	    Trace ttr;
+	    // Reverese complement
+	    reverseComplementTrace(ntr, nbc, ttr, tbc);
+	    alignmentTracePadding(align, ttr, tbc, scoreIdx.size()-i-1, padtr, padbc);
+	  }
 
 	  // Append gapped trace to output
 	  assemblyTrace(rfile, padbc, padtr, c.ab[scoreIdx[i].idx].stem().string());

@@ -213,10 +213,12 @@ namespace tracy
 
   template<typename TOFStream, typename TAlign>
   inline void
-  alignedTraceByRow(TOFStream& rfile, TAlign const& align, uint32_t const row, std::string const& traceFileName, bool const ref) {
+  alignedTraceByRow(TOFStream& rfile, TAlign const& align, uint32_t const row, std::string const& traceFileName, bool const forward, bool const ref) {
     rfile << "{" << std::endl;
     if (ref) rfile << "\"reference\": true," << std::endl;
     else rfile << "\"reference\": false," << std::endl;
+    if (forward) rfile << "\"forward\": true," << std::endl;
+    else rfile << "\"forward\": false," << std::endl;
     rfile << "\"traceFileName\": \"" << traceFileName << "\"," << std::endl;
     rfile << "\"align\": \"";
     for(uint32_t j = 0; j<align.shape()[1]; ++j) rfile << align[row][j];

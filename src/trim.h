@@ -141,6 +141,56 @@ namespace tracy {
     }
   }
 
+
+  inline char
+  reverseComplement(char const c) {
+    switch (c) {
+    case 'A': return 'T';
+    case 'C': return 'G';
+    case 'G': return 'C';
+    case 'T': return 'A';
+    case 'N': return 'N';
+    case 'H': return 'D';
+    case 'V': return 'B';
+    case 'M': return 'K';
+    case 'Y': return 'R';
+    case 'D': return 'H';
+    case 'B': return 'V';
+    case 'K': return 'M';
+    case 'R': return 'Y';
+    case 'U': return 'A';
+    case 'S': return 'S';
+    case 'W': return 'W';
+    default: return c;
+    }
+  }
+  
+  inline void
+  reverseComplementTrace(Trace const& tr, BaseCalls const& bc, Trace& ntr, BaseCalls& nbc) {
+    typedef Trace::TMountains TMountains; 
+    typedef Trace::TValue TValue;
+
+    // Rewrite arrays
+    uint32_t bcpos = bc.bcPos.size()-1;
+    TValue idx = bc.bcPos[bcpos];
+    ntr.traceACGT.resize(4, TMountains());
+    TValue newTracePos = 0;
+    for(TValue tracePos = tr.traceACGT[0].size(); tracePos > 0; --tracePos, ++newTracePos) {
+      if (idx == tracePos - 1) {
+	nbc.bcPos.push_back(newTracePos);
+	nbc.primary.push_back(reverseComplement(bc.primary[bcpos]));
+	nbc.secondary.push_back(reverseComplement(bc.secondary[bcpos]));
+	nbc.consensus.push_back(reverseComplement(bc.consensus[bcpos]));
+	ntr.qual.push_back(tr.qual[bcpos]);
+	if (bcpos > 0) idx = bc.bcPos[--bcpos];
+      }
+      ntr.traceACGT[3].push_back(tr.traceACGT[0][tracePos-1]);        
+      ntr.traceACGT[2].push_back(tr.traceACGT[1][tracePos-1]);
+      ntr.traceACGT[1].push_back(tr.traceACGT[2][tracePos-1]);
+      ntr.traceACGT[0].push_back(tr.traceACGT[3][tracePos-1]);
+    }
+  }
+
 }
 
 #endif
