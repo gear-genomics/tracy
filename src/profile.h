@@ -37,7 +37,11 @@ namespace tracy
       for(uint32_t k = 0; k<4; ++k) totalsig += tr.traceACGT[k][bc.bcPos[j]];
       p[4][j] = 0;
       p[5][j] = 0;
-      for(uint32_t k = 0; k<4; ++k) p[k][j] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+      if (totalsig == 0) {
+	for(uint32_t k = 0; k<4; ++k) p[k][j] = 0.25;
+      } else {
+	for(uint32_t k = 0; k<4; ++k) p[k][j] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+      }
     }
   }
   
@@ -53,7 +57,11 @@ namespace tracy
 	for(uint32_t k = 0; k<4; ++k) totalsig += tr.traceACGT[k][bc.bcPos[j]];
 	p[4][j-trimleft] = 0;
 	p[5][j-trimleft] = 0;
-	for(uint32_t k = 0; k<4; ++k) p[k][j-trimleft] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+	if (totalsig == 0) {
+	  for(uint32_t k = 0; k<4; ++k) p[k][j] = 0.25;
+	} else {
+	  for(uint32_t k = 0; k<4; ++k) p[k][j-trimleft] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+	}
       }
     }
   }

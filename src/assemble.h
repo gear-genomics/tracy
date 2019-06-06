@@ -185,6 +185,8 @@ namespace tracy {
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align ab1 files" << std::endl;
       for(uint32_t i = 0; i < c.ab.size(); ++i) {
+	std::cout << "Processing " << c.ab[i].string() << std::endl;
+	
 	Trace tr;
 	if (!readab(c.ab[i].string(), tr)) return -1;
 
@@ -211,21 +213,16 @@ namespace tracy {
 	reverseComplementProfile(ptrace, prevtrace);
 	int32_t gsRev = gotohScore(prevtrace, prefslice, semiglobal, c.aliscore);
 
-	// Debug
-	std::cerr << gsFwd << ',' << gsRev << ',' << c.ab[i] << std::endl;
-	
 	// Final score
 	double seqsize = ptrace.shape()[1];
 	double scoreThreshold = seqsize * 0.6 * c.aliscore.match + seqsize * 0.4 * c.aliscore.mismatch; // 60% matches
 	if ((gsFwd > scoreThreshold) || (gsRev > scoreThreshold)) {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
 	  if (gsFwd >= gsRev) {
-	    std::cerr << "Forward alignment" << std::endl;
 	    scoreIdx.push_back(TraceScore(bestScore, i, true));
 	    traceProfiles.push_back(ptrace);
 	    sequences.push_back(primarySeq);
 	  } else {
-	    std::cerr << "Reverse alignment" << std::endl;
 	    scoreIdx.push_back(TraceScore(bestScore, i, false));
 	    traceProfiles.push_back(prevtrace);
 	    reverseComplement(primarySeq);
