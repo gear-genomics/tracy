@@ -198,11 +198,11 @@ namespace tracy {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
 	  scoreIdx.push_back(std::make_pair(-bestScore, i));
 	  if (gsFwd >= gsRev) {
-	    std::cerr << "Forward alignment" << std::endl;
+	    //std::cerr << "Forward alignment" << std::endl;
 	    traceProfiles.push_back(ptrace);
 	    sequences.push_back(primarySeq);
 	  } else {
-	    std::cerr << "Reverse alignment" << std::endl;
+	    //std::cerr << "Reverse alignment" << std::endl;
 	    traceProfiles.push_back(prevtrace);
 	    reverseComplement(primarySeq);
 	    sequences.push_back(primarySeq);
@@ -275,8 +275,8 @@ namespace tracy {
 	  trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
 
 	  // Debug
-	  std::string filename = c.ab[scoreIdx[i].second].stem().string() + ".txt";
-	  traceTxtOut(filename, nbc, ntr);
+	  //std::string filename = c.ab[scoreIdx[i].second].stem().string() + ".txt";
+	  //traceTxtOut(filename, nbc, ntr);
 
 	  // Trace padding with gaps
 	  BaseCalls padbc;
