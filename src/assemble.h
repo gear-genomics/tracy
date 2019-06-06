@@ -189,13 +189,13 @@ namespace tracy {
 	AlignConfig<true, false> semiglobal;
 	int32_t gsFwd = gotohScore(ptrace, prefslice, semiglobal, c.aliscore);
 
-	// Reverse Alignment
+	// Reverse complement profile
 	TProfile prevtrace;
-	reverseProfile(ptrace, prevtrace);
+	reverseComplementProfile(ptrace, prevtrace);
 	int32_t gsRev = gotohScore(prevtrace, prefslice, semiglobal, c.aliscore);
 
 	// Debug
-	//std::cerr << gsFwd << ',' << gsRev << ',' << c.ab[i] << std::endl;
+	std::cerr << gsFwd << ',' << gsRev << ',' << c.ab[i] << std::endl;
 	
 	// Final score
 	double seqsize = ptrace.shape()[1];
@@ -204,11 +204,11 @@ namespace tracy {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
 	  scoreIdx.push_back(std::make_pair(-bestScore, i));
 	  if (gsFwd >= gsRev) {
-	    //std::cerr << "Forward alignment" << std::endl;
+	    std::cerr << "Forward alignment" << std::endl;
 	    traceProfiles.push_back(ptrace);
 	    sequences.push_back(primarySeq);
 	  } else {
-	    //std::cerr << "Reverse alignment" << std::endl;
+	    std::cerr << "Reverse alignment" << std::endl;
 	    traceProfiles.push_back(prevtrace);
 	    reverseComplement(primarySeq);
 	    sequences.push_back(primarySeq);
