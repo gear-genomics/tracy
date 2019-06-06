@@ -47,6 +47,24 @@ namespace tracy {
     std::vector<boost::filesystem::path> ab;
   };
 
+
+  struct TraceScore {
+    int32_t score;
+    int32_t idx;
+    bool forward;
+
+    TraceScore(int32_t const s, int32_t const i, bool const f) : score(s), idx(i), forward(f) {}
+  };
+
+
+  template<typename TTraceScore>
+  struct SortTraceScore : public std::binary_function<TTraceScore, TTraceScore, bool>
+  {
+    inline bool operator()(TTraceScore const& ts1, TTraceScore const& ts2) {
+      return ((ts1.score > ts2.score) || ((ts1.score == ts2.score) && (ts1.idx < ts2.idx)));
+    }
+  };
+  
   struct SequenceSegment {
     std::string seq;
     int32_t trimLeft;
@@ -160,8 +178,7 @@ namespace tracy {
       
       // Traces and alignment score objects
       std::vector<TProfile> traceProfiles;
-      typedef std::pair<int32_t, int32_t> TScoreIdx;
-      std::vector<TScoreIdx> scoreIdx;
+      std::vector<TraceScore> scoreIdx;
       std::vector<std::string> sequences;
       
       // Load *.ab1 files
@@ -202,13 +219,14 @@ namespace tracy {
 	double scoreThreshold = seqsize * 0.6 * c.aliscore.match + seqsize * 0.4 * c.aliscore.mismatch; // 60% matches
 	if ((gsFwd > scoreThreshold) || (gsRev > scoreThreshold)) {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
-	  scoreIdx.push_back(std::make_pair(-bestScore, i));
 	  if (gsFwd >= gsRev) {
 	    std::cerr << "Forward alignment" << std::endl;
+	    scoreIdx.push_back(TraceScore(bestScore, i, true));
 	    traceProfiles.push_back(ptrace);
 	    sequences.push_back(primarySeq);
 	  } else {
 	    std::cerr << "Reverse alignment" << std::endl;
+	    scoreIdx.push_back(TraceScore(bestScore, i, false));
 	    traceProfiles.push_back(prevtrace);
 	    reverseComplement(primarySeq);
 	    sequences.push_back(primarySeq);
@@ -222,17 +240,17 @@ namespace tracy {
       }
 
       // Sort score
-      std::sort(scoreIdx.begin(), scoreIdx.end());
+      std::sort(scoreIdx.begin(), scoreIdx.end(), SortTraceScore<TraceScore>());
 
       // Align iteratively
       if (scoreIdx.size()) {
 	AlignConfig<true, false> semiglobal;
-	gotoh(traceProfiles[scoreIdx[0].second], prefslice, align, semiglobal, c.aliscore);
+	gotoh(traceProfiles[scoreIdx[0].idx], prefslice, align, semiglobal, c.aliscore);
 	for(uint32_t i = 1; i < scoreIdx.size(); ++i) {
 	  TAlign alignSeq;
-	  alignSeq.resize(boost::extents[1][sequences[scoreIdx[i].second].size()]);
+	  alignSeq.resize(boost::extents[1][sequences[scoreIdx[i].idx].size()]);
 	  uint32_t ind = 0;
-	  for(typename std::string::const_iterator str = sequences[scoreIdx[i].second].begin(); str != sequences[scoreIdx[i].second].end(); ++str) alignSeq[0][ind++] = *str;
+	  for(typename std::string::const_iterator str = sequences[scoreIdx[i].idx].begin(); str != sequences[scoreIdx[i].idx].end(); ++str) alignSeq[0][ind++] = *str;
 	  TAlign alignNew;	  
 	  gotoh(alignSeq, align, alignNew, semiglobal, c.aliscore);
 	  overwriteArray(alignNew, align);
@@ -250,7 +268,7 @@ namespace tracy {
 	rfile << "[" << std::endl;
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
 	  if (i!=0) rfile << ',' << std::endl;
-	  alignedTraceByRow(rfile, align, scoreIdx.size()-i-1, c.ab[scoreIdx[i].second].stem().string(), false);
+	  alignedTraceByRow(rfile, align, scoreIdx.size()-i-1, c.ab[scoreIdx[i].idx].stem().string(), false);
 	}
 	rfile << ',' << std::endl;
 	alignedTraceByRow(rfile, align, scoreIdx.size(), "", true);
@@ -260,7 +278,7 @@ namespace tracy {
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
 	  if (i!=0) rfile << ", ";
 	  Trace tr;
-	  if (!readab(c.ab[scoreIdx[i].second].string(), tr)) return -1;
+	  if (!readab(c.ab[scoreIdx[i].idx].string(), tr)) return -1;
 
 	  // Call bases
 	  BaseCalls bc;
@@ -277,7 +295,7 @@ namespace tracy {
 	  trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
 
 	  // Debug
-	  //std::string filename = c.ab[scoreIdx[i].second].stem().string() + ".txt";
+	  //std::string filename = c.ab[scoreIdx[i].idx].stem().string() + ".txt";
 	  //traceTxtOut(filename, nbc, ntr);
 
 	  // Trace padding with gaps
@@ -286,7 +304,7 @@ namespace tracy {
 	  alignmentTracePadding(align, ntr, nbc, scoreIdx.size()-i-1, padtr, padbc);
 
 	  // Append gapped trace to output
-	  assemblyTrace(rfile, padbc, padtr, c.ab[scoreIdx[i].second].stem().string());
+	  assemblyTrace(rfile, padbc, padtr, c.ab[scoreIdx[i].idx].stem().string());
 	}
 	rfile << "]" << std::endl;
 	rfile << "}" << std::endl;
