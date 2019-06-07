@@ -40,10 +40,10 @@ namespace tracy {
     float pratio;
     float trimStringency;
     float fractionCalled;
+    std::string outprefix;
     DnaScore<int32_t> aliscore;
     boost::filesystem::path reference;
     boost::filesystem::path alignment;
-    boost::filesystem::path outfile;
     std::vector<boost::filesystem::path> ab;
   };
 
@@ -97,6 +97,7 @@ namespace tracy {
       ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9]")
       ("called,d", boost::program_options::value<float>(&c.fractionCalled)->default_value(0.1), "fraction of traces required for consensus")
       ("reference,r", boost::program_options::value<boost::filesystem::path>(&c.reference), "reference-guided assembly (optional)")
+      ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
       ;
 
     boost::program_options::options_description alignment("Alignment scoring options");
@@ -105,12 +106,6 @@ namespace tracy {
       ("gapext,e", boost::program_options::value<int32_t>(&c.gapext)->default_value(-4), "gap extension")
       ("match,m", boost::program_options::value<int32_t>(&c.match)->default_value(3), "match")
       ("mismatch,n", boost::program_options::value<int32_t>(&c.mismatch)->default_value(-5), "mismatch")
-      ;
-    
-    boost::program_options::options_description otp("Output options");
-    otp.add_options()
-      ("alignment,a", boost::program_options::value<boost::filesystem::path>(&c.alignment)->default_value("al.fa.gz"), "vertical alignment")
-      ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -122,9 +117,9 @@ namespace tracy {
     pos_args.add("input-file", -1);
     
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(alignment).add(otp).add(hidden);
+    cmdline_options.add(generic).add(alignment).add(hidden);
     boost::program_options::options_description visible_options;
-    visible_options.add(generic).add(alignment).add(otp);
+    visible_options.add(generic).add(alignment);
     boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(pos_args).run(), vm);
     boost::program_options::notify(vm);
@@ -256,8 +251,28 @@ namespace tracy {
 	// Consensus calling
 	consensus(c, align, gapped, cs);
 
+	// Output horizontal alignment
+	std::string alignfilename = c.outprefix + ".align.fa";
+	std::ofstream vfile(alignfilename.c_str());
+	typedef typename TAlign::index TAIndex;
+	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
+	  int32_t alignRow = scoreIdx.size()-i-1;
+	  vfile	<< ">" << c.ab[scoreIdx[i].idx].stem().string() << std::endl;
+	  for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+	    vfile << align[alignRow][j];
+	  }
+	  vfile << std::endl;
+	}
+	vfile << ">Reference" << std::endl;
+	for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+	  vfile << align[scoreIdx.size()][j];
+	}
+	vfile << std::endl;
+	vfile.close();
+	
 	// Output MSA and gapped traces
-	std::ofstream rfile(c.outfile.c_str());
+	std::string filename = c.outprefix + ".json";
+	std::ofstream rfile(filename.c_str());
 	rfile << "{" << std::endl;
 	rfile << "\"gapFreeConsensus\": \"" << cs << "\"," << std::endl;
 	rfile << "\"gappedConsensus\": \"" << gapped << "\"," << std::endl;
@@ -350,18 +365,17 @@ namespace tracy {
     }
 
     // Output vertical alignment
-    boost::iostreams::filtering_ostream rcfile;
-    rcfile.push(boost::iostreams::gzip_compressor());
-    rcfile.push(boost::iostreams::file_sink(c.alignment.c_str(), std::ios_base::out | std::ios_base::binary));
+    std::string filename = c.outprefix + ".vertical";
+    std::ofstream vfile(filename.c_str());
     typedef typename TAlign::index TAIndex;
     for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
       for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
-	rcfile << align[i][j];
+	vfile << align[i][j];
       }
-      rcfile << '|' << gapped[j] << std::endl;
+      vfile << '|' << gapped[j] << std::endl;
     }
-    rcfile.pop();
-    
+    vfile.close();
+
     // Done
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;
