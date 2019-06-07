@@ -351,7 +351,9 @@ readab(std::string const& filename, Trace& tr) {
       int32_t ofs = i * esize + offset;
       int32_t ofsraw = ofs + 20;
       if (abi[i].dsize > 4) ofsraw = abi[i].doffset;
-      std::vector<char> entry(buffer.begin()+ofsraw, buffer.begin()+ofsraw + abi[i].nelements*abi[i].esize + 1);
+      int32_t totalOffset = ofsraw + abi[i].nelements*abi[i].esize + 1;
+      if (totalOffset > (int32_t) buffer.size()) totalOffset = buffer.size();
+      std::vector<char> entry(buffer.begin()+ofsraw, buffer.begin() + totalOffset);
       if (abi[i].etype == 2) {
 	if (abi[i].key == "PBAS.2") tr.basecalls1 = replaceNonDna(readBinStr(entry, 0, entry.size()));
 	else if (abi[i].key == "P2BA.1") tr.basecalls2 = replaceNonDna(readBinStr(entry, 0, entry.size()));
