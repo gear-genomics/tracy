@@ -39,6 +39,7 @@ namespace tracy {
     int32_t mismatch;
     float pratio;
     float trimStringency;
+    float matchFraction;
     float fractionCalled;
     std::string outprefix;
     DnaScore<int32_t> aliscore;
@@ -82,7 +83,9 @@ namespace tracy {
     for(TAIndex i = 0; i < (TAIndex) in.shape()[0]; ++i) {
       for(TAIndex j = 0; j < (TAIndex) in.shape()[1]; ++j) {
 	out[i][j] = in[i][j];
+	//std::cerr << out[i][j];
       }
+      //std::cerr << std::endl;
     }
   }
   
@@ -95,6 +98,7 @@ namespace tracy {
       ("help,?", "show help message")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
       ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9]")
+      ("fracmatch,f", boost::program_options::value<float>(&c.matchFraction)->default_value(0.65), "min. fraction of matches [0:1]")
       ("called,d", boost::program_options::value<float>(&c.fractionCalled)->default_value(0.1), "fraction of traces required for consensus")
       ("reference,r", boost::program_options::value<boost::filesystem::path>(&c.reference), "reference-guided assembly (optional)")
       ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
@@ -143,6 +147,10 @@ namespace tracy {
     if (vm.count("reference")) c.hasReference = true;
     else c.hasReference = false;
 
+    // Check match fraction
+    if (c.matchFraction < 0) c.matchFraction = 0;
+    else if (c.matchFraction > 1) c.matchFraction = 1;
+
     // Alignment Scoring
     c.aliscore = DnaScore<int32_t>(c.match, c.mismatch, c.gapopen, c.gapext);
     
@@ -180,7 +188,7 @@ namespace tracy {
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align ab1 files" << std::endl;
       for(uint32_t i = 0; i < c.ab.size(); ++i) {
-	std::cout << "Processing " << c.ab[i].string() << std::endl;
+	std::cout << "Processing " << c.ab[i].string() << " [" << i << "]" << std::endl;
 	
 	Trace tr;
 	int32_t ft = traceFormat(c.ab[i].string());
@@ -218,7 +226,8 @@ namespace tracy {
 
 	// Final score
 	double seqsize = ptrace.shape()[1];
-	double scoreThreshold = seqsize * 0.6 * c.aliscore.match + seqsize * 0.4 * c.aliscore.mismatch; // 60% matches
+	double scoreThreshold = seqsize * c.matchFraction * c.aliscore.match + seqsize * (1 - c.matchFraction) * c.aliscore.mismatch; // 60% matches
+	//std::cerr << scoreThreshold << ',' << gsFwd << ',' << gsRev << std::endl;
 	if ((gsFwd > scoreThreshold) || (gsRev > scoreThreshold)) {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
 	  if (gsFwd >= gsRev) {
