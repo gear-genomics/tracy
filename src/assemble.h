@@ -184,7 +184,6 @@ namespace tracy {
       // Traces and alignment score objects
       std::vector<TProfile> traceProfiles;
       std::vector<TraceScore> scoreIdx;
-      std::vector<std::string> sequences;
       
       // Load *.ab1 files
       now = boost::posix_time::second_clock::local_time();
@@ -211,7 +210,6 @@ namespace tracy {
 	uint32_t trimLeft = 0;
 	uint32_t trimRight = 0;
 	trimTrace(c, bc, trimLeft, trimRight);
-	std::string primarySeq = trimmedSeq(bc.primary, trimLeft, trimRight);
 	
 	// Create Trace Profile
 	TProfile ptrace;
@@ -235,19 +233,15 @@ namespace tracy {
 	  if (gsFwd >= gsRev) {
 	    scoreIdx.push_back(TraceScore(bestScore, i, true));
 	    traceProfiles.push_back(ptrace);
-	    sequences.push_back(primarySeq);
 	  } else {
 	    scoreIdx.push_back(TraceScore(bestScore, i, false));
 	    traceProfiles.push_back(prevtrace);
-	    reverseComplement(primarySeq);
-	    sequences.push_back(primarySeq);
 	  }
 	} else {
 	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to the reference! Trace file will be excluded!" << std::endl;
 	  // Push-back empty trace and sequence to keep the input file order
 	  TProfile empty;
 	  traceProfiles.push_back(empty);
-	  sequences.push_back("");
 	}
       }
 
