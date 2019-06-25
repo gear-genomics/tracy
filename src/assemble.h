@@ -80,6 +80,7 @@ namespace tracy {
   overwriteArray(TArray const& in, TArray& out) {
     typedef typename TArray::index TAIndex;
     out.resize(boost::extents[in.shape()[0]][in.shape()[1]]);
+    //std::cerr << "Sequence alignment" << std::endl;
     for(TAIndex i = 0; i < (TAIndex) in.shape()[0]; ++i) {
       for(TAIndex j = 0; j < (TAIndex) in.shape()[1]; ++j) {
 	out[i][j] = in[i][j];
@@ -87,6 +88,7 @@ namespace tracy {
       }
       //std::cerr << std::endl;
     }
+    //std::cerr << std::endl;
   }
   
   int assemble(int argc, char** argv) {
@@ -98,7 +100,7 @@ namespace tracy {
       ("help,?", "show help message")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
       ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9]")
-      ("fracmatch,f", boost::program_options::value<float>(&c.matchFraction)->default_value(0.65), "min. fraction of matches [0:1]")
+      ("fracmatch,f", boost::program_options::value<float>(&c.matchFraction)->default_value(0.5), "min. fraction of matches [0:1]")
       ("called,d", boost::program_options::value<float>(&c.fractionCalled)->default_value(0.1), "fraction of traces required for consensus")
       ("reference,r", boost::program_options::value<boost::filesystem::path>(&c.reference), "reference-guided assembly (optional)")
       ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
@@ -177,7 +179,7 @@ namespace tracy {
       // Reference profile
       typedef boost::multi_array<float, 2> TProfile;
       TProfile prefslice;
-      createProfile(seq, prefslice);
+      _createProfile(seq, prefslice);
       
       // Traces and alignment score objects
       std::vector<TProfile> traceProfiles;
@@ -257,13 +259,36 @@ namespace tracy {
 	AlignConfig<true, false> semiglobal;
 	gotoh(traceProfiles[scoreIdx[0].idx], prefslice, align, semiglobal, c.aliscore);
 	for(uint32_t i = 1; i < scoreIdx.size(); ++i) {
-	  TAlign alignSeq;
-	  alignSeq.resize(boost::extents[1][sequences[scoreIdx[i].idx].size()]);
-	  uint32_t ind = 0;
-	  for(typename std::string::const_iterator str = sequences[scoreIdx[i].idx].begin(); str != sequences[scoreIdx[i].idx].end(); ++str) alignSeq[0][ind++] = *str;
-	  TAlign alignNew;	  
-	  gotoh(alignSeq, align, alignNew, semiglobal, c.aliscore);
-	  overwriteArray(alignNew, align);
+	  TAlign alignNew;
+	  TProfile alignProfile;
+	  _createProfile(align, alignProfile);
+	  gotoh(traceProfiles[scoreIdx[i].idx], alignProfile, alignNew, semiglobal, c.aliscore);
+
+	  // Debug profile alignment
+	  //std::cerr << "Profile alignment" << std::endl;
+	  //for(uint32_t i = 0; i < alignNew.shape()[0]; ++i) {
+	  //for(uint32_t j = 0; j < alignNew.shape()[1]; ++j) std::cerr << alignNew[i][j];
+	  //std::cerr << std::endl;
+	  //}
+	  
+	  // Create new sequence alignment based on profile alignment
+	  TAlign alignCombined;
+	  uint32_t nSeq = align.shape()[0] + 1;
+	  uint32_t nCol = alignNew.shape()[1];
+	  uint32_t ap = 0;
+	  alignCombined.resize(boost::extents[nSeq][alignNew.shape()[1]]);
+	  for(uint32_t j = 0; j < nCol; ++j) {
+	    alignCombined[0][j] = alignNew[0][j];
+	    if (alignNew[1][j] != '-') {
+	      for(uint32_t k = 1; k < nSeq; ++k) alignCombined[k][j] = align[k-1][ap];
+	      ++ap;
+	    } else {
+	      for(uint32_t k = 1; k < nSeq; ++k) alignCombined[k][j] = '-';
+	    }
+	  }
+
+	  // Overwrite old alignment
+	  overwriteArray(alignCombined, align);
 	}
 
 	// Consensus calling

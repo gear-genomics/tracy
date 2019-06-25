@@ -66,26 +66,10 @@ namespace tracy
     }
   }
 
-  template<typename TProfile>
-  inline void
-  createProfile(std::string const& s, TProfile& p) {
-    typedef typename TProfile::index TPIndex;
-    p.resize(boost::extents[6][s.size()]);   // 'A', 'C', 'G', 'T', 'N', '-'
-    for (std::size_t j = 0; j < s.size(); ++j) {
-      for(TPIndex k = 0; k < 6; ++k) p[k][j] = 0;
-      if ((s[j] == 'A') || (s[j] == 'a')) p[0][j] += 1;
-      else if ((s[j] == 'C') || (s[j] == 'c')) p[1][j] += 1;
-      else if ((s[j] == 'G') || (s[j] == 'g')) p[2][j] += 1;
-      else if ((s[j] == 'T') || (s[j] == 't')) p[3][j] += 1;
-      else if ((s[j] == 'N') || (s[j] == 'n')) p[4][j] += 1;
-      else if (s[j] == '-') p[5][j] += 1;
-    }
-  }
-
   template<typename TConfig, typename TProfile>
   inline void
   createProfile(TConfig const& c, ReferenceSlice const& rs, TProfile& p) {
-    if (rs.filetype != 2) return createProfile(rs.refslice, p);
+    if (rs.filetype != 2) return _createProfile(rs.refslice, p);
     else {
       // Create profile from trace
       Trace wt;
@@ -93,29 +77,6 @@ namespace tracy
       BaseCalls wtbc;
       basecall(wt, wtbc, c.pratio);
       return createProfile(wt, wtbc, p);
-    }
-  }
-
-  template<typename TChar, typename TProfile>
-  inline void
-  createProfile(boost::multi_array<TChar, 2> const& a, TProfile& p) {
-    typedef typename boost::multi_array<TChar, 2>::index TAIndex;
-    typedef typename TProfile::index TPIndex;
-    p.resize(boost::extents[6][a.shape()[1]]);   // 'A', 'C', 'G', 'T', 'N', '-'
-    for (TAIndex j = 0; j < (TAIndex) a.shape()[1]; ++j) {
-      for(TPIndex k = 0; k < 6; ++k) p[k][j] = 0;
-      int sum = 0;
-      for(TAIndex i = 0; i < (TAIndex) a.shape()[0]; ++i) {
-	++sum;
-	if ((a[i][j] == 'A') || (a[i][j] == 'a')) p[0][j] += 1;
-	else if ((a[i][j] == 'C') || (a[i][j] == 'c')) p[1][j] += 1;
-	else if ((a[i][j] == 'G') || (a[i][j] == 'g')) p[2][j] += 1;
-	else if ((a[i][j] == 'T') || (a[i][j] == 't')) p[3][j] += 1;
-	else if ((a[i][j] == 'N') || (a[i][j] == 'n')) p[4][j] += 1;
-	else if (a[i][j] == '-') p[5][j] += 1;
-	else --sum;
-      }
-      for(TPIndex k = 0; k<6; ++k) p[k][j] /= sum;
     }
   }
 
