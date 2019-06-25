@@ -183,7 +183,15 @@ namespace tracy {
 	std::cout << "Processing " << c.ab[i].string() << std::endl;
 	
 	Trace tr;
-	if (!readab(c.ab[i].string(), tr)) return -1;
+	int32_t ft = traceFormat(c.ab[i].string());
+	if (ft == 0) {
+	  if (!readab(c.ab[i].string(), tr)) return -1;
+	} else if (ft == 1) {
+	  if (!readscf(c.ab[i].string(), tr)) return -1;
+	} else {
+	  std::cerr << "Unknown trace file type!" << std::endl;
+	  return -1;
+	}
 
 	// Call bases
 	BaseCalls bc;
@@ -225,9 +233,10 @@ namespace tracy {
 	  }
 	} else {
 	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to the reference! Trace file will be excluded!" << std::endl;
-	  // Push-back empty trace to keep the input file order
+	  // Push-back empty trace and sequence to keep the input file order
 	  TProfile empty;
 	  traceProfiles.push_back(empty);
+	  sequences.push_back("");
 	}
       }
 
@@ -290,7 +299,15 @@ namespace tracy {
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
 	  if (i!=0) rfile << ", ";
 	  Trace tr;
-	  if (!readab(c.ab[scoreIdx[i].idx].string(), tr)) return -1;
+	  int32_t ft = traceFormat(c.ab[i].string());
+	  if (ft == 0) {
+	    if (!readab(c.ab[i].string(), tr)) return -1;
+	  } else if (ft == 1) {
+	    if (!readscf(c.ab[i].string(), tr)) return -1;
+	  } else {
+	    std::cerr << "Unknown trace file type!" << std::endl;
+	    return -1;
+	  }
 
 	  // Call bases
 	  BaseCalls bc;
@@ -338,7 +355,15 @@ namespace tracy {
       std::vector<SequenceSegment> seqSegment;
       for(uint32_t i = 0; i < c.ab.size(); ++i) {
 	Trace tr;
-	if (!readab(c.ab[i].string(), tr)) return -1;
+	int32_t ft = traceFormat(c.ab[i].string());
+	if (ft == 0) {
+	  if (!readab(c.ab[i].string(), tr)) return -1;
+	} else if (ft == 1) {
+	  if (!readscf(c.ab[i].string(), tr)) return -1;
+	} else {
+	  std::cerr << "Unknown trace file type!" << std::endl;
+	  return -1;
+	}
 
 	// Call bases
 	BaseCalls bc;
