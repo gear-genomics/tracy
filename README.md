@@ -133,9 +133,7 @@ Merging of normalized variant files:
 Trace assembly
 --------------
 
-If you tiled a genomic region with multiple chromatogram files you can assemble all of these with tracy. The assemble method supports a reference-guided and a de novo assembly.
-
-`tracy assemble file1.ab1 file2.ab1 fileN.ab1`
+If you tiled a genomic region with multiple chromatogram files you can assemble all of these with tracy.
 
 `tracy assemble -r <reference.fa> file1.ab1 file2.ab1 fileN.ab1`
 
