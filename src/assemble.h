@@ -376,6 +376,8 @@ namespace tracy {
       }
     } else {
       // De-novo assembly
+      std::cout << "Please specify a reference file!" << std::endl;
+      return -1;
       
       // Load *.ab1 files
       now = boost::posix_time::second_clock::local_time();
