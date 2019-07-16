@@ -128,22 +128,17 @@ namespace tracy
     rfile.close();  
   }
 
-  
-  template<typename TAlign>
-  inline void
-  traceAlignJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs, TAlign const& align) {
-    typedef Trace::TValue TValue;
 
+  template<typename TOFStream>
+  inline void
+  assemblyTrace(TOFStream& rfile, BaseCalls& bc, Trace const& tr, std::string const& traceFileName) {
+    typedef Trace::TValue TValue;
     
     // Output trace
-    std::ofstream rfile(outfile.c_str());
     rfile << "{" << std::endl;
-    rfile << "\"pos\": [";
-    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-      if (i!=0) rfile << ", ";
-      rfile << (i+1);
-    }
-    rfile << "]," << std::endl;
+    rfile << "\"traceFileName\": \"" << traceFileName << "\"," << std::endl;
+    rfile << "\"leadingGaps\": " << tr.leadingGaps << "," << std::endl;
+    rfile << "\"trailingGaps\": " << tr.trailingGaps << "," << std::endl;
     rfile << "\"peakA\": [";
     for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
       if (i!=0) rfile << ", ";
@@ -167,8 +162,7 @@ namespace tracy
       if (i!=0) rfile << ", ";
       rfile << tr.traceACGT[3][i];
     }
-    rfile << "]," << std::endl;
-    
+    rfile << "]," << std::endl;    
     // Basecalls
     uint32_t bcpos = 0;
     TValue idx = bc.bcPos[0];
@@ -196,7 +190,20 @@ namespace tracy
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }
-    rfile << "}," << std::endl;
+    rfile << "}" << std::endl;
+    rfile << "}" << std::endl;
+  }
+
+   
+  template<typename TAlign>
+  inline void
+  traceAlignJsonOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, ReferenceSlice const& rs, TAlign const& align) {
+    // Output trace
+    std::ofstream rfile(outfile.c_str());
+    rfile << "{" << std::endl;
+    rfile << "\"gappedTrace\":" << std::endl;
+    assemblyTrace(rfile, bc, tr, "trace");
+    rfile << "," << std::endl;
     rfile << "\"refchr\": \"" << rs.chr << "\"," << std::endl;
     rfile << "\"refpos\": " << (rs.pos + 1) << "," << std::endl;
     rfile << "\"altalign\": \"";
@@ -239,75 +246,6 @@ namespace tracy
     rfile << "}" << std::endl;
   }
   
-  template<typename TOFStream>
-  inline void
-  assemblyTrace(TOFStream& rfile, BaseCalls& bc, Trace const& tr, std::string const& traceFileName) {
-    typedef Trace::TValue TValue;
-    
-    // Output trace
-    rfile << "{" << std::endl;
-    rfile << "\"traceFileName\": \"" << traceFileName << "\"," << std::endl;
-    rfile << "\"pos\": [";
-    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-      if (i!=0) rfile << ", ";
-      rfile << (i+1);
-    }
-    rfile << "]," << std::endl;
-    rfile << "\"peakA\": [";
-    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-      if (i!=0) rfile << ", ";
-      rfile << tr.traceACGT[0][i];
-    }
-    rfile << "]," << std::endl;
-    rfile << "\"peakC\": [";
-    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-      if (i!=0) rfile << ", ";
-      rfile << tr.traceACGT[1][i];
-    }
-    rfile << "]," << std::endl;
-    rfile << "\"peakG\": [";
-    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-      if (i!=0) rfile << ", ";
-      rfile << tr.traceACGT[2][i];
-    }
-    rfile << "]," << std::endl;
-    rfile << "\"peakT\": [";
-    for(uint32_t i = 0; i<tr.traceACGT[0].size(); ++i) {
-      if (i!=0) rfile << ", ";
-      rfile << tr.traceACGT[3][i];
-    }
-    rfile << "]," << std::endl;
-    
-    // Basecalls
-    uint32_t bcpos = 0;
-    TValue idx = bc.bcPos[0];
-    rfile << "\"basecallPos\": [";
-    for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-      if (idx == i) {
-	if (i!=bc.bcPos[0]) rfile << ", ";
-	rfile << (i+1);
-	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
-      }
-    }
-    rfile << "]," << std::endl;
-    bcpos = 0;
-    idx = bc.bcPos[0];
-    uint32_t gaplessbcpos = 0;
-    rfile << "\"basecalls\": {";
-    for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
-      if (idx == i) {
-	if (i!=bc.bcPos[0]) rfile << ", ";
-	if (bc.primary[bcpos] != '-') {
-	  rfile << "\"" << (i+1) << "\"" << ":" << "\"" << (++gaplessbcpos) << ":" <<  bc.primary[bcpos];
-	  if (bc.primary[bcpos] != bc.secondary[bcpos]) rfile << "|" << bc.secondary[bcpos];
-	  rfile << "\"";
-	} else rfile << "\"" << (i+1) << "\"" << ":" << "\"-\"";
-	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
-      }
-    }
-    rfile << "}" << std::endl;
-    rfile << "}" << std::endl;
-  }
 
   inline std::pair<int32_t, int32_t>
   xWindowViewport(BaseCalls const& bc, int32_t const pos) {
@@ -467,7 +405,8 @@ namespace tracy
     // Find the gap positions 
     uint32_t pos = 0;
     bool ingap = false;
-    uint32_t gapsize = 0;    
+    uint32_t gapsize = 0;
+    ntr.leadingGaps = 0;
     for(uint32_t j = 0; j<align.shape()[1]; ++j) {
       if (align[alignRow][j] == '-') {
 	if (ingap) ++gapsize;
@@ -482,20 +421,16 @@ namespace tracy
 	    uint32_t insertPos = (uint32_t) (( bc.bcPos[pos - 1] + bc.bcPos[pos] ) / 2.0);
 	    insPos.push_back(insertPos);
 	    insSize.push_back(gapsize);
-	  } else {
-	    insPos.push_back(0);
-	    insSize.push_back(gapsize);
-	  }
+	  } else ntr.leadingGaps = gapsize;
 	}
 	++pos;
       }
     }
     // Trailing gaps
-    if (ingap) {
-      uint32_t insertPos = tr.traceACGT[0].size();
-      insPos.push_back(insertPos);
-      insSize.push_back(gapsize);
-    }
+    ntr.trailingGaps = 0;
+    if (ingap) ntr.trailingGaps = gapsize;
+
+    // Debug
     //for(uint32_t i = 0; i<insPos.size(); ++i) std::cerr << i << ',' << insPos[i] << ',' << insSize[i] << std::endl;
     
 
@@ -534,21 +469,6 @@ namespace tracy
 	nbc.secondary.push_back(bc.secondary[bcpos]);
 	nbc.consensus.push_back(bc.consensus[bcpos]);
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
-      }
-    }
-    // Trailing gaps
-    if (insIdx == tracePos) {
-      for(uint32_t k = 0; k < insSize[inspos]; ++k) {
-	nbc.bcPos.push_back(tracePos + offset + (uint32_t) (step / 2.0));
-	nbc.primary.push_back('-');
-	nbc.secondary.push_back('-');
-	nbc.consensus.push_back('-');
-	for(uint32_t n = 0; n < step; ++n, ++offset) {
-	  ntr.traceACGT[0].push_back(EMPTY_TRACE_SIGNAL);
-	  ntr.traceACGT[1].push_back(EMPTY_TRACE_SIGNAL);
-	  ntr.traceACGT[2].push_back(EMPTY_TRACE_SIGNAL);
-	  ntr.traceACGT[3].push_back(EMPTY_TRACE_SIGNAL);
-	}
       }
     }
   }

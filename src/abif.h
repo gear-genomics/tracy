@@ -51,12 +51,16 @@ struct Trace {
   typedef std::vector<TValue> TMountains;
   typedef std::vector<TMountains> TACGTMountains;
   typedef std::vector<uint8_t> TQual;
-  
+
+  uint32_t leadingGaps;
+  uint32_t trailingGaps;
   std::string basecalls1;
   std::string basecalls2;
   TQual qual;
   TMountains basecallpos;
   TACGTMountains traceACGT;
+
+  Trace() : leadingGaps(0), trailingGaps(0) {}
 };
 
 
