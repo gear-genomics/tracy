@@ -214,14 +214,27 @@ namespace tracy
   template<typename TOFStream, typename TAlign>
   inline void
   alignedTraceByRow(TOFStream& rfile, TAlign const& align, uint32_t const row, std::string const& traceFileName, bool const forward, bool const ref) {
+    bool leadingGap = true;
+    uint32_t leadingGaps = 0;
+    uint32_t trailingGaps = 0;
+    for(uint32_t j = 0; j<align.shape()[1]; ++j) {
+      if (leadingGap) {
+	if (align[row][j] == '-') ++leadingGaps;
+	else leadingGap = false;
+      }
+      if (align[row][j] != '-') trailingGaps = 0;
+      else ++trailingGaps;
+    }
     rfile << "{" << std::endl;
     if (ref) rfile << "\"reference\": true," << std::endl;
     else rfile << "\"reference\": false," << std::endl;
     if (forward) rfile << "\"forward\": true," << std::endl;
     else rfile << "\"forward\": false," << std::endl;
     rfile << "\"traceFileName\": \"" << traceFileName << "\"," << std::endl;
+    rfile << "\"leadingGaps\": \"" << leadingGaps << "\"," << std::endl;
+    rfile << "\"trailingGaps\": \"" << trailingGaps << "\"," << std::endl;
     rfile << "\"align\": \"";
-    for(uint32_t j = 0; j<align.shape()[1]; ++j) rfile << align[row][j];
+    for(uint32_t j = leadingGaps; (j < (align.shape()[1] - trailingGaps)); ++j) rfile << align[row][j];
     rfile << "\"" << std::endl;
     rfile << "}" << std::endl;
   }
