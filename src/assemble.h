@@ -364,7 +364,7 @@ namespace tracy {
       // De-novo assembly
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
-      std::vector<TProfile> seqProfiles;
+      std::vector<TProfile> inputProfiles;
       for(uint32_t i = 0; i < c.ab.size(); ++i) {
 	Trace tr;
 	int32_t ft = traceFormat(c.ab[i].string());
@@ -389,13 +389,43 @@ namespace tracy {
 	// Create Trace Profile
 	TProfile ptrace;
 	createProfile(tr, bc, ptrace, trimLeft, trimRight);
-	seqProfiles.push_back(ptrace);
+	inputProfiles.push_back(ptrace);
       }
 
       // Optimize layout/trimming
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Optimize layout" << std::endl;
-      revSeqBasedOnDist(c, seqProfiles);
+      revSeqBasedOnDist(c, inputProfiles);
+
+      // Any trace we need to exclude?
+      std::vector<TProfile> seqProfiles;
+      for (uint32_t i = 0; i<inputProfiles.size(); ++i) {
+	int32_t seqSize = inputProfiles[i].shape()[1];
+	bool foundHit = false;
+	for(uint32_t j = 0; j<inputProfiles.size(); ++j) {
+	  if (i!=j) {
+	    AlignConfig<true, true> alignconf;
+	    TAlign seqAlign;
+	    int32_t gs = gotoh(inputProfiles[i], inputProfiles[j], seqAlign, alignconf, c.aliscore);
+	    int32_t numAligned = 0;
+	    for(uint32_t k = 0; k < seqAlign.shape()[1];++k) {
+	      if ((seqAlign[0][k] != '-') && (seqAlign[1][k] != '-')) ++numAligned;
+	    }
+	    double frac = (double) numAligned / (double) seqSize;
+	    double scoreThreshold = numAligned * c.matchFraction * c.aliscore.match + numAligned * (1 - c.matchFraction) * c.aliscore.mismatch;
+	    // At least 10% overlap
+	    if ((frac > 0.1) && (numAligned > 25) && (gs > scoreThreshold)) {
+	      foundHit = true;
+	      break;
+	    }
+	  }
+	}
+	if (!foundHit) {
+	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to any of the other traces! Trace file will be excluded!" << std::endl;
+	} else {
+	  seqProfiles.push_back(inputProfiles[i]);
+	}
+      }
 
       // Assemble
       now = boost::posix_time::second_clock::local_time();
