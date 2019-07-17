@@ -224,7 +224,7 @@ namespace tracy {
 	    traceProfiles.push_back(prevtrace);
 	  }
 	} else {
-	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to the reference! Trace file will be excluded!" << std::endl;
+	  std::cerr << "Warning: " << c.ab[i].stem().string() << " is not matching to the reference! Trace file will be excluded!" << std::endl;
 	  // Push-back empty trace and sequence to keep the input file order
 	  TProfile empty;
 	  traceProfiles.push_back(empty);
@@ -427,7 +427,7 @@ namespace tracy {
 	  }
 	}
 	if (!foundHit) {
-	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to any of the other traces! Trace file will be excluded!" << std::endl;
+	  std::cerr << "Warning: " << c.ab[i].stem().string() << " is not matching to any of the other traces! Trace file will be excluded!" << std::endl;
 	} else {
 	  seqProfiles.push_back(inputProfiles[i]);
 	  seqNames.push_back(c.ab[i].stem().string());
@@ -449,7 +449,6 @@ namespace tracy {
       std::ofstream vfile(alignfilename.c_str());
       typedef typename TAlign::index TAIndex;
       for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
-	std::cout <<  align.shape()[0] << ',' << seqidx.size() << ',' << seqidx[i] << std::endl;
 	vfile << ">" << seqNames[seqidx[i]];
 	if (fwd[seqidx[i]]) vfile << " (forward)" << std::endl;
 	else vfile << " (reverse)" << std::endl;
