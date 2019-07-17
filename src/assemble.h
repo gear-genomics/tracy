@@ -403,7 +403,7 @@ namespace tracy {
 
       // Any trace we need to exclude?
       std::vector<TProfile> seqProfiles;
-      std::vector<std::string> seqNames;
+      std::vector<uint32_t> idxMap;
       std::vector<bool> fwd;
       for (uint32_t i = 0; i<inputProfiles.size(); ++i) {
 	int32_t seqSize = inputProfiles[i].shape()[1];
@@ -430,7 +430,7 @@ namespace tracy {
 	  std::cerr << "Warning: " << c.ab[i].stem().string() << " is not matching to any of the other traces! Trace file will be excluded!" << std::endl;
 	} else {
 	  seqProfiles.push_back(inputProfiles[i]);
-	  seqNames.push_back(c.ab[i].stem().string());
+	  idxMap.push_back(i);
 	  fwd.push_back(fwdProfiles[i]);
 	}
       }
@@ -449,7 +449,7 @@ namespace tracy {
       std::ofstream vfile(alignfilename.c_str());
       typedef typename TAlign::index TAIndex;
       for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
-	vfile << ">" << seqNames[seqidx[i]];
+	vfile << ">" << c.ab[idxMap[seqidx[i]]].stem().string();
 	if (fwd[seqidx[i]]) vfile << " (forward)" << std::endl;
 	else vfile << " (reverse)" << std::endl;
 	for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
@@ -458,6 +458,66 @@ namespace tracy {
 	vfile << std::endl;
       }
       vfile.close();
+      
+      // Output MSA and gapped traces
+      std::string filename = c.outprefix + ".json";
+      std::ofstream rfile(filename.c_str());
+      rfile << "{" << std::endl;
+      rfile << "\"gapFreeConsensus\": \"" << cs << "\"," << std::endl;
+      rfile << "\"gappedConsensus\": \"" << gapped << "\"," << std::endl;
+      rfile << "\"msa\": " << std::endl;
+      rfile << "[" << std::endl;
+      for(uint32_t i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	if (i!=0) rfile << ',' << std::endl;
+	alignedTraceByRow(rfile, align, i, c.ab[idxMap[seqidx[i]]].stem().string(), fwd[seqidx[i]], false);
+      }
+      rfile << "]," << std::endl;
+      rfile << "\"gappedTraces\": " << std::endl;
+      rfile << "[" << std::endl;
+      for(uint32_t i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	if (i!=0) rfile << ", ";
+	Trace tr;
+	int32_t ft = traceFormat(c.ab[idxMap[seqidx[i]]].string());
+	if (ft == 0) {
+	  if (!readab(c.ab[idxMap[seqidx[i]]].string(), tr)) return -1;
+	} else if (ft == 1) {
+	    if (!readscf(c.ab[idxMap[seqidx[i]]].string(), tr)) return -1;
+	} else {
+	  std::cerr << "Unknown trace file type!" << std::endl;
+	  return -1;
+	}
+
+	// Call bases
+	BaseCalls bc;
+	basecall(tr, bc, c.pratio);
+
+	// Get trim sizes
+	uint32_t trimLeft = 0;
+	uint32_t trimRight = 0;
+	trimTrace(c, bc, trimLeft, trimRight);
+
+	// Hard trim of the trace data structures
+	BaseCalls nbc;
+	Trace ntr;
+	trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
+
+	// Reverse complement trace if necessary
+	BaseCalls padbc;
+	Trace padtr;
+	if (fwd[seqidx[i]]) alignmentTracePadding(align, ntr, nbc, i, padtr, padbc);
+	else {
+	  BaseCalls tbc;
+	  Trace ttr;
+	  // Reverese complement
+	  reverseComplementTrace(ntr, nbc, ttr, tbc);
+	  alignmentTracePadding(align, ttr, tbc, i, padtr, padbc);
+	}
+	// Append gapped trace to output
+	assemblyTrace(rfile, padbc, padtr, c.ab[idxMap[seqidx[i]]].stem().string());
+      }
+      rfile << "]" << std::endl;
+      rfile << "}" << std::endl;
+      rfile.close();
     }
 
     // Output vertical alignment
