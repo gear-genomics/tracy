@@ -258,7 +258,7 @@ namespace tracy {
 
   template<typename TConfig, typename TSeqProfiles>
   inline void
-  revSeqBasedOnDist(TConfig const& c, TSeqProfiles& seq) {
+  revSeqBasedOnDist(TConfig const& c, TSeqProfiles& seq, std::vector<bool>& fwd) {
     typedef typename TSeqProfiles::value_type TProfile;
     
     // Compute distance matrix
@@ -313,6 +313,7 @@ namespace tracy {
 	}
 	if (scoreSum >= oldScoreSum) {
 	  seq[seqQuality[k].second] = s;
+	  fwd[seqQuality[k].second] = (!fwd[seqQuality[k].second]);
 	  for (TDIndex i = 0; i<num; ++i) {
 	    d[i][seqQuality[k].second] = newD[i];
 	    d[seqQuality[k].second][i] = d[i][seqQuality[k].second];
@@ -344,7 +345,7 @@ namespace tracy {
 
   template<typename TConfig, typename TSeqProfiles, typename TAlign>
   inline void
-  msa(TConfig const& c, TSeqProfiles const& sps, TAlign& align) {
+  msa(TConfig const& c, TSeqProfiles const& sps, TAlign& align, std::vector<uint32_t>& seqidx) {
     typedef typename TSeqProfiles::value_type TProfile;
     
     // Compute distance matrix
@@ -379,8 +380,7 @@ namespace tracy {
     
     // Progressive Alignment
     TProfile prof;
-    std::vector<uint32_t> sidx;
-    palign(c, sps, p, root, align, prof, sidx);
+    palign(c, sps, p, root, align, prof, seqidx);
   }
 
 }

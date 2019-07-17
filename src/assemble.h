@@ -280,7 +280,9 @@ namespace tracy {
 	typedef typename TAlign::index TAIndex;
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
 	  int32_t alignRow = scoreIdx.size()-i-1;
-	  vfile	<< ">" << c.ab[scoreIdx[i].idx].stem().string() << std::endl;
+	  vfile	<< ">" << c.ab[scoreIdx[i].idx].stem().string();
+	  if (scoreIdx[i].forward) vfile << " (forward)" << std::endl;
+	  else vfile << " (reverse)" << std::endl;
 	  for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
 	    vfile << align[alignRow][j];
 	  }
@@ -365,6 +367,7 @@ namespace tracy {
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
       std::vector<TProfile> inputProfiles;
+      std::vector<bool> fwdProfiles;
       for(uint32_t i = 0; i < c.ab.size(); ++i) {
 	Trace tr;
 	int32_t ft = traceFormat(c.ab[i].string());
@@ -390,15 +393,18 @@ namespace tracy {
 	TProfile ptrace;
 	createProfile(tr, bc, ptrace, trimLeft, trimRight);
 	inputProfiles.push_back(ptrace);
+	fwdProfiles.push_back(true);
       }
 
       // Optimize layout/trimming
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Optimize layout" << std::endl;
-      revSeqBasedOnDist(c, inputProfiles);
+      revSeqBasedOnDist(c, inputProfiles, fwdProfiles);
 
       // Any trace we need to exclude?
       std::vector<TProfile> seqProfiles;
+      std::vector<std::string> seqNames;
+      std::vector<bool> fwd;
       for (uint32_t i = 0; i<inputProfiles.size(); ++i) {
 	int32_t seqSize = inputProfiles[i].shape()[1];
 	bool foundHit = false;
@@ -424,16 +430,35 @@ namespace tracy {
 	  std::cerr << "Warning: " << c.ab[i].string() << " is not matching to any of the other traces! Trace file will be excluded!" << std::endl;
 	} else {
 	  seqProfiles.push_back(inputProfiles[i]);
+	  seqNames.push_back(c.ab[i].stem().string());
+	  fwd.push_back(fwdProfiles[i]);
 	}
       }
 
       // Assemble
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;
-      msa(c, seqProfiles, align);
+      std::vector<uint32_t> seqidx;
+      msa(c, seqProfiles, align, seqidx);
 
       // Consensus calling
       consensus(c, align, gapped, cs);
+
+      // Output horizontal alignment
+      std::string alignfilename = c.outprefix + ".align.fa";
+      std::ofstream vfile(alignfilename.c_str());
+      typedef typename TAlign::index TAIndex;
+      for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	std::cout <<  align.shape()[0] << ',' << seqidx.size() << ',' << seqidx[i] << std::endl;
+	vfile << ">" << seqNames[seqidx[i]];
+	if (fwd[seqidx[i]]) vfile << " (forward)" << std::endl;
+	else vfile << " (reverse)" << std::endl;
+	for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
+	  vfile << align[i][j];
+	}
+	vfile << std::endl;
+      }
+      vfile.close();
     }
 
     // Output vertical alignment
