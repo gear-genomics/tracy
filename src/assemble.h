@@ -435,6 +435,12 @@ namespace tracy {
 	}
       }
 
+      // Enough sequences left?
+      if (fwd.size() < 2) {
+	std::cerr << "At least 2 traces are required for de novo assembly!" << std::endl;
+	return -1;
+      }
+
       // Assemble
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;
