@@ -33,30 +33,24 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 namespace tracy {
 
-  inline int32_t
-  lcs(std::string const& s1, std::string const& s2) {
-    uint32_t m = s1.size();
-    uint32_t n = s2.size();
-    int32_t prevdiag = 0;
-    int32_t prevprevdiag = 0;
-    std::vector<int32_t> onecol(n+1, 0);
-    for(uint32_t i = 0; i <= m; ++i) {
-      for(uint32_t j = 0; j <= n; ++j) {
-	if ((i==0) || (j==0)) {
-	  onecol[j] = 0;
-	  prevprevdiag = 0;
-	  prevdiag = 0;
-	} else {
-	  prevprevdiag = prevdiag;
-	  prevdiag = onecol[j];
-	  if (s1[i-1] == s2[j-1]) onecol[j] = prevprevdiag + 1;
-	  else onecol[j] = (onecol[j] > onecol[j-1]) ? onecol[j] : onecol[j-1];
-	}
+  
+  template<typename TArray>
+  inline void
+  overwriteArray(TArray const& in, TArray& out) {
+    typedef typename TArray::index TAIndex;
+    out.resize(boost::extents[in.shape()[0]][in.shape()[1]]);
+    //std::cerr << "Sequence alignment" << std::endl;
+    for(TAIndex i = 0; i < (TAIndex) in.shape()[0]; ++i) {
+      for(TAIndex j = 0; j < (TAIndex) in.shape()[1]; ++j) {
+	out[i][j] = in[i][j];
+	//std::cerr << out[i][j];
       }
+      //std::cerr << std::endl;
     }
-    return onecol[n];
+    //std::cerr << std::endl;
   }
 
+  
   template<typename TConfig, typename TSeqProfiles, typename TDistArray>
   inline void
   distanceMatrix(TConfig const& c, TSeqProfiles const& sps, TDistArray& d) {
@@ -113,19 +107,76 @@ namespace tracy {
     return (nn > 0) ? (nn - 1) : 0;
   }
 
-  template<typename TConfig, typename TSeqProfiles, typename TPhylogeny, typename TDIndex, typename TAlign>
+  template<typename TConfig, typename TSeqProfiles, typename TPhylogeny, typename TDIndex, typename TAlign, typename TProfile, typename TSeqIdx>
   inline void
-  palign(TConfig const& c, TSeqProfiles const& sps, TPhylogeny const& p, TDIndex root, TAlign& align) {
+  palign(TConfig const& c, TSeqProfiles const& sps, TPhylogeny const& p, TDIndex root, TAlign& align, TProfile& prof, TSeqIdx& sidx) {
     if ((p[root][1] == -1) && (p[root][2] == -1)) {
       align.resize(boost::extents[1][sps[root].shape()[1]]);
       for(uint32_t ind = 0; ind < sps[root].shape()[1]; ++ind) align[0][ind] = _profileConsChar(sps[root], ind);
+      copyProfile(sps[root], prof);
+      sidx.push_back(root);
     } else {
       TAlign align1;
-      palign(c, sps, p, p[root][1], align1);
+      TProfile prof1;
+      TSeqIdx sidx1;
+      palign(c, sps, p, p[root][1], align1, prof1, sidx1);
       TAlign align2;
-      palign(c, sps, p, p[root][2], align2);
+      TProfile prof2;
+      TSeqIdx sidx2;
+      palign(c, sps, p, p[root][2], align2, prof2, sidx2);
       AlignConfig<true, true> endFreeAlign;
-      gotoh(align1, align2, align, endFreeAlign, c.aliscore);
+
+      // Debug
+      //std::cerr << prof1.shape()[0] << ',' << prof1.shape()[1] << std::endl;
+      //std::cerr << align1.shape()[0] << ',' << align1.shape()[1] << std::endl;
+      //std::cerr << prof2.shape()[0] << ',' << prof2.shape()[1] << std::endl;
+      //std::cerr << align2.shape()[0] << ',' << align2.shape()[1] << std::endl;
+      
+      // Profile-to-profile alignment
+      TAlign alignNew;
+      gotoh(prof1, prof2, alignNew, endFreeAlign, c.aliscore);
+
+      // Debug profile alignment
+      //std::cerr << "Profile alignment" << std::endl;
+      //for(uint32_t i = 0; i < alignNew.shape()[0]; ++i) {
+      //for(uint32_t j = 0; j < alignNew.shape()[1]; ++j) std::cerr << alignNew[i][j];
+	//std::cerr << std::endl;
+      //}
+      
+      // Create new sequence alignment based on profile alignment
+      TAlign alignCombined;
+      uint32_t nSeq = align1.shape()[0] + align2.shape()[0];
+      uint32_t nCol = alignNew.shape()[1];
+      uint32_t a1p = 0;
+      uint32_t a2p = 0;
+      alignCombined.resize(boost::extents[nSeq][nCol]);
+      for(uint32_t j = 0; j < nCol; ++j) {
+	if (alignNew[0][j] != '-') {
+	  for(uint32_t k = 0; k < align1.shape()[0]; ++k) alignCombined[k][j] = align1[k][a1p];
+	  ++a1p;
+	} else {
+	  for(uint32_t k = 0; k < align1.shape()[0]; ++k) alignCombined[k][j] = '-';
+	}
+	if (alignNew[1][j] != '-') {
+	  uint32_t ind = 0;
+	  for(uint32_t k = align1.shape()[0]; k < nSeq; ++k) alignCombined[k][j] = align2[ind++][a2p];
+	  ++a2p;
+	} else {
+	  for(uint32_t k = align1.shape()[0]; k < nSeq; ++k) alignCombined[k][j] = '-';
+	}
+      }
+
+      // Overwrite old alignment                                                   
+      overwriteArray(alignCombined, align);
+
+      // Create alignment profile
+      _createProfile(align, prof);
+
+      // Create sequence index
+      sidx.resize(nSeq);
+      for(uint32_t k = 0; k < sidx1.size(); ++k) sidx[k] = sidx1[k];
+      uint32_t ind = 0;
+      for(uint32_t k = sidx1.size(); k < nSeq; ++k) sidx[k] = sidx2[ind++];
     }
   }
 
@@ -294,6 +345,8 @@ namespace tracy {
   template<typename TConfig, typename TSeqProfiles, typename TAlign>
   inline void
   msa(TConfig const& c, TSeqProfiles const& sps, TAlign& align) {
+    typedef typename TSeqProfiles::value_type TProfile;
+    
     // Compute distance matrix
     typedef boost::multi_array<int32_t, 2> TDistArray;
     typedef typename TDistArray::index TDIndex;
@@ -325,7 +378,9 @@ namespace tracy {
     //}
     
     // Progressive Alignment
-    palign(c, sps, p, root, align);
+    TProfile prof;
+    std::vector<uint32_t> sidx;
+    palign(c, sps, p, root, align, prof, sidx);
   }
 
 }

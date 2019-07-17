@@ -75,22 +75,6 @@ namespace tracy {
   };
 
 
-  template<typename TArray>
-  inline void
-  overwriteArray(TArray const& in, TArray& out) {
-    typedef typename TArray::index TAIndex;
-    out.resize(boost::extents[in.shape()[0]][in.shape()[1]]);
-    //std::cerr << "Sequence alignment" << std::endl;
-    for(TAIndex i = 0; i < (TAIndex) in.shape()[0]; ++i) {
-      for(TAIndex j = 0; j < (TAIndex) in.shape()[1]; ++j) {
-	out[i][j] = in[i][j];
-	//std::cerr << out[i][j];
-      }
-      //std::cerr << std::endl;
-    }
-    //std::cerr << std::endl;
-  }
-  
   int assemble(int argc, char** argv) {
     AssembleConfig c;
   

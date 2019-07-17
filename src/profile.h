@@ -98,6 +98,14 @@ namespace tracy
     }
   }
 
+  template<typename TProfile>
+  inline void
+  copyProfile(TProfile const& p, TProfile& out) {
+    out.resize(boost::extents[p.shape()[0]][p.shape()[1]]);
+    for(uint32_t i = 0; i < p.shape()[0]; ++i) {
+      for(uint32_t j = 0; j < p.shape()[1]; ++j) out[i][j] = p[i][j];
+    }
+  }
 }
 
 #endif
