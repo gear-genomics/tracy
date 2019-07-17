@@ -161,7 +161,13 @@ namespace tracy {
       // Load reference
       std::string faname = "";
       std::string seq = "";
-      loadSingleFasta(c.reference.string(), faname, seq);
+      if (!loadSingleFasta(c.reference.string(), faname, seq)) return -1;
+
+      // Check reference size
+      if (seq.size() > 50000) {
+	std::cerr << "Reference is larger than 50Kbp. Please use a smaller reference slice!" << std::endl;
+	return -1;
+      }
 
       // Reference profile
       TProfile prefslice;
