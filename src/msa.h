@@ -57,20 +57,13 @@ namespace tracy {
     return onecol[n];
   }
 
-  template<typename TConfig, typename TSplitReadSet, typename TDistArray>
+  template<typename TConfig, typename TSeqProfiles, typename TDistArray>
   inline void
-  distanceMatrix(TConfig const& c, TSplitReadSet const& sps, TDistArray& d) {
-    typedef typename TDistArray::index TDIndex;
-    typename TSplitReadSet::const_iterator sIt1 = sps.begin();
-    for (TDIndex i = 0; sIt1 != sps.end(); ++sIt1, ++i) {
-      typename TSplitReadSet::const_iterator sIt2 = sIt1;
-      ++sIt2;
-      for (TDIndex j = i+1; sIt2 != sps.end(); ++sIt2, ++j) {
-	// LCS
-	//d[i][j] = (lcs(*sIt1, *sIt2) * 100) / std::min(sIt1->size(), sIt2->size());
-	// DP
+  distanceMatrix(TConfig const& c, TSeqProfiles const& sps, TDistArray& d) {
+    for (uint32_t i = 0; i < sps.size(); ++i) {
+      for (uint32_t j = i+1; j < sps.size(); ++j) {
 	AlignConfig<true, true> alignconf;
-	d[i][j] = gotohScore(*sIt1, *sIt2, alignconf, c.aliscore);
+	d[i][j] = gotohScore(sps[i], sps[j], alignconf, c.aliscore);
       }
     }
   }
@@ -120,16 +113,12 @@ namespace tracy {
     return (nn > 0) ? (nn - 1) : 0;
   }
 
-  template<typename TConfig, typename TSplitReadSet, typename TPhylogeny, typename TDIndex, typename TAlign>
+  template<typename TConfig, typename TSeqProfiles, typename TPhylogeny, typename TDIndex, typename TAlign>
   inline void
-  palign(TConfig const& c, TSplitReadSet const& sps, TPhylogeny const& p, TDIndex root, TAlign& align) {
-    typedef typename TAlign::index TAIndex;
+  palign(TConfig const& c, TSeqProfiles const& sps, TPhylogeny const& p, TDIndex root, TAlign& align) {
     if ((p[root][1] == -1) && (p[root][2] == -1)) {
-      typename TSplitReadSet::const_iterator sIt = sps.begin();
-      if (root) std::advance(sIt, root);
-      align.resize(boost::extents[1][sIt->size()]);
-      TAIndex ind = 0;
-      for(typename std::string::const_iterator str = sIt->begin(); str != sIt->end(); ++str) align[0][ind++] = *str;
+      align.resize(boost::extents[1][sps[root].shape()[1]]);
+      for(uint32_t ind = 0; ind < sps[root].shape()[1]; ++ind) align[0][ind] = _profileConsChar(sps[root], ind);
     } else {
       TAlign align1;
       palign(c, sps, p, p[root][1], align1);
@@ -216,18 +205,11 @@ namespace tracy {
   }
 
 
-  template<typename TConfig, typename TSeqSegment, typename TSequences>
+  template<typename TConfig, typename TSeqProfiles>
   inline void
-  revSeqBasedOnDist(TConfig const& c, TSeqSegment& trpart, TSequences& seq) {
-    // Initialize Sequence Set
-    seq.resize(trpart.size(), "");
-    for(uint32_t k = 0; k < trpart.size(); ++k) {
-      if ((trpart[k].trimLeft >= 0) && (trpart[k].trimRight >= 0) && (trpart[k].trimLeft + trpart[k].trimRight < (int32_t) trpart[k].seq.size())) {
-	int32_t sz =  trpart[k].seq.size() - trpart[k].trimLeft - trpart[k].trimRight;
-	seq[k] = trpart[k].seq.substr(trpart[k].trimLeft, sz);
-      }
-    }
-
+  revSeqBasedOnDist(TConfig const& c, TSeqProfiles& seq) {
+    typedef typename TSeqProfiles::value_type TProfile;
+    
     // Compute distance matrix
     int32_t totalScore = 0;
     typedef boost::multi_array<int32_t, 2> TDistArray;
@@ -243,13 +225,13 @@ namespace tracy {
 	totalScore += d[i][j];
       }
     }
+    // Debug: Initial score
+    //std::cerr << "Score: " << totalScore << std::endl;
 
     // Optimize fwd-rev X-times
     bool iterateScore = true;
     int32_t updatedScore = 0;
     while (iterateScore) {
-      std::cout << "Score: " << totalScore << std::endl;
-      
       // Get quality
       typedef std::pair<int32_t, int32_t> TSeqScore;
       std::vector<TSeqScore> seqQuality;
@@ -265,97 +247,37 @@ namespace tracy {
 
       // Update scores
       for(uint32_t k = 0; k<seqQuality.size(); ++k) {
-	std::string s = seq[k];
-	reverseComplement(s);
+	TProfile s;
+        reverseComplementProfile(seq[seqQuality[k].second], s);
 	std::vector<int32_t> newD(num, 0);
 	int32_t scoreSum = 0;
 	int32_t oldScoreSum = 0;
 	for (TDIndex i = 0; i<num; ++i) {
-	  if (i != k) {
+	  if (i != seqQuality[k].second) {
 	    AlignConfig<true, true> alignconf;
 	    newD[i] = gotohScore(seq[i], s, alignconf, c.aliscore);
-	    oldScoreSum += d[i][k];
+	    oldScoreSum += d[i][seqQuality[k].second];
 	    scoreSum += newD[i];
 	  }
 	}
 	if (scoreSum >= oldScoreSum) {
-	  seq[k] = s;
+	  seq[seqQuality[k].second] = s;
 	  for (TDIndex i = 0; i<num; ++i) {
-	    d[i][k] = newD[i];
-	    d[k][i] = d[i][k];
+	    d[i][seqQuality[k].second] = newD[i];
+	    d[seqQuality[k].second][i] = d[i][seqQuality[k].second];
 	  }
 	}
 
-	// Update trimming boundaries
-	int32_t lr = 0;
-	int32_t offsetBP = 8;
-	int32_t newTrim = 0;
-	while (lr < 4) {
-	  std::string s = "";
-	  if (lr == 0) {
-	    if (trpart[k].trimLeft >= offsetBP) {
-	      newTrim = trpart[k].trimLeft - offsetBP;
-	      int32_t sz =  trpart[k].seq.size() - newTrim - trpart[k].trimRight;
-	      s = trpart[k].seq.substr(newTrim, sz);
-	    } else ++lr;
+	// Updated Score
+	updatedScore = 0;
+	for (TDIndex i = 0; i<num; ++i) {
+	  for (TDIndex j = 0; j<num; ++j) {
+	    updatedScore += d[i][j];
 	  }
-	  if (lr == 1) {
-	    if (trpart[k].trimLeft + trpart[k].trimRight + offsetBP + 100 < (int32_t) trpart[k].seq.size()) {
-	      newTrim = trpart[k].trimLeft + offsetBP;
-	      int32_t sz =  trpart[k].seq.size() - newTrim - trpart[k].trimRight;
-	      s = trpart[k].seq.substr(newTrim, sz);
-	    } else ++lr;
-	  }
-	  if (lr == 2) {
-	    if (trpart[k].trimRight >= offsetBP) {
-	      newTrim = trpart[k].trimRight - offsetBP;
-	      int32_t sz =  trpart[k].seq.size() - trpart[k].trimLeft - newTrim;
-	      s = trpart[k].seq.substr(trpart[k].trimLeft, sz);
-	    } else ++lr;
-	  }
-	  if (lr == 4) {
-	    if (trpart[k].trimLeft + trpart[k].trimRight + offsetBP + 100 < (int32_t) trpart[k].seq.size()) {
-	      newTrim = trpart[k].trimRight + offsetBP;
-	      int32_t sz =  trpart[k].seq.size() - trpart[k].trimLeft - newTrim;
-	      s = trpart[k].seq.substr(trpart[k].trimLeft, sz);
-	    }
-	    else break;
-	  }
-
-	  // Compute trimmed scores
-	  std::vector<int32_t> newD(num, 0);
-	  int32_t scoreSum = 0;
-	  int32_t oldScoreSum = 0;
-	  for (TDIndex i = 0; i<num; ++i) {
-	    if (i != k) {
-	      AlignConfig<true, true> alignconf;
-	      newD[i] = gotohScore(seq[i], s, alignconf, c.aliscore);
-	      oldScoreSum += d[i][k];
-	      scoreSum += newD[i];
-	    }
-	  }
-	  if (scoreSum >= oldScoreSum) {
-	    seq[k] = s;
-	    if ((lr == 0) || (lr == 1)) trpart[k].trimLeft = newTrim;
-	    else trpart[k].trimRight = newTrim;
-	    for (TDIndex i = 0; i<num; ++i) {
-	      d[i][k] = newD[i];
-	      d[k][i] = d[i][k];
-	    }
-	  } else ++lr;
-
-	  // Updated Score
-	  updatedScore = 0;
-	  for (TDIndex i = 0; i<num; ++i) {
-	    for (TDIndex j = 0; j<num; ++j) {
-	      updatedScore += d[i][j];
-	    }
-	  }
-	  std::cout << "Score: " << updatedScore << std::endl;
 	}
+	std::cout << "." << std::flush;
       }
       
-
       // Updated score
       updatedScore = 0;
       for (TDIndex i = 0; i<num; ++i) {
@@ -366,13 +288,14 @@ namespace tracy {
       if (totalScore < updatedScore) totalScore = updatedScore;
       else iterateScore = false;
     }
+    std::cout << std::endl;
   }
 
-  template<typename TConfig, typename TSplitReadSet>
-  inline int
-  msa(TConfig const& c, TSplitReadSet const& sps, std::string& cs) {
+  template<typename TConfig, typename TSeqProfiles, typename TAlign>
+  inline void
+  msa(TConfig const& c, TSeqProfiles const& sps, TAlign& align) {
     // Compute distance matrix
-    typedef boost::multi_array<int, 2> TDistArray;
+    typedef boost::multi_array<int32_t, 2> TDistArray;
     typedef typename TDistArray::index TDIndex;
     TDIndex num = sps.size();
     TDistArray d(boost::extents[2*num+1][2*num+1]);
@@ -402,33 +325,7 @@ namespace tracy {
     //}
     
     // Progressive Alignment
-    typedef boost::multi_array<char, 2> TAlign;
-    TAlign align;
     palign(c, sps, p, root, align);
-
-    // Consensus calling
-    std::string gapped;
-    consensus(c, align, gapped, cs);
-    
-    // Output vertical alignment
-    boost::iostreams::filtering_ostream rcfile;
-    rcfile.push(boost::iostreams::gzip_compressor());
-    rcfile.push(boost::iostreams::file_sink(c.alignment.c_str(), std::ios_base::out | std::ios_base::binary));
-    typedef typename TAlign::index TAIndex;
-    for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
-      for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
-	rcfile << align[i][j];
-      }
-      rcfile << '|' << gapped[j] << std::endl;
-    }
-    rcfile.pop();
-    
-
-    //std::cerr << cs << std::endl;
-    //std::cerr << std::endl;
-    
-    // Return split-read support
-    return align.shape()[0];
   }
 
 }

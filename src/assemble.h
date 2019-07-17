@@ -163,6 +163,9 @@ namespace tracy {
     for(int i=0; i<argc; ++i) { std::cout << argv[i] << ' '; }
     std::cout << std::endl;
 
+    // Sequence Profile
+    typedef boost::multi_array<float, 2> TProfile;
+
     // Multiple sequence alignment
     typedef boost::multi_array<char, 2> TAlign;
     TAlign align;
@@ -177,7 +180,6 @@ namespace tracy {
       loadSingleFasta(c.reference.string(), faname, seq);
 
       // Reference profile
-      typedef boost::multi_array<float, 2> TProfile;
       TProfile prefslice;
       _createProfile(seq, prefslice);
       
@@ -376,13 +378,9 @@ namespace tracy {
       }
     } else {
       // De-novo assembly
-      std::cout << "Please specify a reference file!" << std::endl;
-      return -1;
-      
-      // Load *.ab1 files
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load ab1 files" << std::endl;
-      std::vector<SequenceSegment> seqSegment;
+      std::vector<TProfile> seqProfiles;
       for(uint32_t i = 0; i < c.ab.size(); ++i) {
 	Trace tr;
 	int32_t ft = traceFormat(c.ab[i].string());
@@ -403,20 +401,25 @@ namespace tracy {
 	uint32_t trimLeft = 0;
 	uint32_t trimRight = 0;
 	trimTrace(c, bc, trimLeft, trimRight);
-	seqSegment.push_back(SequenceSegment(bc.primary, trimLeft, trimRight, true));
+
+	// Create Trace Profile
+	TProfile ptrace;
+	createProfile(tr, bc, ptrace, trimLeft, trimRight);
+	seqProfiles.push_back(ptrace);
       }
 
       // Optimize layout/trimming
       now = boost::posix_time::second_clock::local_time();
-      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Optimize layout/trimming" << std::endl;
-      std::vector<std::string> traceSet;
-      revSeqBasedOnDist(c, seqSegment, traceSet);	
+      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Optimize layout" << std::endl;
+      revSeqBasedOnDist(c, seqProfiles);
 
       // Assemble
       now = boost::posix_time::second_clock::local_time();
       std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Assemble traces" << std::endl;
-      std::string consensus;
-      msa(c, traceSet, consensus);
+      msa(c, seqProfiles, align);
+
+      // Consensus calling
+      consensus(c, align, gapped, cs);
     }
 
     // Output vertical alignment
