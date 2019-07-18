@@ -52,9 +52,10 @@ namespace tracy {
   struct TraceScore {
     int32_t score;
     int32_t idx;
+    int32_t newidx;
     bool forward;
 
-    TraceScore(int32_t const s, int32_t const i, bool const f) : score(s), idx(i), forward(f) {}
+    TraceScore(int32_t const s, int32_t const i, int32_t const n, bool const f) : score(s), idx(i), newidx(n), forward(f) {}
   };
 
 
@@ -223,17 +224,14 @@ namespace tracy {
 	if ((gsFwd > scoreThreshold) || (gsRev > scoreThreshold)) {
 	  int32_t bestScore = std::max(gsFwd, gsRev);
 	  if (gsFwd >= gsRev) {
-	    scoreIdx.push_back(TraceScore(bestScore, i, true));
+	    scoreIdx.push_back(TraceScore(bestScore, i, scoreIdx.size(), true));
 	    traceProfiles.push_back(ptrace);
 	  } else {
-	    scoreIdx.push_back(TraceScore(bestScore, i, false));
+	    scoreIdx.push_back(TraceScore(bestScore, i, scoreIdx.size(), false));
 	    traceProfiles.push_back(prevtrace);
 	  }
 	} else {
 	  std::cerr << "Warning: " << c.ab[i].stem().string() << " is not matching to the reference! Trace file will be excluded!" << std::endl;
-	  // Push-back empty trace and sequence to keep the input file order
-	  TProfile empty;
-	  traceProfiles.push_back(empty);
 	}
       }
 
@@ -243,12 +241,12 @@ namespace tracy {
       // Align iteratively
       if (scoreIdx.size()) {
 	AlignConfig<true, false> semiglobal;
-	gotoh(traceProfiles[scoreIdx[0].idx], prefslice, align, semiglobal, c.aliscore);
+	gotoh(traceProfiles[scoreIdx[0].newidx], prefslice, align, semiglobal, c.aliscore);
 	for(uint32_t i = 1; i < scoreIdx.size(); ++i) {
 	  TAlign alignNew;
 	  TProfile alignProfile;
 	  _createProfile(align, alignProfile);
-	  gotoh(traceProfiles[scoreIdx[i].idx], alignProfile, alignNew, semiglobal, c.aliscore);
+	  gotoh(traceProfiles[scoreIdx[i].newidx], alignProfile, alignNew, semiglobal, c.aliscore);
 
 	  // Debug profile alignment
 	  //std::cerr << "Profile alignment" << std::endl;
@@ -321,11 +319,11 @@ namespace tracy {
 	for(uint32_t i = 0; i < scoreIdx.size(); ++i) {
 	  if (i!=0) rfile << ", ";
 	  Trace tr;
-	  int32_t ft = traceFormat(c.ab[i].string());
+	  int32_t ft = traceFormat(c.ab[scoreIdx[i].idx].string());
 	  if (ft == 0) {
-	    if (!readab(c.ab[i].string(), tr)) return -1;
+	    if (!readab(c.ab[scoreIdx[i].idx].string(), tr)) return -1;
 	  } else if (ft == 1) {
-	    if (!readscf(c.ab[i].string(), tr)) return -1;
+	    if (!readscf(c.ab[scoreIdx[i].idx].string(), tr)) return -1;
 	  } else {
 	    std::cerr << "Unknown trace file type!" << std::endl;
 	    return -1;
@@ -340,24 +338,20 @@ namespace tracy {
 	  uint32_t trimRight = 0;
 	  trimTrace(c, bc, trimLeft, trimRight);
 
-	  // Hard trim of the trace data structures
+	  // Hard trim of the basecalls, keep trace data structure
 	  BaseCalls nbc;
-	  Trace ntr;
-	  trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
+	  trimTrace(tr, bc, trimLeft, trimRight, nbc);
 
 	  // Reverse complement trace if necessary
 	  BaseCalls padbc;
 	  Trace padtr;
 	  if (scoreIdx[i].forward) {
-	    // Debug
-	    //std::string filename = c.ab[scoreIdx[i].idx].stem().string() + ".txt";
-	    //traceTxtOut(filename, nbc, ntr);
-	    alignmentTracePadding(align, ntr, nbc, scoreIdx.size()-i-1, padtr, padbc);
+	    alignmentTracePadding(align, tr, nbc, scoreIdx.size()-i-1, padtr, padbc);
 	  } else {
 	    BaseCalls tbc;
 	    Trace ttr;
 	    // Reverese complement
-	    reverseComplementTrace(ntr, nbc, ttr, tbc);
+	    reverseComplementTrace(tr, nbc, ttr, tbc);
 	    alignmentTracePadding(align, ttr, tbc, scoreIdx.size()-i-1, padtr, padbc);
 	  }
 
@@ -510,18 +504,17 @@ namespace tracy {
 
 	// Hard trim of the trace data structures
 	BaseCalls nbc;
-	Trace ntr;
-	trimTrace(tr, bc, trimLeft, trimRight, ntr, nbc);
+	trimTrace(tr, bc, trimLeft, trimRight, nbc);
 
 	// Reverse complement trace if necessary
 	BaseCalls padbc;
 	Trace padtr;
-	if (fwd[seqidx[i]]) alignmentTracePadding(align, ntr, nbc, i, padtr, padbc);
+	if (fwd[seqidx[i]]) alignmentTracePadding(align, tr, nbc, i, padtr, padbc);
 	else {
 	  BaseCalls tbc;
 	  Trace ttr;
 	  // Reverese complement
-	  reverseComplementTrace(ntr, nbc, ttr, tbc);
+	  reverseComplementTrace(tr, nbc, ttr, tbc);
 	  alignmentTracePadding(align, ttr, tbc, i, padtr, padbc);
 	}
 	// Append gapped trace to output
