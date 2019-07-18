@@ -209,14 +209,30 @@ namespace tracy {
       // Basecalling and reference profile
       BaseCalls gbc;
       basecall(gtr, gbc, c.pratio);
-      createProfile(gtr, gbc, referenceprofile);
 
-      // Dummy reference slice
-      rs.forward = true;
+      // Figure out if fwd or rev
+      TProfile fwdprofile;
+      createProfile(gtr, gbc, fwdprofile);
+      TProfile revprofile;
+      reverseComplementProfile(fwdprofile, revprofile);
+
+      // Alignment scores
+      int32_t gsFwd = gotohScore(fulltraceprofile, fwdprofile, semiglobal, sc);
+      int32_t gsRev = gotohScore(fulltraceprofile, revprofile, semiglobal, sc);
+      
+      // Forward or reverse?
       rs.kmersupport = 0;
       rs.pos = 0;
       rs.chr = "wildtype";
       rs.refslice = gbc.primary;
+      if (gsFwd > gsRev) {
+	rs.forward = true;
+	copyProfile(fwdprofile, referenceprofile);
+      } else {
+	rs.forward = false;
+	reverseComplement(rs.refslice);
+	copyProfile(revprofile, referenceprofile);
+      }
     }
 
     // Semi-global alignment
