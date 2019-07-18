@@ -109,8 +109,8 @@ namespace tracy
       ifile.read(fcode, 4);
       ifile.close();
       if (((uint8_t)fcode[0] == (uint8_t)0x1f) && ((uint8_t)fcode[1] == (uint8_t)0x8b)) return 0; // Gzipped fasta, big reference genome
-      else if (traceFormat(path) >= 0) return 2; // Trace file, small reference
-      else if (fcode[0] == '>') return 1;
+      else if (traceFormat(path) >= 0) return 2; // Trace file
+      else if (fcode[0] == '>') return 1; // Single-fasta file
     }
     return -1;
   }

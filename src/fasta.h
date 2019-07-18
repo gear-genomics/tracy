@@ -29,6 +29,11 @@ Contact: Tobias Rausch (rausch@embl.de)
 namespace tracy
 {
 
+#ifndef MAX_SINGLE_FASTA_SIZE
+#define MAX_SINGLE_FASTA_SIZE 50000
+#endif
+
+
   inline bool
   loadSingleFasta(std::string const& filename, std::string& faname, std::string& seq) {
     faname = "";
