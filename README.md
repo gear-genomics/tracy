@@ -63,7 +63,15 @@ Alignment to a Fasta Slice
 
 Alignment of a trace file to a FASTA reference slice.
 
-`tracy align -f align -o out.align -g ref_slice.fa input.ab1`
+`tracy align -o outprefix -r ref_slice.fa input.ab1`
+
+
+Alignment to a Wildtype Chromatogram
+------------------------------------
+
+Alignment of a trace file to a wildtype chromatogram is also possible.
+
+`tracy align -o outprefix -r wildtype.ab1 input.ab1`
 
 
 Alignment to an indexed reference genome
@@ -77,7 +85,9 @@ Alignment to a large reference genome requires a pre-built index on a bgzip comp
 
 Once the index has been built you can align to the indexed genome.
 
-`tracy align -g hg38.fa.gz input.ab1`
+`tracy align -r hg38.fa.gz input.ab1`
+
+The index needs to be built only once.
 
 
 Separating heterozygous variants
