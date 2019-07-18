@@ -62,9 +62,14 @@ namespace tracy {
     uint16_t kmer;
     uint16_t maxindel;
     uint16_t minKmerSupport;
+    int32_t gapopen;
+    int32_t gapext;
+    int32_t match;
+    int32_t mismatch;
     float pratio;
     std::string format;
     std::string outprefix;
+    DnaScore<int32_t> aliscore;
     boost::filesystem::path align;
     boost::filesystem::path ab;
     boost::filesystem::path outfile;
@@ -83,18 +88,26 @@ namespace tracy {
     boost::program_options::options_description generic("Generic options");
     generic.add_options()
       ("help,?", "show help message")
-      ("genome,g", boost::program_options::value<boost::filesystem::path>(&c.genome), "(gzipped) fasta or wildtype ab1 file")
+      ("reference,r", boost::program_options::value<boost::filesystem::path>(&c.genome), "(gzipped) fasta or wildtype ab1 file")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
       ("kmer,k", boost::program_options::value<uint16_t>(&c.kmer)->default_value(15), "kmer size to anchor trace")
       ("support,s",  boost::program_options::value<uint16_t>(&c.minKmerSupport)->default_value(3), "min. kmer support")
-      ("maxindel,m", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
-      ("trimLeft,l", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
-      ("trimRight,r", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
+      ("maxindel,i", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
+      ("trimLeft,t", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
+      ("trimRight,u", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
       ;
-    
+
+    boost::program_options::options_description alignment("Alignment scoring options");
+    alignment.add_options()
+      ("gapopen,g", boost::program_options::value<int32_t>(&c.gapopen)->default_value(-10), "gap open")
+      ("gapext,e", boost::program_options::value<int32_t>(&c.gapext)->default_value(-4), "gap extension")
+      ("match,m", boost::program_options::value<int32_t>(&c.match)->default_value(3), "match")
+      ("mismatch,n", boost::program_options::value<int32_t>(&c.mismatch)->default_value(-5), "mismatch")
+      ;
+
     boost::program_options::options_description otp("Output options");
     otp.add_options()
-      ("linelimit,n", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
+      ("linelimit,l", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
       ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
       ;
     
@@ -107,9 +120,9 @@ namespace tracy {
     pos_args.add("input-file", -1);
     
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(otp).add(hidden);
+    cmdline_options.add(generic).add(alignment).add(otp).add(hidden);
     boost::program_options::options_description visible_options;
-    visible_options.add(generic).add(otp);
+    visible_options.add(generic).add(alignment).add(otp);
     boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(pos_args).run(), vm);
     boost::program_options::notify(vm);
@@ -151,7 +164,7 @@ namespace tracy {
 
     // Alignment options
     AlignConfig<true, false> semiglobal;
-    DnaScore<int> sc(5, -4, -10, -1);
+    c.aliscore = DnaScore<int32_t>(c.match, c.mismatch, c.gapopen, c.gapext);
 
     // Call bases
     BaseCalls bc;
@@ -188,7 +201,7 @@ namespace tracy {
       // Align trimmed trace to profile
       typedef boost::multi_array<char, 2> TAlign;
       TAlign align;
-      gotoh(ptrace, prefslice, align, semiglobal, sc);
+      gotoh(ptrace, prefslice, align, semiglobal, c.aliscore);
       
       // Trim initial reference slice and extend to full trace
       trimReferenceSlice(c, align, rs);
@@ -217,8 +230,8 @@ namespace tracy {
       reverseComplementProfile(fwdprofile, revprofile);
 
       // Alignment scores
-      int32_t gsFwd = gotohScore(fulltraceprofile, fwdprofile, semiglobal, sc);
-      int32_t gsRev = gotohScore(fulltraceprofile, revprofile, semiglobal, sc);
+      int32_t gsFwd = gotohScore(fulltraceprofile, fwdprofile, semiglobal, c.aliscore);
+      int32_t gsRev = gotohScore(fulltraceprofile, revprofile, semiglobal, c.aliscore);
       
       // Forward or reverse?
       rs.kmersupport = 0;
@@ -240,7 +253,7 @@ namespace tracy {
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Alignment" << std::endl;
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final;
-    int32_t score = gotoh(fulltraceprofile, referenceprofile, final, semiglobal, sc);
+    int32_t score = gotoh(fulltraceprofile, referenceprofile, final, semiglobal, c.aliscore);
     // Debug Alignment
     //for(uint32_t i = 0; i<final.shape()[0]; ++i) {
     //for(uint32_t j = 0; j<final.shape()[1]; ++j) std::cerr << final[i][j];
