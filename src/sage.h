@@ -287,7 +287,9 @@ namespace tracy {
     c.outfile = c.outprefix + ".txt";
     plotAlignment(c, final, rs, score);
 
-    //traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
+    // JSON output
+    std::string jsonfilename = c.outprefix + ".json";
+    traceAlignJsonOut(jsonfilename, nbc, ntr, rs, final);
 
 #ifdef PROFILE
     ProfilerStop();
