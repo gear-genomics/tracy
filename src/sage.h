@@ -180,7 +180,11 @@ namespace tracy {
     typedef boost::multi_array<float, 2> TProfile;
     TProfile fulltraceprofile;
     createProfile(tr, bc, fulltraceprofile);
-    
+
+    // Create trimmed trace profile
+    TProfile trimmedtrace;
+    createProfile(tr, bc, trimmedtrace, c.trimLeft, c.trimRight);
+
     // Load reference
     ReferenceSlice rs;
     TProfile referenceprofile;
@@ -193,23 +197,53 @@ namespace tracy {
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Find reference match" << std::endl;
     if ((rs.filetype == 0) || (rs.filetype == 1)) {
-      // Large reference file
-      csa_wt<> fm_index;
-      if (!loadFMIdx(c, rs, fm_index)) return -1;
-      if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
-      TProfile prefslice;	  
-      createProfile(c, rs, prefslice);
-
-      // Create trimmed trace profile
-      TProfile ptrace;
-      createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
-    
-      // Align trimmed trace to profile
+      // Preliminary alignment
       typedef boost::multi_array<char, 2> TAlign;
       TAlign align;
-      gotoh(ptrace, prefslice, align, semiglobal, c.aliscore);
+      TProfile prefslice;	  
+      if (rs.filetype == 0) {
+	// Indexed genome
+	csa_wt<> fm_index;
+	if (!loadFMIdx(c, rs, fm_index)) return -1;
+	if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
+	createProfile(c, rs, prefslice);
+      } else {
+	// Single FASTA
+	std::string faname = "";
+	std::string seq = "";
+	if (!loadSingleFasta(c.genome.string(), faname, seq)) return -1;
+	if (seq.size() > MAX_SINGLE_FASTA_SIZE) {
+	  std::cerr << "Reference is larger than 50Kbp. Please use a smaller reference slice or an indexed genome!" << std::endl;
+	  return -1;
+	}
+
+	// Profile
+	TProfile fwdprofile;
+	_createProfile(seq, fwdprofile);
+	TProfile revprofile;
+	reverseComplementProfile(fwdprofile, revprofile);
+	
+	// Alignment scores
+	int32_t gsFwd = gotohScore(trimmedtrace, fwdprofile, semiglobal, c.aliscore);
+	int32_t gsRev = gotohScore(trimmedtrace, revprofile, semiglobal, c.aliscore);
+	
+	// Forward or reverse?
+	rs.kmersupport = 0;
+	rs.pos = 0;
+	rs.chr = faname;
+	rs.refslice = seq;
+	if (gsFwd > gsRev) {
+	  rs.forward = true;
+	  copyProfile(fwdprofile, prefslice);
+	} else {
+	  rs.forward = false;
+	  reverseComplement(rs.refslice);
+	  copyProfile(revprofile, prefslice);
+	}
+      }
       
-      // Trim initial reference slice and extend to full trace
+      // Align trimmed trace to profile
+      gotoh(trimmedtrace, prefslice, align, semiglobal, c.aliscore);
       trimReferenceSlice(c, align, rs);
       createProfile(c, rs, referenceprofile);
     } else if (rs.filetype == 2) {
@@ -236,8 +270,8 @@ namespace tracy {
       reverseComplementProfile(fwdprofile, revprofile);
 
       // Alignment scores
-      int32_t gsFwd = gotohScore(fulltraceprofile, fwdprofile, semiglobal, c.aliscore);
-      int32_t gsRev = gotohScore(fulltraceprofile, revprofile, semiglobal, c.aliscore);
+      int32_t gsFwd = gotohScore(trimmedtrace, fwdprofile, semiglobal, c.aliscore);
+      int32_t gsRev = gotohScore(trimmedtrace, revprofile, semiglobal, c.aliscore);
       
       // Forward or reverse?
       rs.kmersupport = 0;
@@ -252,6 +286,9 @@ namespace tracy {
 	reverseComplement(rs.refslice);
 	copyProfile(revprofile, referenceprofile);
       }
+    } else {
+      std::cerr << "Unknown reference file type!" << std::endl;
+      return - 1;
     }
 
     // Semi-global alignment
