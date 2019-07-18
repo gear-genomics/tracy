@@ -140,6 +140,12 @@ namespace tracy {
       std::cerr << "Reference file is missing: " << c.genome.filename().string() << std::endl;
       return 1;
     }
+
+    // Check input trace
+    if (!(boost::filesystem::exists(c.ab) && boost::filesystem::is_regular_file(c.ab) && boost::filesystem::file_size(c.ab))) {
+      std::cerr << "Input trace file is missing: " << c.ab.filename().string() << std::endl;
+      return 1;
+    }
     
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
