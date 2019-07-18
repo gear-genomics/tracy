@@ -276,7 +276,7 @@ namespace tracy {
 	}
 
 	// Consensus calling
-	consensus(c, align, gapped, cs);
+	consensus(c, align, gapped, cs, true);
 
 	// Output horizontal alignment
 	std::string alignfilename = c.outprefix + ".align.fa";
@@ -448,7 +448,7 @@ namespace tracy {
       msa(c, seqProfiles, align, seqidx);
 
       // Consensus calling
-      consensus(c, align, gapped, cs);
+      consensus(c, align, gapped, cs, false);
 
       // Output horizontal alignment
       std::string alignfilename = c.outprefix + ".align.fa";

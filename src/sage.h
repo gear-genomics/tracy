@@ -46,6 +46,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "abif.h"
 #include "align.h"
 #include "gotoh.h"
+#include "fasta.h"
 #include "fmindex.h"
 #include "json.h"
 #include "profile.h"
@@ -63,9 +64,10 @@ namespace tracy {
     uint16_t minKmerSupport;
     float pratio;
     std::string format;
+    std::string outprefix;
     boost::filesystem::path align;
-    boost::filesystem::path outfile;
     boost::filesystem::path ab;
+    boost::filesystem::path outfile;
     boost::filesystem::path genome;
   };
   
@@ -93,8 +95,7 @@ namespace tracy {
     boost::program_options::options_description otp("Output options");
     otp.add_options()
       ("linelimit,n", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
-      ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|align]")
-      ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
+      ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -147,60 +148,83 @@ namespace tracy {
       std::cerr << "Unknown trace file type!" << std::endl;
       return -1;
     }
-    
+
+    // Alignment options
+    AlignConfig<true, false> semiglobal;
+    DnaScore<int> sc(5, -4, -10, -1);
+
     // Call bases
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
 
-    // Load reference
-    csa_wt<> fm_index;
-    ReferenceSlice rs;
-    if (!loadFMIdx(c, rs, fm_index)) return -1;
+    // Full trace profile
+    typedef boost::multi_array<float, 2> TProfile;
+    TProfile fulltraceprofile;
+    createProfile(tr, bc, fulltraceprofile);
     
+    // Load reference
+    ReferenceSlice rs;
+    TProfile referenceprofile;
+    rs.filetype = genomeType(c.genome.string());
+    if (rs.filetype == -1) {
+      std::cerr << "Unknown reference file format!" << std::endl;
+      return -1;
+    }
     // Find reference match
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Find reference match" << std::endl;
-    if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
+    if ((rs.filetype == 0) || (rs.filetype == 1)) {
+      // Large reference file
+      csa_wt<> fm_index;
+      if (!loadFMIdx(c, rs, fm_index)) return -1;
+      if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
+      TProfile prefslice;	  
+      createProfile(c, rs, prefslice);
 
-    // Create trimmed trace and reference profile
-    typedef boost::multi_array<float, 2> TProfile;
-    TProfile ptrace;
-    createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
-    TProfile prefslice;
-    createProfile(c, rs, prefslice);
+      // Create trimmed trace profile
+      TProfile ptrace;
+      createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
     
-    // Debug Profile
-    //for(uint32_t i = 0; i<ptrace.shape()[0]; ++i) {
-    //for(uint32_t j = 0; j<ptrace.shape()[1]; ++j) std::cerr << ptrace[i][j];
-    //std::cerr << std::endl;
-    //}
-    
+      // Align trimmed trace to profile
+      typedef boost::multi_array<char, 2> TAlign;
+      TAlign align;
+      gotoh(ptrace, prefslice, align, semiglobal, sc);
+      
+      // Trim initial reference slice and extend to full trace
+      trimReferenceSlice(c, align, rs);
+      createProfile(c, rs, referenceprofile);
+    } else if (rs.filetype == 2) {
+      // Wildtype trace
+      Trace gtr;
+      int32_t gft = traceFormat(c.genome.string());
+      if (gft == 0) {
+	if (!readab(c.genome.string(), gtr)) return -1;
+      } else if (gft == 1) {
+	if (!readscf(c.genome.string(), gtr)) return -1;
+      } else {
+	std::cerr << "Unknown trace file type!" << std::endl;
+	return -1;
+      }
+
+      // Basecalling and reference profile
+      BaseCalls gbc;
+      basecall(gtr, gbc, c.pratio);
+      createProfile(gtr, gbc, referenceprofile);
+
+      // Dummy reference slice
+      rs.forward = true;
+      rs.kmersupport = 0;
+      rs.pos = 0;
+      rs.chr = "wildtype";
+      rs.refslice = gbc.primary;
+    }
+
     // Semi-global alignment
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Alignment" << std::endl;
     typedef boost::multi_array<char, 2> TAlign;
-    TAlign align;
-    AlignConfig<true, false> semiglobal;
-    DnaScore<int> sc(5, -4, -10, -1);
-    gotoh(ptrace, prefslice, align, semiglobal, sc);
-    
-    // Debug Alignment
-    //for(uint32_t i = 0; i<align.shape()[0]; ++i) {
-    //for(uint32_t j = 0; j<align.shape()[1]; ++j) std::cerr << align[i][j];
-    //std::cerr << std::endl;
-    //}
-    
-    // Trim initial reference slice and extend to full trace
-    trimReferenceSlice(c, align, rs);
-    TProfile ptr;
-    createProfile(tr, bc, ptr);
-    TProfile prs;
-    createProfile(c, rs, prs);
-    
-    // Global alignment to trimmed reference
-    typedef boost::multi_array<char, 2> TAlign;
     TAlign final;
-    gotoh(ptr, prs, final, semiglobal, sc);
+    int32_t score = gotoh(fulltraceprofile, referenceprofile, final, semiglobal, sc);
     // Debug Alignment
     //for(uint32_t i = 0; i<final.shape()[0]; ++i) {
     //for(uint32_t j = 0; j<final.shape()[1]; ++j) std::cerr << final[i][j];
@@ -215,14 +239,26 @@ namespace tracy {
     // Output
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Output" << std::endl;
-    if (c.format == "align") {
-      // For the command line we want to show the trimmed alignment (as in Indigo)
-      TAlign final1;
-      std::string pritrim = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
-      int32_t alTrimmedScore = gotoh(pritrim, rs.refslice, final1, semiglobal, sc);
-      plotAlignment(c, final1, rs, alTrimmedScore);
-    } else traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
 
+    // Horizontal alignment
+    std::string alignfilename = c.outprefix + ".align.fa";
+    std::ofstream vfile(alignfilename.c_str());
+    typedef typename TAlign::index TAIndex;
+    vfile << ">" << c.ab.stem().string() << std::endl;
+    for(TAIndex j = 0; j < (TAIndex) final.shape()[1]; ++j) vfile << final[0][j];
+    vfile << std::endl;
+    vfile << ">" << rs.chr;
+    if (rs.forward) vfile << " (forward)" << std::endl;
+    else vfile << " (reverse)" << std::endl;
+    for(TAIndex j = 0; j < (TAIndex) final.shape()[1]; ++j) vfile << final[1][j];
+    vfile << std::endl;
+    vfile.close();
+
+    // Show ClustalW like alignment
+    c.outfile = c.outprefix + ".txt";
+    plotAlignment(c, final, rs, score);
+
+    //traceAlignJsonOut(c.outfile.string(), nbc, ntr, rs, final);
 
 #ifdef PROFILE
     ProfilerStop();

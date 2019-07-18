@@ -182,17 +182,21 @@ namespace tracy {
 
   template<typename TConfig, typename TAlign>
   inline void
-  consensus(TConfig const& c, TAlign const& align, std::string& gapped, std::string& cs) {
+  consensus(TConfig const& c, TAlign const& align, std::string& gapped, std::string& cs, bool ignoreLast) {
     typedef typename TAlign::index TAIndex;
 
+    // Ignore last sequence?
+    uint32_t getRidOffRef = 0;
+    if (ignoreLast) getRidOffRef = 1;
+    
     // Calculate coverage
     typedef boost::multi_array<bool, 2> TFlag;
     TFlag fl;
-    fl.resize(boost::extents[align.shape()[0]][align.shape()[1]]);
+    fl.resize(boost::extents[align.shape()[0] - getRidOffRef][align.shape()[1]]);
     typedef std::vector<int32_t> TCoverage;
     TCoverage cov;
     cov.resize(align.shape()[1], 0);
-    for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+    for(TAIndex i = 0; (i < ((TAIndex) align.shape()[0] - getRidOffRef)); ++i) {
       int start = 0;
       int end = -1;
       for(TAIndex j = 0; j < (TAIndex) align.shape()[1]; ++j) {
@@ -207,7 +211,7 @@ namespace tracy {
     }
 
     // Minimum number of aligned sequences
-    int32_t covThreshold = (int32_t) (c.fractionCalled * align.shape()[0]);
+    int32_t covThreshold = (int32_t) (c.fractionCalled * (align.shape()[0] - getRidOffRef));
     TAIndex j = 0;
     std::vector<char> cons(align.shape()[1], '-');
     for(typename TCoverage::const_iterator itCov = cov.begin(); itCov != cov.end(); ++itCov, ++j) {
@@ -215,7 +219,7 @@ namespace tracy {
       if (*itCov >= covThreshold) {
 	// Get consensus letter
 	std::vector<int32_t> count(5, 0); // ACGT-
-	for(TAIndex i = 0; i < (TAIndex) align.shape()[0]; ++i) {
+	for(TAIndex i = 0; (i < ((TAIndex) align.shape()[0] - getRidOffRef)); ++i) {
 	  if (fl[i][j]) {
 	    if ((align[i][j] == 'A') || (align[i][j] == 'a')) ++count[0];
 	    else if ((align[i][j] == 'C') || (align[i][j] == 'c')) ++count[1];
@@ -247,13 +251,6 @@ namespace tracy {
     }
   }
 
-
-  template<typename TConfig, typename TAlign>
-  inline void
-  consensus(TConfig const& c, TAlign const& align, std::string& cs) {
-    std::string gapped;
-    consensus(c, align, gapped, cs);
-  }
 
 
   template<typename TConfig, typename TSeqProfiles>

@@ -26,6 +26,8 @@ Contact: Tobias Rausch (rausch@embl.de)
 
 #include <htslib/faidx.h>
 
+#include "fasta.h"
+
 namespace tracy
 {
 
@@ -48,13 +50,13 @@ namespace tracy
 
   struct ReferenceSlice {
     bool forward;
-    uint32_t filetype;   //0: *fa.gz, 1: *.fa, 2: *.ab1
+    int32_t filetype;   //-1: failure, 0: *fa.gz, 1: *.fa, 2: *.ab1
     uint32_t kmersupport;
     uint32_t pos;
     std::string chr;
     std::string refslice;
 
-    ReferenceSlice() : forward(true), filetype(0), kmersupport(0), pos(0), chr(""), refslice("") {}
+    ReferenceSlice() : forward(true), filetype(-1), kmersupport(0), pos(0), chr(""), refslice("") {}
   };
 
 
@@ -98,6 +100,22 @@ namespace tracy
     boost::erase_all(s, "#");
   }
 
+  inline int32_t     // -1: failure, 0: Indexed genome, 1: fasta file, 2: trace
+  genomeType(std::string const& path) {
+    std::ifstream ifile(path.c_str(), std::ios::binary | std::ios::in);
+    if (ifile.is_open()) {
+      char fcode[4];
+      ifile.seekg(0);
+      ifile.read(fcode, 4);
+      ifile.close();
+      if (((uint8_t)fcode[0] == (uint8_t)0x1f) && ((uint8_t)fcode[1] == (uint8_t)0x8b)) return 0; // Gzipped fasta, big reference genome
+      else if (traceFormat(path) >= 0) return 2; // Trace file, small reference
+      else if (fcode[0] == '>') return 1;
+    }
+    return -1;
+  }
+    
+  
   template<typename TConfig, typename TFMIdx>
   inline bool
   loadFMIdx(TConfig const& c, ReferenceSlice& rs, TFMIdx& fm_index) {
