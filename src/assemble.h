@@ -33,6 +33,7 @@ namespace tracy {
   
   struct AssembleConfig {
     bool hasReference;
+    bool incCons;
     int32_t gapopen;
     int32_t gapext;
     int32_t match;
@@ -87,17 +88,23 @@ namespace tracy {
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
       ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9]")
       ("fracmatch,f", boost::program_options::value<float>(&c.matchFraction)->default_value(0.5), "min. fraction of matches [0:1]")
-      ("called,d", boost::program_options::value<float>(&c.fractionCalled)->default_value(0.1), "fraction of traces required for consensus")
-      ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
       ;
 
-    boost::program_options::options_description alignment("Alignment scoring options");
+    boost::program_options::options_description alignment("Alignment options");
     alignment.add_options()
       ("gapopen,g", boost::program_options::value<int32_t>(&c.gapopen)->default_value(-10), "gap open")
       ("gapext,e", boost::program_options::value<int32_t>(&c.gapext)->default_value(-4), "gap extension")
       ("match,m", boost::program_options::value<int32_t>(&c.match)->default_value(3), "match")
       ("mismatch,n", boost::program_options::value<int32_t>(&c.mismatch)->default_value(-5), "mismatch")
       ;
+
+    boost::program_options::options_description otp("Output options");
+    otp.add_options()
+      ("called,d", boost::program_options::value<float>(&c.fractionCalled)->default_value(0.1), "fraction of traces required for consensus")
+      ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
+      ("inccons,i", "include consensus in FASTA align")
+      ;
+
     
     boost::program_options::options_description hidden("Hidden options");
     hidden.add_options()
@@ -108,9 +115,9 @@ namespace tracy {
     pos_args.add("input-file", -1);
     
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(alignment).add(hidden);
+    cmdline_options.add(generic).add(alignment).add(otp).add(hidden);
     boost::program_options::options_description visible_options;
-    visible_options.add(generic).add(alignment);
+    visible_options.add(generic).add(alignment).add(otp);
     boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(pos_args).run(), vm);
     boost::program_options::notify(vm);
@@ -133,6 +140,10 @@ namespace tracy {
     // Check reference
     if (vm.count("reference")) c.hasReference = true;
     else c.hasReference = false;
+
+    // Check include consensus flag
+    if (vm.count("inccons")) c.incCons = true;
+    else c.incCons = false;
 
     // Check match fraction
     if (c.matchFraction < 0) c.matchFraction = 0;
@@ -297,8 +308,10 @@ namespace tracy {
 	  vfile << align[scoreIdx.size()][j];
 	}
 	vfile << std::endl;
-	vfile << ">Consensus" << std::endl;
-	vfile << gapped << std::endl;
+	if (c.incCons) {
+	  vfile << ">Consensus" << std::endl;
+	  vfile << gapped << std::endl;
+	}
 	vfile.close();
 	
 	// Output MSA and gapped traces
@@ -465,8 +478,10 @@ namespace tracy {
 	}
 	vfile << std::endl;
       }
-      vfile << ">Consensus" << std::endl;
-      vfile << gapped << std::endl;
+      if (c.incCons) {
+	vfile << ">Consensus" << std::endl;
+	vfile << gapped << std::endl;
+      }
       vfile.close();
       
       // Output MSA and gapped traces
