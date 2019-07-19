@@ -90,12 +90,12 @@ Once the index has been built you can align to the indexed genome.
 The index needs to be built only once.
 
 
-Separating heterozygous variants
---------------------------------
+Separating heterozygous mutations
+---------------------------------
 
-Double-peaks in the Chromatogram can cause alignment issues. Tracy supports deconvolution of heterozygous variants into two separate alleles.
+Double-peaks in the chromatogram trace can cause alignment issues. Tracy supports deconvolution of heterozygous variants into two separate alleles.
 
-`tracy decompose -g hg38.fa.gz -f align -o outprefix input.ab1`
+`tracy decompose -r hg38.fa.gz -o outprefix input.ab1`
 
 The two alleles are then separately aligned.
 
@@ -103,17 +103,21 @@ The two alleles are then separately aligned.
 
 You can also use a wildtype chromatogram for decomposition.
 
-`tracy decompose -g wildtype.ab1 -f align -o outprefix mutated.ab1`
+`tracy decompose -r wildtype.ab1 -o outprefix mutated.ab1`
+
+Or a simple FASTA file.
+
+`tracy decompose -r sequence.fa -o outprefix mutated.ab1`
 
 
-SNV & InDel Variant Calling and Annotation
---------------------------------------------
+Single-nucleotide variant (SNV) and insertion & deletion (InDel) variant calling and annotation
+-----------------------------------------------------------------------------------------------
 
 Tracy can call and annotate variants with respect to a reference genome.
 
-`tracy decompose -v -a homo_sapiens -g hg38.fa.gz -f align -o outprefix input.ab1`
+`tracy decompose -v -a homo_sapiens -r hg38.fa.gz -o outprefix input.ab1`
 
-This command produces a variant call file in binary BCF format. It can be converted to VCF using bcftools.
+This command produces a variant call file in binary BCF format. It can be converted to VCF using [bcftools](https://github.com/samtools/bcftools).
 
 `bcftools view outprefix.bcf`
 
@@ -121,15 +125,13 @@ This command produces a variant call file in binary BCF format. It can be conver
 Using forward & reverse ab1 files to improve variant calling
 ------------------------------------------------------------
 
-If you do have forward and reverse trace files for the same expected genomic variant you can merge variant files and check consistency of calls and genotypes.
+If you do have forward and reverse trace files for the same expected genomic variant you can merge variant files and check consistency of calls and genotypes. Forward trace decomposition:
 
-Forward trace decomposition:
-
-`tracy decompose -f align -o forward -a homo_sapiens -g hg38.fa.gz forward.ab1`
+`tracy decompose -o forward -a homo_sapiens -r hg38.fa.gz forward.ab1`
 
 Reverse trace decomposition:
 
-`tracy decompose -f align -o reverse -a homo_sapiens -g hg38.fa.gz reverse.ab1`
+`tracy decompose -o reverse -a homo_sapiens -r hg38.fa.gz reverse.ab1`
 
 Left-alignment of InDels:
 
@@ -147,7 +149,7 @@ Trace assembly
 
 If you tiled a genomic region with multiple chromatogram files you can assemble all of these with tracy. 
 
-`tracy assemble -r <reference.fa> file1.ab1 file2.ab1 fileN.ab1`
+`tracy assemble -r reference.fa file1.ab1 file2.ab1 fileN.ab1`
 
 Tracy also supports de novo assembly if chromatogram trace files overlap sufficiently with each other.
 
