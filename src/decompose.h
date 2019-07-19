@@ -619,11 +619,10 @@ namespace tracy
     
   
 
-  template<typename TConfig, typename TDecomp>
+  template<typename TDecomp>
   inline void
-  writeDecomposition(TConfig const& c, TDecomp const& dcp) {
-    boost::filesystem::path outdecomp(c.outfile.string() + ".decomp");
-    std::ofstream ofile(outdecomp.string().c_str());
+  writeDecomposition(std::string const& path, TDecomp const& dcp) {
+    std::ofstream ofile(path.c_str());
     ofile << "indel\tdecomp" << std::endl;
     for(uint32_t i = 0; i < dcp.size(); ++i) ofile << dcp[i].first << "\t" << dcp[i].second << std::endl;
     ofile.close();

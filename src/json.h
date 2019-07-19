@@ -262,8 +262,7 @@ namespace tracy
   inline void
   traceAlleleAlignJsonOut(TConfig const& c, BaseCalls& bc, Trace const& tr, std::vector<Variant> const& var, ReferenceSlice const& rs1, ReferenceSlice const& rs2, ReferenceSlice const&, TAlign const& align1, TAlign const& align2, TAlign const& align3, TDecomposition const& dcp, int32_t const a1Score, int32_t const a2Score, int32_t const a3Score, TraceBreakpoint const& bp, std::pair<double, double> const& a1a2) {
     // Output file name
-    std::string outfile = c.outfile.string();
-    if (c.format == "align") outfile = c.outfile.string() + ".json";    
+    std::string outfile = c.outprefix + ".json";    
     
     // Output trace
     std::ofstream rfile(outfile.c_str());

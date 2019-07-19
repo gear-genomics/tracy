@@ -394,17 +394,15 @@ namespace tracy
   }
 
 
-  template<typename TConfig, typename TAlign>
+  template<typename TAlign>
   inline void
-    plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const key, int32_t const score, std::pair<double, double> const& a1a2) {
+  plotAlignment(std::string const& filename, TAlign const& align, ReferenceSlice const& rs, int32_t const key, int32_t const score, std::pair<double, double> const& a1a2, uint32_t const linelimit) {
     typedef typename TAlign::index TAIndex;
     int32_t ri = rs.pos + 1;
     int32_t riend = rs.pos + rs.refslice.size();
     int32_t vi = 1;
     
-    uint32_t fald = c.linelimit + 14;
-    std::string filename = c.outfile.string();
-    if (key != 0) filename = filename + ".align" + boost::lexical_cast<std::string>(key);
+    uint32_t fald = linelimit + 14;
     std::ofstream ofile(filename.c_str());
     if (key == 0) ofile << ">Alt" << std::endl;
     else if (key == 1) ofile << ">Alt1 (Estimated allelic Fraction: " << a1a2.first << ")" << std::endl;
@@ -447,13 +445,13 @@ namespace tracy
     while (s < e) {
       if (key != 3) ofile << "Alt" << std::setw(10) << vi << ' ';
       else ofile << "Alt1" << std::setw(9) << vi << ' ';
-      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
+      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + linelimit)); ++j) {
 	ofile << align[0][j];
 	if (align[0][j] != '-') ++vi;
       }
       ofile << std::endl;
       ofile << "              ";
-      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
+      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + linelimit)); ++j) {
 	if (align[0][j] == align[1][j]) ofile << "|";
 	else ofile << " ";
       }
@@ -464,13 +462,13 @@ namespace tracy
       } else {
 	ofile << "Alt2" << std::setw(9) << ri << ' ';
       }
-      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + c.linelimit)); ++j) {
+      for(TAIndex j = s; ((j < (TAIndex) e) && (j < s + linelimit)); ++j) {
 	ofile << align[1][j];
 	if (align[1][j] != '-') ++ri;
       }
       ofile << std::endl;
       ofile << std::endl;
-      s += c.linelimit;
+      s += linelimit;
       ++blockcount;
     }
     if (blockcount < 6) {
@@ -490,10 +488,10 @@ namespace tracy
     ofile.close();
   }
 
-  template<typename TConfig, typename TAlign>
+  template<typename TAlign>
   inline void
-  plotAlignment(TConfig const& c, TAlign const& align, ReferenceSlice const& rs, int32_t const score) {
-    plotAlignment(c, align, rs, 0, score, std::make_pair(0, 0));
+  plotAlignment(std::string const& filename, TAlign const& align, ReferenceSlice const& rs, int32_t const score, uint32_t const linelimit) {
+    plotAlignment(filename, align, rs, 0, score, std::make_pair(0, 0), linelimit);
   }
 
   template<typename TConfig, typename TAlign>

@@ -45,10 +45,16 @@ namespace tracy {
     uint16_t madc;
     uint16_t minKmerSupport;
     uint16_t qualCut;
+    int32_t gapopen;
+    int32_t gapext;
+    int32_t match;
+    int32_t mismatch;
     float pratio;
+    float trimStringency;
     std::string annotate;
-    std::string format;
     std::string host;
+    std::string outprefix;
+    DnaScore<int32_t> aliscore;
     boost::filesystem::path outfile;
     boost::filesystem::path ab;
     boost::filesystem::path genome;
@@ -61,28 +67,40 @@ namespace tracy {
     boost::program_options::options_description generic("Generic options");
     generic.add_options()
       ("help,?", "show help message")
-      ("genome,g", boost::program_options::value<boost::filesystem::path>(&c.genome), "(gzipped) fasta or wildtype ab1 file")
+      ("genome,r", boost::program_options::value<boost::filesystem::path>(&c.genome), "(gzipped) fasta or wildtype ab1 file")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
       ("kmer,k", boost::program_options::value<uint16_t>(&c.kmer)->default_value(15), "kmer size")
       ("support,s",  boost::program_options::value<uint16_t>(&c.minKmerSupport)->default_value(3), "min. kmer support")
-      ("maxindel,m", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
-      ("trimLeft,l", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
-      ("trimRight,r", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
+      ("maxindel,i", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
       ("annotate,a", boost::program_options::value<std::string>(&c.annotate), "annotate variants [homo_sapiens|homo_sapiens_hg19|mus_musculus|danio_rerio|...]")
       ("callVariants,v", "call variants in trace")
+      ;
+
+    boost::program_options::options_description alignment("Alignment options");
+    alignment.add_options()
+      ("gapopen,g", boost::program_options::value<int32_t>(&c.gapopen)->default_value(-10), "gap open")
+      ("gapext,e", boost::program_options::value<int32_t>(&c.gapext)->default_value(-4), "gap extension")
+      ("match,m", boost::program_options::value<int32_t>(&c.match)->default_value(3), "match")
+      ("mismatch,n", boost::program_options::value<int32_t>(&c.mismatch)->default_value(-5), "mismatch")
+      ;
+
+    boost::program_options::options_description tro("Trimming options");
+    tro.add_options()
+      ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(0), "trimming stringency [1:9], 0: use trimLeft and trimRight")
+      ("trimLeft,q", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
+      ("trimRight,u", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
       ;
     
     boost::program_options::options_description otp("Output options");
     otp.add_options()
-      ("linelimit,n", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
-      ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|align]")
-      ("outfile,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "output file")
+      ("linelimit,l", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
+      ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
     hidden.add_options()
       ("madc,c", boost::program_options::value<uint16_t>(&c.madc)->default_value(5), "MAD cutoff")
-      ("qualCut,q",  boost::program_options::value<uint16_t>(&c.qualCut)->default_value(45), "variant calling quality threshold")
+      ("qualCut,z",  boost::program_options::value<uint16_t>(&c.qualCut)->default_value(45), "variant calling quality threshold")
       ("input-file", boost::program_options::value<boost::filesystem::path>(&c.ab), "ab1")
       ;
     
@@ -90,9 +108,9 @@ namespace tracy {
     pos_args.add("input-file", -1);
     
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(otp).add(hidden);
+    cmdline_options.add(generic).add(alignment).add(tro).add(otp).add(hidden);
     boost::program_options::options_description visible_options;
-    visible_options.add(generic).add(otp);
+    visible_options.add(generic).add(alignment).add(tro).add(otp);
     boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(pos_args).run(), vm);
     boost::program_options::notify(vm);
@@ -105,6 +123,9 @@ namespace tracy {
     }
     if (c.maxindel < 1) c.maxindel = 1;
 
+    // Check trimming parameters
+    if (c.trimStringency > 9) c.trimStringency = 9;
+    
     // Variant calling
     if (vm.count("callVariants")) c.callvariants = true;
     else c.callvariants = false;
@@ -159,51 +180,147 @@ namespace tracy {
       std::cerr << "Trace file lacks basecalls!" << std::endl;
       return -1;
     }
+    
+    // Alignment options
+    AlignConfig<true, false> semiglobal;
+    c.aliscore = DnaScore<int32_t>(c.match, c.mismatch, c.gapopen, c.gapext);
 
     // Call bases
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
-    if (c.format == "align") traceTxtOut(c.outfile.string() + ".abif", bc, tr, c.trimLeft, c.trimRight);
+
+    // Get trim sizes
+    if (c.trimStringency >= 1) {
+      uint32_t trimLeft = 0;
+      uint32_t trimRight = 0;
+      trimTrace(c, bc, trimLeft, trimRight);
+      c.trimLeft = trimLeft;
+      c.trimRight = trimRight;
+    }
+    
+    // Output trace information
+    traceTxtOut(c.outprefix + ".abif", bc, tr, c.trimLeft, c.trimRight);
 
     // Create trimmed trace profile
     typedef boost::multi_array<float, 2> TProfile;
-    TProfile ptrace;
-    createProfile(tr, bc, ptrace, c.trimLeft, c.trimRight);
+    TProfile trimmedtrace;
+    createProfile(tr, bc, trimmedtrace, c.trimLeft, c.trimRight);
 
     // Identify position of indel shift in Sanger trace
     TraceBreakpoint bp;
-    findBreakpoint(ptrace, bp);
-    
+    findBreakpoint(trimmedtrace, bp);
+
     // Load reference
-    csa_wt<> fm_index;
     ReferenceSlice rs;
-    if (!loadFMIdx(c, rs, fm_index)) return -1;
-      
+    TProfile referenceprofile;
+    rs.filetype = genomeType(c.genome.string());
+    if (rs.filetype == -1) {
+      std::cerr << "Unknown reference file format!" << std::endl;
+      return -1;
+    }
+
     // Find reference match
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Find Reference Match" << std::endl;
-    
-    // Get reference slice
-    if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
-
-    // Create reference profile
     TProfile prefslice;
-    createProfile(c, rs, prefslice);
+    if ((rs.filetype == 0) || (rs.filetype == 1)) {
+      if (rs.filetype == 0) {
+	// Indexed genome
+	csa_wt<> fm_index;
+	if (!loadFMIdx(c, rs, fm_index)) return -1;
+	if (!getReferenceSlice(c, fm_index, bc, rs)) return -1;
+	createProfile(c, rs, prefslice);
+      } else {
+	// Single FASTA
+	std::string faname = "";
+	std::string seq = "";
+	if (!loadSingleFasta(c.genome.string(), faname, seq)) return -1;
+	if (seq.size() > MAX_SINGLE_FASTA_SIZE) {
+	  std::cerr << "Reference is larger than 50Kbp. Please use a smaller reference slice or an indexed genome!" << std::endl;
+	  return -1;
+	}
 
-    // Semi-global alignment
-    now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Alignment" << std::endl;
+	// Profile
+	TProfile fwdprofile;
+	_createProfile(seq, fwdprofile);
+	TProfile revprofile;
+	reverseComplementProfile(fwdprofile, revprofile);
+	
+	// Alignment scores
+	int32_t gsFwd = gotohScore(trimmedtrace, fwdprofile, semiglobal, c.aliscore);
+	int32_t gsRev = gotohScore(trimmedtrace, revprofile, semiglobal, c.aliscore);
+	
+	// Forward or reverse?
+	rs.kmersupport = 0;
+	rs.pos = 0;
+	rs.chr = faname;
+	rs.refslice = seq;
+	if (gsFwd > gsRev) {
+	  rs.forward = true;
+	  copyProfile(fwdprofile, prefslice);
+	} else {
+	  rs.forward = false;
+	  reverseComplement(rs.refslice);
+	  copyProfile(revprofile, prefslice);
+	}
+      }
+    } else if (rs.filetype == 2) {
+      // Wildtype trace
+      Trace gtr;
+      int32_t gft = traceFormat(c.genome.string());
+      if (gft == 0) {
+	if (!readab(c.genome.string(), gtr)) return -1;
+      } else if (gft == 1) {
+	if (!readscf(c.genome.string(), gtr)) return -1;
+      } else {
+	std::cerr << "Unknown trace file type!" << std::endl;
+	return -1;
+      }
+
+      // Basecalling and reference profile
+      BaseCalls gbc;
+      basecall(gtr, gbc, c.pratio);
+
+      // Figure out if fwd or rev
+      TProfile fwdprofile;
+      createProfile(gtr, gbc, fwdprofile);
+      TProfile revprofile;
+      reverseComplementProfile(fwdprofile, revprofile);
+
+      // Alignment scores
+      int32_t gsFwd = gotohScore(trimmedtrace, fwdprofile, semiglobal, c.aliscore);
+      int32_t gsRev = gotohScore(trimmedtrace, revprofile, semiglobal, c.aliscore);
+      
+      // Forward or reverse?
+      rs.kmersupport = 0;
+      rs.pos = 0;
+      rs.chr = "wildtype";
+      rs.refslice = gbc.primary;
+      if (gsFwd > gsRev) {
+	rs.forward = true;
+	copyProfile(fwdprofile, prefslice);
+      } else {
+	rs.forward = false;
+	reverseComplement(rs.refslice);
+	copyProfile(revprofile, prefslice);
+      }
+    } else {
+      std::cerr << "Unknown reference file type!" << std::endl;
+      return - 1;
+    }
+
+    // Align trimmed trace to profile    
     typedef boost::multi_array<char, 2> TAlign;
     TAlign align;
-    AlignConfig<true, false> semiglobal;
-    DnaScore<int> sc(5, -4, -10, -1);
-    gotoh(ptrace, prefslice, align, semiglobal, sc);
-    
-    // Do we have a shifted trace?
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Alignment" << std::endl;
+    gotoh(trimmedtrace, prefslice, align, semiglobal, c.aliscore);
+
+    // Hom. InDel search
+    now = boost::posix_time::second_clock::local_time();
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "InDel Search" << std::endl;
     if (!bp.indelshift) {
       // Find breakpoint for hom. indels
-      now = boost::posix_time::second_clock::local_time();
-      std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Homozygous InDel Search" << std::endl;
       if (!findHomozygousBreakpoint(align, bp)) return -1;
     }
 
@@ -229,7 +346,7 @@ namespace tracy {
     typedef std::vector<TIndelError> TDecomposition;
     TDecomposition dcp;
     if (!decomposeAlleles(c, align, bc, bp, rs, dcp)) return -1;
-    if (c.format == "align") writeDecomposition(c, dcp);
+    writeDecomposition(c.outprefix + ".decomp", dcp);
 
     // Generate plain nucleotide sequence for second allele
     generateSecondaryDecomposed(tr, bc);
@@ -241,31 +358,31 @@ namespace tracy {
     TFractions a1a2 = allelicFraction(c, tr, bc);
     
     now = boost::posix_time::second_clock::local_time();
-    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Align to reference" << std::endl;
+    std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Allele-specific alignments" << std::endl;
     
     // Allele1
     typedef boost::multi_array<char, 2> TAlign;
     TAlign alignPrimary;
     std::string pri = trimmedSeq(bc.primary, c.trimLeft, c.trimRight);
-    gotoh(pri, rs.refslice, alignPrimary, semiglobal, sc);
+    gotoh(pri, rs.refslice, alignPrimary, semiglobal, c.aliscore);
     // Trim initial reference slice
     ReferenceSlice allele1(rs);
     trimReferenceSlice(c, alignPrimary, allele1);
     typedef boost::multi_array<char, 2> TAlign;
     TAlign final1;
-    int32_t a1Score = gotoh(pri, allele1.refslice, final1, semiglobal, sc);
-    if (c.format == "align") plotAlignment(c, final1, allele1, 1, a1Score, a1a2);
+    int32_t a1Score = gotoh(pri, allele1.refslice, final1, semiglobal, c.aliscore);
+    plotAlignment(c.outprefix + ".align1", final1, allele1, 1, a1Score, a1a2, c.linelimit);
 
     // Allele2
     TAlign alignSecondary;
     std::string sec = trimmedSeq(bc.secDecompose, c.trimLeft, c.trimRight);
-    gotoh(sec, rs.refslice, alignSecondary, semiglobal, sc);
+    gotoh(sec, rs.refslice, alignSecondary, semiglobal, c.aliscore);
     // Trim initial reference slice
     ReferenceSlice allele2(rs);
     trimReferenceSlice(c, alignSecondary, allele2);
     TAlign final2;
-    int32_t a2Score = gotoh(sec, allele2.refslice, final2, semiglobal, sc);
-    if (c.format == "align") plotAlignment(c, final2, allele2, 2, a2Score, a1a2);
+    int32_t a2Score = gotoh(sec, allele2.refslice, final2, semiglobal, c.aliscore);
+    plotAlignment(c.outprefix + ".align2", final2, allele2, 2, a2Score, a1a2, c.linelimit);
 
     // Allele1 vs. Allele2
     TAlign final3;
@@ -275,8 +392,8 @@ namespace tracy {
     secrs.forward = 1;
     secrs.pos = 0;
     secrs.chr = "Alt2";
-    int32_t a3Score = gotoh(pri, secrs.refslice, final3, global, sc);
-    if (c.format == "align") plotAlignment(c, final3, secrs, 3, a3Score, a1a2);
+    int32_t a3Score = gotoh(pri, secrs.refslice, final3, global, c.aliscore);
+    plotAlignment(c.outprefix + ".align3", final3, secrs, 3, a3Score, a1a2, c.linelimit);
 
     // Any het. InDel
     if (!bp.indelshift) {
@@ -302,14 +419,14 @@ namespace tracy {
 	ReferenceSlice allele1Rev;
 	_reverseReferenceSlize(allele1, allele1Rev);
 	TAlign final1Rev;
-	gotoh(revPri, allele1Rev.refslice, final1Rev, semiglobal, sc);
+	gotoh(revPri, allele1Rev.refslice, final1Rev, semiglobal, c.aliscore);
 	callVariants(final1Rev, allele1Rev, var);
 	std::string revSec(sec);
 	reverseComplement(revSec);
 	ReferenceSlice allele2Rev;
 	_reverseReferenceSlize(allele2, allele2Rev);
 	TAlign final2Rev;
-	gotoh(revSec, allele2Rev.refslice, final2Rev, semiglobal, sc);
+	gotoh(revSec, allele2Rev.refslice, final2Rev, semiglobal, c.aliscore);
 	callVariants(final2Rev, allele2Rev, var);
       }
 	

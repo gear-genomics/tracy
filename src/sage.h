@@ -69,7 +69,6 @@ namespace tracy {
     int32_t mismatch;
     float pratio;
     float trimStringency;
-    std::string format;
     std::string outprefix;
     DnaScore<int32_t> aliscore;
     boost::filesystem::path align;
@@ -107,7 +106,7 @@ namespace tracy {
 
     boost::program_options::options_description tro("Trimming options");
     tro.add_options()
-      ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9], 0: use trimLeft and trimRight")
+      ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(0), "trimming stringency [1:9], 0: use trimLeft and trimRight")
       ("trimLeft,q", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
       ("trimRight,u", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
       ;
@@ -178,6 +177,12 @@ namespace tracy {
       return -1;
     }
 
+    // Any basecalls
+    if (!tr.basecallpos.size()) {
+      std::cerr << "Trace file lacks basecalls!" << std::endl;
+      return -1;
+    }
+
     // Alignment options
     AlignConfig<true, false> semiglobal;
     c.aliscore = DnaScore<int32_t>(c.match, c.mismatch, c.gapopen, c.gapext);
@@ -194,6 +199,9 @@ namespace tracy {
       c.trimLeft = trimLeft;
       c.trimRight = trimRight;
     }
+
+    // Output trace information
+    traceTxtOut(c.outprefix + ".abif", bc, tr, c.trimLeft, c.trimRight);
     
     // Full trace profile
     typedef boost::multi_array<float, 2> TProfile;
@@ -212,6 +220,7 @@ namespace tracy {
       std::cerr << "Unknown reference file format!" << std::endl;
       return -1;
     }
+
     // Find reference match
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Find reference match" << std::endl;
@@ -346,12 +355,10 @@ namespace tracy {
     vfile.close();
 
     // Show ClustalW like alignment
-    c.outfile = c.outprefix + ".txt";
-    plotAlignment(c, final, rs, score);
+    plotAlignment(c.outprefix + ".txt", final, rs, score, c.linelimit);
 
     // JSON output
-    std::string jsonfilename = c.outprefix + ".json";
-    traceAlignJsonOut(jsonfilename, nbc, ntr, rs, final);
+    traceAlignJsonOut(c.outprefix + ".json", nbc, ntr, rs, final);
 
 #ifdef PROFILE
     ProfilerStop();

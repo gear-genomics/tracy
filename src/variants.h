@@ -168,8 +168,7 @@ namespace tracy {
   inline void
   vcfOutput(TConfig const& c, BaseCalls const& bc, std::vector<Variant> const& var, ReferenceSlice const& rs) {
     // Output file name
-    std::string outfile = c.outfile.string();
-    if (c.format == "align") outfile = c.outfile.string() + ".bcf";
+    std::string outfile = c.outprefix + ".bcf";
     
     // Output all structural variants
     htsFile *fp = hts_open(outfile.c_str(), "wb");
