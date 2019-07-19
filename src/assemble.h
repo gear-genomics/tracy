@@ -145,6 +145,10 @@ namespace tracy {
     if (vm.count("inccons")) c.incCons = true;
     else c.incCons = false;
 
+    // Check trimming stringency
+    if (c.trimStringency > 9) c.trimStringency = 9;
+    if (c.trimStringency < 1) c.trimStringency = 1;
+    
     // Check match fraction
     if (c.matchFraction < 0) c.matchFraction = 0;
     else if (c.matchFraction > 1) c.matchFraction = 1;

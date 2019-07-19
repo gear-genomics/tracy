@@ -47,6 +47,7 @@ Contact: Tobias Rausch (rausch@embl.de)
 #include "align.h"
 #include "gotoh.h"
 #include "fasta.h"
+#include "trim.h"
 #include "fmindex.h"
 #include "json.h"
 #include "profile.h"
@@ -67,6 +68,7 @@ namespace tracy {
     int32_t match;
     int32_t mismatch;
     float pratio;
+    float trimStringency;
     std::string format;
     std::string outprefix;
     DnaScore<int32_t> aliscore;
@@ -93,16 +95,21 @@ namespace tracy {
       ("kmer,k", boost::program_options::value<uint16_t>(&c.kmer)->default_value(15), "kmer size to anchor trace")
       ("support,s",  boost::program_options::value<uint16_t>(&c.minKmerSupport)->default_value(3), "min. kmer support")
       ("maxindel,i", boost::program_options::value<uint16_t>(&c.maxindel)->default_value(1000), "max. indel size in Sanger trace")
-      ("trimLeft,t", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
-      ("trimRight,u", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
       ;
 
-    boost::program_options::options_description alignment("Alignment scoring options");
+    boost::program_options::options_description alignment("Alignment options");
     alignment.add_options()
       ("gapopen,g", boost::program_options::value<int32_t>(&c.gapopen)->default_value(-10), "gap open")
       ("gapext,e", boost::program_options::value<int32_t>(&c.gapext)->default_value(-4), "gap extension")
       ("match,m", boost::program_options::value<int32_t>(&c.match)->default_value(3), "match")
       ("mismatch,n", boost::program_options::value<int32_t>(&c.mismatch)->default_value(-5), "mismatch")
+      ;
+
+    boost::program_options::options_description tro("Trimming options");
+    tro.add_options()
+      ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9], 0: use trimLeft and trimRight")
+      ("trimLeft,q", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(50), "trim size left")
+      ("trimRight,u", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(50), "trim size right")
       ;
 
     boost::program_options::options_description otp("Output options");
@@ -120,9 +127,9 @@ namespace tracy {
     pos_args.add("input-file", -1);
     
     boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(alignment).add(otp).add(hidden);
+    cmdline_options.add(generic).add(alignment).add(tro).add(otp).add(hidden);
     boost::program_options::options_description visible_options;
-    visible_options.add(generic).add(alignment).add(otp);
+    visible_options.add(generic).add(alignment).add(tro).add(otp);
     boost::program_options::variables_map vm;
     boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(pos_args).run(), vm);
     boost::program_options::notify(vm);
@@ -134,6 +141,9 @@ namespace tracy {
       return -1;
     }
     if (c.maxindel < 1) c.maxindel = 1;
+
+    // Check trimming parameters
+    if (c.trimStringency > 9) c.trimStringency = 9;
     
     // Check reference
     if (!(boost::filesystem::exists(c.genome) && boost::filesystem::is_regular_file(c.genome) && boost::filesystem::file_size(c.genome))) {
@@ -176,6 +186,15 @@ namespace tracy {
     BaseCalls bc;
     basecall(tr, bc, c.pratio);
 
+    // Get trim sizes
+    if (c.trimStringency >= 1) {
+      uint32_t trimLeft = 0;
+      uint32_t trimRight = 0;
+      trimTrace(c, bc, trimLeft, trimRight);
+      c.trimLeft = trimLeft;
+      c.trimRight = trimRight;
+    }
+    
     // Full trace profile
     typedef boost::multi_array<float, 2> TProfile;
     TProfile fulltraceprofile;
