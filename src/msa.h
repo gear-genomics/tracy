@@ -216,7 +216,7 @@ namespace tracy {
     std::vector<char> cons(align.shape()[1], '-');
     for(typename TCoverage::const_iterator itCov = cov.begin(); itCov != cov.end(); ++itCov, ++j) {
       int32_t maxIdx = 4;  // Leading/trailing gaps until min. coverage is reached
-      if (*itCov >= covThreshold) {
+      if ((*itCov >= 1) && (*itCov >= covThreshold)) {
 	// Get consensus letter
 	std::vector<int32_t> count(5, 0); // ACGT-
 	for(TAIndex i = 0; (i < ((TAIndex) align.shape()[0] - getRidOffRef)); ++i) {

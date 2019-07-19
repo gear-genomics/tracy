@@ -297,6 +297,8 @@ namespace tracy {
 	  vfile << align[scoreIdx.size()][j];
 	}
 	vfile << std::endl;
+	vfile << ">Consensus" << std::endl;
+	vfile << gapped << std::endl;
 	vfile.close();
 	
 	// Output MSA and gapped traces
@@ -463,6 +465,8 @@ namespace tracy {
 	}
 	vfile << std::endl;
       }
+      vfile << ">Consensus" << std::endl;
+      vfile << gapped << std::endl;
       vfile.close();
       
       // Output MSA and gapped traces
