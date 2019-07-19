@@ -27,45 +27,52 @@ Contact: Tobias Rausch (rausch@embl.de)
 namespace tracy
 {
 
+  inline bool
+  _inBaseCalled(uint32_t const k, char const p, char const s) {
+    if (k == 0) {
+      if ((p == 'A') || (p == 'R') || (p == 'W') || (p == 'M') || (s == 'A') || (s == 'R') || (s == 'W') || (s == 'M')) return true;
+    } else if (k == 1) {
+      if ((p == 'C') || (p == 'Y') || (p == 'S') || (p == 'M') || (s == 'C') || (s == 'Y') || (s == 'S') || (s == 'M')) return true;
+    } else if (k == 2) {
+      if ((p == 'G') || (p == 'R') || (p == 'S') || (p == 'K') || (s == 'G') || (s == 'R') || (s == 'S') || (s == 'K')) return true;
+    } else if (k == 3) {
+      if ((p == 'T') || (p == 'Y') || (p == 'W') || (p == 'K') || (s == 'T') || (s == 'Y') || (s == 'W') || (s == 'K')) return true;
+    }
+    return false;
+  }
 
   template<typename TProfile>
   inline void
-  createProfile(Trace const& tr, BaseCalls const& bc, TProfile& p) {
-    p.resize(boost::extents[6][bc.bcPos.size()]);   // 'A', 'C', 'G', 'T', 'N', '-'
-    for(uint32_t j = 0; j < bc.bcPos.size(); ++j) {
-      float totalsig = 0;
-      for(uint32_t k = 0; k<4; ++k) totalsig += tr.traceACGT[k][bc.bcPos[j]];
-      p[4][j] = 0;
-      p[5][j] = 0;
-      if (totalsig == 0) {
-	for(uint32_t k = 0; k<4; ++k) p[k][j] = 0.25;
-      } else {
-	for(uint32_t k = 0; k<4; ++k) p[k][j] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
-      }
+  createProfile(Trace const& tr, BaseCalls const& bc, TProfile& p, int32_t trimleft, int32_t trimright) {
+    if (trimleft + trimright >= (int32_t) bc.bcPos.size()) {
+      trimleft = 0;
+      trimright = 0;
     }
-  }
-  
-  template<typename TProfile>
-  inline void
-  createProfile(Trace const& tr, BaseCalls const& bc, TProfile& p, int32_t const trimleft, int32_t const trimright) {
-    if (trimleft + trimright >= (int32_t) bc.bcPos.size()) return createProfile(tr, bc, p);
-    else {
-      int32_t sz = bc.bcPos.size() - (trimleft + trimright);
-      p.resize(boost::extents[6][sz]);   // 'A', 'C', 'G', 'T', 'N', '-'
-      for(int32_t j = trimleft; j < (trimleft + sz); ++j) {
-	float totalsig = 0;
-	for(uint32_t k = 0; k<4; ++k) totalsig += tr.traceACGT[k][bc.bcPos[j]];
-	p[4][j-trimleft] = 0;
-	p[5][j-trimleft] = 0;
-	if (totalsig == 0) {
-	  for(uint32_t k = 0; k<4; ++k) p[k][j] = 0.25;
-	} else {
-	  for(uint32_t k = 0; k<4; ++k) p[k][j-trimleft] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+    int32_t sz = bc.bcPos.size() - (trimleft + trimright);
+    p.resize(boost::extents[6][sz]);   // 'A', 'C', 'G', 'T', 'N', '-'
+    for(int32_t j = trimleft; j < (trimleft + sz); ++j) {
+      float totalsig = 0;
+      for(uint32_t k = 0; k<4; ++k) {
+	if (_inBaseCalled(k, bc.primary[j], bc.secondary[j])) totalsig += tr.traceACGT[k][bc.bcPos[j]];
+      }
+      p[4][j-trimleft] = 0;
+      p[5][j-trimleft] = 0;
+      if (totalsig == 0) {
+	for(uint32_t k = 0; k<4; ++k) p[k][j-trimleft] = 0.25;
+      } else {
+	for(uint32_t k = 0; k<4; ++k) {
+	  if (_inBaseCalled(k, bc.primary[j], bc.secondary[j])) p[k][j-trimleft] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
 	}
       }
     }
   }
 
+  template<typename TProfile>
+  inline void
+  createProfile(Trace const& tr, BaseCalls const& bc, TProfile& p) {
+    createProfile(tr, bc, p, 0, 0);
+  }
+  
   template<typename TConfig, typename TProfile>
   inline void
   createProfile(TConfig const& c, ReferenceSlice const& rs, TProfile& p) {
