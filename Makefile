@@ -14,8 +14,8 @@ bindir ?= $(exec_prefix)/bin
 
 # Flags
 CXX=g++
-CXXFLAGS += -std=c++11 -isystem ${JLIB} -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
-LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -lsdsl -ldivsufsort -ldivsufsort64 -ldl -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -lpthread
+CXXFLAGS += -std=c++14 -isystem ${JLIB} -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
+LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -ldl -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -lpthread
 
 ifeq (${STATIC}, 1)
 	LDFLAGS += -static -static-libgcc -pthread -lhts -lz -llzma -lbz2
@@ -39,7 +39,7 @@ endif
 
 
 # External sources
-SDSLSOURCES = $(wildcard src/sdsl/lib/*.cpp)
+SDSLSOURCES = $(wildcard src/xxsds/lib/*.cpp)
 TRACYSOURCES = $(wildcard src/*.cpp) $(wildcard src/*.h)
 HTSLIBSOURCES = $(wildcard src/htslib/*.c) $(wildcard src/htslib/*.h)
 PBASE=$(shell pwd)
@@ -51,7 +51,7 @@ TARGETS = ${SUBMODULES} ${BUILT_PROGRAMS}
 all:   	$(TARGETS)
 
 .sdsl: $(SDSLSOURCES)
-	if [ -r src/sdsl/install.sh ]; then cd src/sdsl/ && ./install.sh ${PBASE}/src/sdslLite && cd ../../ && touch .sdsl; fi
+	if [ -r src/xxsds/install.sh ]; then cd src/xxsds/ && ./install.sh ${PBASE}/src/sdslLite && cd ../../ && touch .sdsl; fi
 
 .htslib: $(HTSLIBSOURCES)
 	if [ -r src/htslib/Makefile ]; then cd src/htslib && make && make lib-static && cd ../../ && touch .htslib; fi
@@ -65,7 +65,8 @@ install: ${BUILT_PROGRAMS}
 
 clean:
 	if [ -r src/htslib/Makefile ]; then cd src/htslib && make clean; fi
-	if [ -r src/sdsl/install.sh ]; then cd src/sdsl/ && ./uninstall.sh && cd ../../ && rm -rf src/sdslLite/; fi
+	#if [ -r src/xxsds/install.sh ]; then cd src/xxsds/ && ./uninstall.sh ${PBASE}/src/sdslLite && cd ../../ && rm -rf src/sdslLite/; fi
+	if [ -r src/xxsds/install.sh ]; then rm -rf src/sdslLite/; fi
 	rm -f $(TARGETS) $(TARGETS:=.o) ${SUBMODULES}
 
 distclean: clean
