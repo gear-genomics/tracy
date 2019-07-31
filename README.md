@@ -87,7 +87,7 @@ Once the index has been built you can align to the indexed genome.
 
 `tracy align -r hg38.fa.gz input.ab1`
 
-The index needs to be built only once.
+The index needs to be built only once. Pre-built genome indices for commonly used reference genomes are available for [download here](https://gear.embl.de/data/tracy/).
 
 
 Separating heterozygous mutations
