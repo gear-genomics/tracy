@@ -155,6 +155,13 @@ Tracy also supports de novo assembly if chromatogram trace files overlap suffici
 
 `tracy assemble file1.ab1 file2.ab1 fileN.ab1`
 
+
+Graphical user interface
+------------------------
+
+All features of tracy are available as web applications at [gear.embl.de](https://gear.embl.de/).
+
+
 Questions
 ---------
 
