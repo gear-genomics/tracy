@@ -136,36 +136,11 @@ namespace tracy
 	// Load FM index
 	boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
 	std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Load FM-Index" << std::endl;
-	if (!load_from_file(fm_index, index_file)) {
-	  std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Build FM-Index" << std::endl;
-	  // Dump fasta
-	  bool firstSeq = true;
-	  std::ofstream tmpout(outfile.string().c_str());
-	  std::ifstream file(c.genome.string().c_str(), std::ios_base::in | std::ios_base::binary);
-	  boost::iostreams::filtering_streambuf<boost::iostreams::input> dataIn;
-	  dataIn.push(boost::iostreams::gzip_decompressor());
-	  dataIn.push(file);
-	  std::istream instream(&dataIn);
-	  std::string line;
-	  while(std::getline(instream, line)) {
-	    if ((!line.empty()) && (line[0] == '>')) {
-	      if (!firstSeq) tmpout << std::endl;
-	      else firstSeq = false;
-	    } else {
-	      tmpout << boost::to_upper_copy(line);
-	    }
-	  }
-	  tmpout << std::endl;
-	  file.close();
-	  tmpout.close();
-	  
-	  now = boost::posix_time::second_clock::local_time();
-	  std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Create FM-Index" << std::endl;
-      
-	  // Build index
-	  construct(fm_index, outfile.string().c_str(), 1);
-	  store_to_file(fm_index, index_file);
-	  boost::filesystem::remove(outfile);
+
+	// Check if that's an old index file
+	if (!load_from_checked_file(fm_index, index_file)) {
+	  std::cerr << "Old index data format. Please rebuild your reference genome index!" << std::endl;
+	  return -1;
 	}
       } else if (traceFormat(c.genome.string()) >= 0) {
 	rs.filetype = 2;
