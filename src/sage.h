@@ -179,6 +179,12 @@ namespace tracy {
       c.trimRight = trimRight;
     }
 
+    // Check trim sizes
+    if (c.trimLeft + c.trimRight >= bc.bcPos.size()) {
+      std::cerr << "The sum of the left and right trim size is larger than the trace!" << std::endl;
+      return -1;
+    }
+    
     // Output trace information
     traceTxtOut(c.outprefix + ".abif", bc, tr, c.trimLeft, c.trimRight);
     

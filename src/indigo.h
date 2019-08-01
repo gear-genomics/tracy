@@ -176,6 +176,12 @@ namespace tracy {
       c.trimLeft = trimLeft;
       c.trimRight = trimRight;
     }
+
+    // Check trim sizes
+    if (c.trimLeft + c.trimRight >= bc.bcPos.size()) {
+      std::cerr << "The sum of the left and right trim size is larger than the trace!" << std::endl;
+      return -1;
+    }
     
     // Output trace information
     traceTxtOut(c.outprefix + ".abif", bc, tr, c.trimLeft, c.trimRight);
@@ -293,8 +299,15 @@ namespace tracy {
     TAlign align;
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Alignment" << std::endl;
-    gotoh(trimmedtrace, prefslice, align, semiglobal, c.aliscore);
-
+    int32_t aliTrimScore = gotoh(trimmedtrace, prefslice, align, semiglobal, c.aliscore);
+    double seqsize = trimmedtrace.shape()[1];
+    double matchFraction = 0.35;
+    double scoreThreshold = seqsize * matchFraction * c.aliscore.match + seqsize * (1 - matchFraction) * c.aliscore.mismatch;
+    if (aliTrimScore <= scoreThreshold) {
+      std::cerr << "Alignment of trace to reference failed!" << std::endl;
+      return -1;
+    }
+    
     // Hom. InDel search
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "InDel Search" << std::endl;
