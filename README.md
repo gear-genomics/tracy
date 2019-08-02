@@ -7,13 +7,13 @@
 [![GitHub Issues](https://img.shields.io/github/issues/gear-genomics/tracy.svg)](https://github.com/gear-genomics/tracy/issues)
 
 
-Installing Tracy
-----------------
+## Installing Tracy
+
 
 The easiest way to get Tracy is to download the statically linked binary or the singularity container (SIF file) from the [Tracy release page](https://github.com/gear-genomics/tracy/releases). Alternatively, you can download Tracy from [Bioconda](https://anaconda.org/bioconda/tracy) or pull the [Tracy docker container](https://hub.docker.com/r/geargenomics/tracy/).
 
-Building from Source
---------------------
+
+## Building from Source
 
 `git clone --recursive https://github.com/gear-genomics/tracy.git`
 
@@ -38,14 +38,12 @@ For Mac OSX you also often need to set the library path to HTSlib.
 `export DYLD_LIBRARY_PATH=`pwd`/src/htslib/`
 
 
-Running Tracy
--------------
+## Running Tracy
 
 `tracy -h`
 
 
-Basecalling a Trace File
-------------------------
+## Basecalling a Trace File
 
 To get the primary sequence (highest peak) of a trace file in FASTA or FASTQ format.
 
@@ -58,24 +56,21 @@ To get full trace information, including primary and secondary basecalls for het
 `tracy basecall -f tsv -o out.tsv input.ab1`
 
 
-Alignment to a Fasta Slice
---------------------------
+## Alignment to a Fasta Slice
 
 Alignment of a trace file to a FASTA reference slice.
 
 `tracy align -o outprefix -r ref_slice.fa input.ab1`
 
 
-Alignment to a Wildtype Chromatogram
-------------------------------------
+## Alignment to a Wildtype Chromatogram
 
 Alignment of a trace file to a wildtype chromatogram is also possible.
 
 `tracy align -o outprefix -r wildtype.ab1 input.ab1`
 
 
-Alignment to an indexed reference genome
-----------------------------------------
+## Alignment to an indexed reference genome
 
 Alignment to a large reference genome requires a pre-built index on a bgzip compressed genome.
 
@@ -90,8 +85,7 @@ Once the index has been built you can align to the indexed genome.
 The index needs to be built only once. Pre-built genome indices for commonly used reference genomes are available for [download here](https://gear.embl.de/data/tracy/).
 
 
-Separating heterozygous mutations
----------------------------------
+## Separating heterozygous mutations
 
 Double-peaks in the chromatogram trace can cause alignment issues. Tracy supports deconvolution of heterozygous variants into two separate alleles.
 
@@ -110,8 +104,7 @@ Or a simple FASTA file.
 `tracy decompose -r sequence.fa -o outprefix mutated.ab1`
 
 
-Single-nucleotide variant (SNV) and insertion & deletion (InDel) variant calling and annotation
------------------------------------------------------------------------------------------------
+## Single-nucleotide variant (SNV) and insertion & deletion (InDel) variant calling and annotation
 
 Tracy can call and annotate variants with respect to a reference genome.
 
@@ -122,8 +115,7 @@ This command produces a variant call file in binary BCF format. It can be conver
 `bcftools view outprefix.bcf`
 
 
-Using forward & reverse ab1 files to improve variant calling
-------------------------------------------------------------
+## Using forward & reverse ab1 files to improve variant calling
 
 If you do have forward and reverse trace files for the same expected genomic variant you can merge variant files and check consistency of calls and genotypes. Forward trace decomposition:
 
@@ -144,8 +136,7 @@ Merging of normalized variant files:
 `bcftools merge --force-samples forward.norm.bcf reverse.norm.bcf`
 
 
-Trace assembly
---------------
+## Trace assembly
 
 If you tiled a genomic region with multiple chromatogram files you can assemble all of these with tracy. 
 
@@ -156,13 +147,11 @@ Tracy also supports de novo assembly if chromatogram trace files overlap suffici
 `tracy assemble file1.ab1 file2.ab1 fileN.ab1`
 
 
-Graphical user interface
-------------------------
+## Graphical user interface
 
 All features of tracy are available as web applications at [gear.embl.de](https://gear.embl.de/).
 
 
-Questions
----------
+## Questions
 
 In case of questions feel free to send us an [email](https://www-db.embl.de/EMBLPersonGroup-PersonPicture/MailForm/?recipient=ggenomics).
