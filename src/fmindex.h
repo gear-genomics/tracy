@@ -57,28 +57,6 @@ namespace tracy
     float bestDiff;
   };
 
-
-  inline void
-  _fixReferenceName(std::string& s) {
-    // Disallow any weird characters
-    boost::erase_all(s, "\\");
-    boost::erase_all(s, ",");
-    boost::erase_all(s, "'");
-    boost::erase_all(s, "\"");
-    boost::erase_all(s, "(");
-    boost::erase_all(s, ")");
-    boost::erase_all(s, "[");
-    boost::erase_all(s, "]");
-    boost::erase_all(s, "{");
-    boost::erase_all(s, "}");
-    boost::erase_all(s, "<");
-    boost::erase_all(s, ">");
-    boost::erase_all(s, ":");
-    boost::erase_all(s, "\t");
-    boost::erase_all(s, "\r");
-    boost::erase_all(s, "#");
-  }
-
   inline int32_t     // -1: failure, 0: Indexed genome, 1: fasta file, 2: trace
   genomeType(std::string const& path) {
     std::ifstream ifile(path.c_str(), std::ios::binary | std::ios::in);

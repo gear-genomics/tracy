@@ -13,6 +13,28 @@ namespace tracy
 #endif
 
 
+
+  inline void
+  _fixReferenceName(std::string& s) {
+    // Disallow any weird characters
+    boost::erase_all(s, "\\");
+    boost::erase_all(s, ",");
+    boost::erase_all(s, "'");
+    boost::erase_all(s, "\"");
+    boost::erase_all(s, "(");
+    boost::erase_all(s, ")");
+    boost::erase_all(s, "[");
+    boost::erase_all(s, "]");
+    boost::erase_all(s, "{");
+    boost::erase_all(s, "}");
+    boost::erase_all(s, "<");
+    boost::erase_all(s, ">");
+    boost::erase_all(s, ":");
+    boost::erase_all(s, "\t");
+    boost::erase_all(s, "\r");
+    boost::erase_all(s, "#");
+  }
+  
   inline bool
   loadSingleFasta(std::string const& filename, std::string& faname, std::string& seq) {
     faname = "";
@@ -50,6 +72,9 @@ namespace tracy
       std::cerr << "FASTA file contains nucleotides != [ACGTN]." << std::endl;
       return false;
     }
+
+    // Fix FASTA sequence name for BCF output
+    _fixReferenceName(faname);  // Replace special characters
 
     return true;
   }
