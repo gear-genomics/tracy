@@ -1,6 +1,6 @@
 # Usage
 
-Tracy uses subcommands for [basecalling](#basecalling-a-chromatogram-trace-file), [alignment](#trace-alignment), [deconvolution](#deconvolution-of-heterozygous-mutations). These subcommands are explained below.
+Tracy uses subcommands for [basecalling](#basecalling-a-chromatogram-trace-file), [alignment](#trace-alignment), [deconvolution](#deconvolution-of-heterozygous-mutations), [variant calling](#variant-calling). These subcommands are explained below.
 
 ## Basecalling a Chromatogram Trace File
 
@@ -68,4 +68,46 @@ Tracy also supports the use of a wildtype chromatogram for decomposition or a sm
 ```bash
 tracy decompose -r wildtype.ab1 -o outprefix mutated.ab1
 tracy decompose -r sequence.fa -o outprefix mutated.ab1
+```
+
+## Variant Calling
+
+Tracy can call and annotate single-nucleotide variants (SNV) and insertions & deletions (InDels) with respect to a reference genome. For instance, to call variants on a Chromatogram trace file using the hg38 human reference genome.
+
+```bash
+tracy decompose -v -a homo_sapiens -r hg38.fa.gz -o outprefix input.ab1
+```
+
+This command also annotates rs identifiers of known polymorphisms and produces a variant call file in binary BCF format.
+This output file in BCF format can be converted to VCF using [bcftools](https://github.com/samtools/bcftools).
+
+```bash
+bcftools view outprefix.bcf
+```
+
+## Using forward and reverse ab1 files to improve variant calling
+
+If you do have forward and reverse trace files for the same expected genomic variant you can merge variant files and check consistency of calls and genotypes. Forward trace decomposition:
+
+```bash
+tracy decompose -o forward -a homo_sapiens -r hg38.fa.gz forward.ab1
+```
+
+Reverse trace decomposition:
+
+```bash
+tracy decompose -o reverse -a homo_sapiens -r hg38.fa.gz reverse.ab1
+```
+
+Left-alignment of InDels:
+
+```bash
+bcftools norm -O b -o forward.norm.bcf -f hg38.fa.gz forward.bcf
+bcftools norm -O b -o reverse.norm.bcf -f hg38.fa.gz reverse.bcf
+```
+
+Merging of normalized variant files:
+
+```bash
+bcftools merge --force-samples forward.norm.bcf reverse.norm.bcf
 ```
