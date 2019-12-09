@@ -13,7 +13,7 @@ Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy),
 
 [Source Code](https://github.com/gear-genomics/tracy/)
 
-[Web Application](https://www.gear-genomics.com)
+[Web Applications](https://www.gear-genomics.com)
 
 [Documentation](https://www.gear-genomics.com/docs/tracy/)
 
