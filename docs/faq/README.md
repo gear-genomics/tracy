@@ -13,3 +13,7 @@ Pre-built genome indices for commonly used reference genomes are available for d
 ## How can I use forward and reverse trace files to confirm variants?
 
 Please see [this section](/cli/#using-forward-and-reverse-ab1-files-to-improve-variant-calling) in the documentation of tracy.
+
+## I have a feature request, how do I contact the developers?
+
+For questions, help or feature requests please contact gear_genomics@embl.de

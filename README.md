@@ -7,151 +7,16 @@
 [![GitHub Issues](https://img.shields.io/github/issues/gear-genomics/tracy.svg)](https://github.com/gear-genomics/tracy/issues)
 
 
-## Installing Tracy
+## Tracy: basecalling, alignment, assembly and deconvolution of Sanger Chromatogram trace files
 
+Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy), as a pre-compiled statically linked binary from [Tracy's github release page](https://github.com/gear-genomics/tracy/releases), as a singularity container [SIF file](https://github.com/gear-genomics/tracy/releases) or as a minimal [Docker container](https://hub.docker.com/r/geargenomics/tracy/).
 
-The easiest way to get Tracy is to download the statically linked binary or the singularity container (SIF file) from the [Tracy release page](https://github.com/gear-genomics/tracy/releases). Alternatively, you can download Tracy from [Bioconda](https://anaconda.org/bioconda/tracy) or pull the [Tracy docker container](https://hub.docker.com/r/geargenomics/tracy/).
+[Source Code](https://github.com/gear-genomics/tracy/)
 
+[Web Application](https://www.gear-genomics.com)
 
-## Building from Source
+[Documentation](https://www.gear-genomics.com/docs/tracy/)
 
-`git clone --recursive https://github.com/gear-genomics/tracy.git`
+## Citation
 
-`cd tracy/`
-
-`make all`
-
-`make install`
-
-Tracy requires some system libraries such as bzip2, zlib and boost. For Ubuntu Linux you install these using:
-
-`apt-get install -y build-essential g++ cmake zlib1g-dev libbz2-dev liblzma-dev libboost-all-dev`
-
-The Mac OSX versions of these packages are:
-
-`brew install cmake zlib readline xz bzip2 gsl libtool pkg-config boost`
-
-For Mac OSX you also often need to set the library path to HTSlib.
-
-`cd tracy/`
-
-`export DYLD_LIBRARY_PATH=`pwd`/src/htslib/`
-
-
-## Running Tracy
-
-`tracy -h`
-
-
-## Basecalling a Trace File
-
-To get the primary sequence (highest peak) of a trace file in FASTA or FASTQ format.
-
-`tracy basecall -f fasta -o out.fasta input.ab1`
-
-`tracy basecall -f fastq -o out.fastq input.ab1`
-
-To get full trace information, including primary and secondary basecalls for heterozygous variants.
-
-`tracy basecall -f tsv -o out.tsv input.ab1`
-
-
-## Alignment to a Fasta Slice
-
-Alignment of a trace file to a FASTA reference slice.
-
-`tracy align -o outprefix -r ref_slice.fa input.ab1`
-
-
-## Alignment to a Wildtype Chromatogram
-
-Alignment of a trace file to a wildtype chromatogram is also possible.
-
-`tracy align -o outprefix -r wildtype.ab1 input.ab1`
-
-
-## Alignment to an indexed reference genome
-
-Alignment to a large reference genome requires a pre-built index on a bgzip compressed genome.
-
-`tracy index -o hg38.fa.fm9 hg38.fa.gz`
-
-`samtools faidx hg38.fa.gz`
-
-Once the index has been built you can align to the indexed genome.
-
-`tracy align -r hg38.fa.gz input.ab1`
-
-The index needs to be built only once. Pre-built genome indices for commonly used reference genomes are available for [download here](https://gear.embl.de/data/tracy/).
-
-
-## Separating heterozygous mutations
-
-Double-peaks in the chromatogram trace can cause alignment issues. Tracy supports deconvolution of heterozygous variants into two separate alleles.
-
-`tracy decompose -r hg38.fa.gz -o outprefix input.ab1`
-
-The two alleles are then separately aligned.
-
-`cat outprefix.align1 outprefix.align2`
-
-You can also use a wildtype chromatogram for decomposition.
-
-`tracy decompose -r wildtype.ab1 -o outprefix mutated.ab1`
-
-Or a simple FASTA file.
-
-`tracy decompose -r sequence.fa -o outprefix mutated.ab1`
-
-
-## Single-nucleotide variant (SNV) and insertion & deletion (InDel) variant calling and annotation
-
-Tracy can call and annotate variants with respect to a reference genome.
-
-`tracy decompose -v -a homo_sapiens -r hg38.fa.gz -o outprefix input.ab1`
-
-This command produces a variant call file in binary BCF format. It can be converted to VCF using [bcftools](https://github.com/samtools/bcftools).
-
-`bcftools view outprefix.bcf`
-
-
-## Using forward & reverse ab1 files to improve variant calling
-
-If you do have forward and reverse trace files for the same expected genomic variant you can merge variant files and check consistency of calls and genotypes. Forward trace decomposition:
-
-`tracy decompose -o forward -a homo_sapiens -r hg38.fa.gz forward.ab1`
-
-Reverse trace decomposition:
-
-`tracy decompose -o reverse -a homo_sapiens -r hg38.fa.gz reverse.ab1`
-
-Left-alignment of InDels:
-
-`bcftools norm -O b -o forward.norm.bcf -f hg38.fa.gz forward.bcf`
-
-`bcftools norm -O b -o reverse.norm.bcf -f hg38.fa.gz reverse.bcf`
-
-Merging of normalized variant files:
-
-`bcftools merge --force-samples forward.norm.bcf reverse.norm.bcf`
-
-
-## Trace assembly
-
-If you tiled a genomic region with multiple chromatogram files you can assemble all of these with tracy. 
-
-`tracy assemble -r reference.fa file1.ab1 file2.ab1 fileN.ab1`
-
-Tracy also supports de novo assembly if chromatogram trace files overlap sufficiently with each other.
-
-`tracy assemble file1.ab1 file2.ab1 fileN.ab1`
-
-
-## Graphical user interface
-
-All features of tracy are available as web applications at [gear.embl.de](https://gear.embl.de/).
-
-
-## Questions
-
-In case of questions feel free to send us an [email](https://www-db.embl.de/EMBLPersonGroup-PersonPicture/MailForm/?recipient=ggenomics).
+If you use tracy please cite our URL in publications: [https://www.gear-genomics.com](https://www.gear-genomics.com)

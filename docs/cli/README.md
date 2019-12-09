@@ -1,6 +1,6 @@
 # Usage
 
-Tracy uses subcommands for [basecalling](#basecalling-a-chromatogram-trace-file), [alignment](#trace-alignment), [deconvolution](#deconvolution-of-heterozygous-mutations), [variant calling](#variant-calling). These subcommands are explained below.
+Tracy uses subcommands for [basecalling](#basecalling-a-chromatogram-trace-file), [alignment](#trace-alignment), [deconvolution](#deconvolution-of-heterozygous-mutations), [variant calling](#variant-calling) and [trace assembly](#trace-assembly). These subcommands are explained below.
 
 ## Basecalling a Chromatogram Trace File
 
@@ -111,3 +111,18 @@ Merging of normalized variant files:
 ```bash
 bcftools merge --force-samples forward.norm.bcf reverse.norm.bcf
 ```
+
+## Trace assembly
+
+For a short genomic region that you tiled with multiple, overlapping Sanger Chromatogram trace files you can use tracy to assemble these.
+
+```bash
+tracy assemble -r reference.fa file1.ab1 file2.ab1 fileN.ab1
+```
+
+Instead of a reference-guided assembly using the '-r' option, tracy also supports de novo assembly of chromatogram trace files if these sufficiently overlap each other.
+
+```bash
+tracy assemble file1.ab1 file2.ab1 fileN.ab1
+```
+
