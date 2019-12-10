@@ -4,11 +4,40 @@ Tracy features a range of companion web applications hosted at [https://www.gear
 
 ## Teal
 
-ToDo
+[Teal](https://www.gear-genomics.com/teal/) is a simple viewer for Sanger chromatogram traces.
+The input tab of Teal requires a chromatogram trace file in scf, abi, ab1 or ab format.
+The `Launch Analysis` button kicks off tracy and the results are
+visualized in a separate browser tab. At the top, Teal shows the trace
+signal. The navigation buttons on the top left side can be used to move
+the actual view and zoom in or out. The buttons on the top right side
+highlight a base of choice. The chromatogram sequence is provided below
+the trace signal.
+
+![Tracy output page](./img/tracy-output.png)
 
 ## Sage
 
-ToDo
+[Sage](https://www.gear-genomics.com/sage/)
+aligns a Sanger chromatogram trace to a reference sequence. The
+input tab of Sage requires a chromatogram trace file in scf, abi, ab1 or
+ab format. Optionally, a left and right trimming size for this trace can
+be specified. We recommend using Teal for estimating such trim sizes.
+Sage also requires a reference sequence as input. This can be either a
+wildtype chromatogram, a small sequence in FASTA format or a large
+indexed reference genome.
+
+Once these input requirements have been
+specified the `Launch Analysis` button kicks off tracy and the results are
+visualized in a separate browser tab. At the top, Sage shows the gapped
+trace signal with the gapped reference aligned below. Mismatches between
+reference and trace are colored red to highlight them for easy
+identification. Traces with secondary peaks are colored orange. The
+navigation buttons on the top left side can be used to move the actual
+view and zoom in or out. The buttons on the top right side highlight a
+base of choice. The chromatogram sequence and the reference sequence are
+provided below the trace signal.
+
+![Sage output page](./img/sage-output.png)
 
 ## Indigo
 
@@ -16,7 +45,49 @@ ToDo
 
 ## Pearl
 
-ToDo
+[Pearl](https://www.gear-genomics.com/pearl/)
+is a tool to patch a DNA references with several Sanger trace
+files. It has two main applications: (Parts) of a reference sequence
+(fasta file, \*.fa) can be sequenced and Pearl highlights the conflicts
+and mismatches between reference and the trace files. If no reference is
+provided, a consensus sequence is assembled and used instead.
+
+The input
+tab of Perl requires several chromatogram trace files in scf, abi, ab1
+or ab format. Pearl may use an optional reference sequence in FASTA
+format as input. The user may choose if secondary peaks should be
+treated as conflicts. Once these input requirements have been specified
+the `Launch Analysis` button kicks off tracy and the results are
+visualized in a separate browser tab.
+
+In the results tab Pearl shows the color-coded consensus overview
+sequence on top:
+
+- light green - consensus: all traces agree on same base
+- red - mismatch: traces agree on different base then reference
+- orange - conflict: conflict, some traces suggest other bases
+- green - edited: the base was entered manually by the user
+- grey - no information: only reference data available
+
+By design, Pearl focuses only on one location, the position given below
+the overview. A position can be selected by clicking at a position in
+the overview sequence, by changing the number in the position field or
+by navigating the trace windows.
+
+The available traces at the given position can be reviewed by the user
+and manually set with the `Set...` buttons to a certain base. The `Jump to next conflict` button moves the position to the next conflict. Below the
+traces three sequences are given
+
+1. the user sequence including all manually edited bases
+2. the reference as uploaded
+3. the consensus calculated by Pearl
+
+Once all mismatches and conflicts are edited by the
+user, the sequence can be exported as FASTA. The entire dataset
+including the traces can be saved as a JSON file and uploaded in the
+result section later using the buttons at the top of the result tab.
+
+![Pearl output page](./img/pearl-output.png)
 
 ## Sabre
 
@@ -40,4 +111,34 @@ as well as the alignment) is shown on the right.
 
 ## Wily-DNA-Editor
 
-ToDo
+The Wily-DNA-Editor is a tool for plasmid assembly, reverse complementing
+DNA, translating to protein code and calculating restriction digests maps.
+
+The screenshot below illustrates the basic DNA/RNA operations that Wily can
+perform, such as reverse-complementing DNA, removing non-IUPAC letters and
+changing upper to lower case and vice versa.
+
+![Wily main controls](./img/wily-main.jpg)
+
+Furthermore, you can find restriction sites, select them and highlight them
+in the sequence.
+
+![Wily digest controls](./img/wily-digest.jpg)
+
+You can draw restriction maps with or without features for linear
+and circular sequences.
+
+![Wily map controls](./img/wily-map.jpg)
+
+You can simulate gel band intensity or draw all bands black.
+
+![Wily gel controls](./img/wily-gel.jpg)
+
+Translate DNA in one, three or six frames.
+
+![Wily translate controls](./img/wily-translate.jpg)
+
+Last but not least, Wily let's you annotate regions in the DNA
+using GenBank features.
+
+![Wily feature controls](./img/wily-features.jpg)
