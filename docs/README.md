@@ -6,7 +6,7 @@ Contents:
 
 1. [Installation](/installation/)
 2. [Usage](/cli/)
-3. [Web Application](/webapp/)
+3. [Web Application](/webapps/)
 4. [FAQ](/faq/)
 
 ::: tip
