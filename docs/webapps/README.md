@@ -20,7 +20,23 @@ ToDo
 
 # Sabre
 
-ToDo
+[Sabre](https://www.gear-genomics.com/sabre/) is a multiple sequence alignment
+viewer which allows you to view all trace sequences in parallel. An alignment in
+FASTA format has to provided via file upload or pasting into the provded text area.
+The default number of characters per alignment row is set to 80 by default,
+but this can be adjusted.
+Once everything is ready, press the `Launch Analysis` button.
+Note that as with all GEAR apps, we provide an example to view. For this, first
+press `Load Example` and then `Launch Analysis`.
+
+![Sabre input page](./img/sabre-input.png)
+
+You will now get redirected to the output page where you can browse the multiple
+sequence alignment of all traces. If you hover over individual bases, information
+about this particular position (both in the context of the corresponding sequence
+as well as the alignment) is shown on the right.
+
+![Sabre output page](./img/sabre-output.png)
 
 # Wily-DNA-Editor
 
