@@ -142,8 +142,8 @@ namespace tracy
 
   inline char
   phaseRefAllele(BaseCalls& bc, char const r, uint32_t varIndex) {
-    if (bc.secondary[varIndex] == r) return bc.primary[varIndex];
-    else if (bc.secondary[varIndex] == 'N') return 'N';
+    if ((r == '-') || (bc.secondary[varIndex] == 'N')) return 'N';
+    else if (bc.secondary[varIndex] == r) return bc.primary[varIndex];
     else {
       if (bc.secondary[varIndex] == 'R') {
 	if (r == 'A') return iupac(bc.primary[varIndex], 'G');
@@ -318,7 +318,25 @@ namespace tracy
 	  }
 	}
       } else {
-	std::cout << "Allele decomposition failed, primary & secondary base calls unchanged." << std::endl;
+	std::cout << "No InDel detected, traverse the whole alignment." << std::endl;
+	// Traverse the whole alignment
+	//std::cerr << bc.primary << std::endl;
+	//std::cerr << bc.secondary << std::endl;
+	vi = ltrim;
+	for(uint32_t j = 0; j < align.shape()[1]; ++j) {
+	  if (align[0][j] != '-') {
+	    if (align[1][j] != bc.primary[vi]) {
+	      char sec = phaseRefAllele(bc, align[1][j], vi);
+	      if (sec != 'N') {
+		bc.primary[vi] = align[1][j];
+		bc.secondary[vi] = sec;
+	      }
+	    }
+	    ++vi;
+	  }
+	}
+	//std::cerr << bc.primary << std::endl;
+	//std::cerr << bc.secondary << std::endl;
       }
     } else {
       // take smallest deletion for decomposition
