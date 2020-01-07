@@ -236,6 +236,7 @@ namespace tracy
       if (fref[i] < thres) {
 	if ((i + 1 < fref.size()) && (2 * fref[i] < fref[i+1])) deldecomp.push_back(i);
 	else if ((i > 0) && (2 * fref[i] < fref[i-1])) deldecomp.push_back(i);
+	else if ((i == 0) && (i + 2 < fref.size()) && (2 * fref[i] < fref[i+2])) deldecomp.push_back(i); // het. 1bp deletion
       }
     }
 
@@ -261,6 +262,7 @@ namespace tracy
       if (fins[i] < thres) {
 	if ((i + 1 < fins.size()) && (2 * fins[i] < fins[i+1])) insdecomp.push_back(i);
 	else if ((i > 0) && (2 * fins[i] < fins[i-1])) insdecomp.push_back(i);
+	else if ((i == 0) && (i + 2 < fins.size()) && (2 * fins[i] < fins[i+2])) insdecomp.push_back(i); // het. 1bp insertion
       }
     }
     
