@@ -54,7 +54,7 @@ all:   	$(TARGETS)
 	if [ -r src/xxsds/install.sh ]; then cd src/xxsds/ && ./install.sh ${PBASE}/src/sdslLite && cd ../../ && touch .sdsl; fi
 
 .htslib: $(HTSLIBSOURCES)
-	if [ -r src/htslib/Makefile ]; then cd src/htslib && make && make lib-static && cd ../../ && touch .htslib; fi
+	if [ -r src/htslib/Makefile ]; then cd src/htslib && autoheader && autoconf && ./configure --disable-s3 --disable-gcs --disable-libcurl --disable-plugins && $(MAKE) && $(MAKE) lib-static && cd ../../ && touch .htslib; fi
 
 src/tracy: ${SUBMODULES} ${TRACYSOURCES}
 	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
@@ -64,8 +64,7 @@ install: ${BUILT_PROGRAMS}
 	install -p ${BUILT_PROGRAMS} ${bindir}
 
 clean:
-	if [ -r src/htslib/Makefile ]; then cd src/htslib && make clean; fi
-	#if [ -r src/xxsds/install.sh ]; then cd src/xxsds/ && ./uninstall.sh ${PBASE}/src/sdslLite && cd ../../ && rm -rf src/sdslLite/; fi
+	if [ -r src/htslib/Makefile ]; then cd src/htslib && $(MAKE) clean; fi
 	if [ -r src/xxsds/install.sh ]; then rm -rf src/sdslLite/; fi
 	rm -f $(TARGETS) $(TARGETS:=.o) ${SUBMODULES}
 
