@@ -14,8 +14,8 @@ bindir ?= $(exec_prefix)/bin
 
 # Flags
 CXX=g++
-CXXFLAGS += -std=c++14 -isystem ${JLIB} -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall -fvisibility=hidden
-LDFLAGS += -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -ldl -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -lpthread
+CXXFLAGS += -std=c++14 -isystem ${JLIB} -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall
+LDFLAGS += -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time
 
 ifeq (${STATIC}, 1)
 	LDFLAGS += -static -static-libgcc -pthread -lhts -lz -llzma -lbz2
@@ -40,7 +40,7 @@ endif
 
 # External sources
 SDSLSOURCES = $(wildcard src/xxsds/lib/*.cpp)
-TRACYSOURCES = $(wildcard src/*.cpp) $(wildcard src/*.h)
+SOURCES = $(wildcard src/*.cpp) $(wildcard src/*.h)
 HTSLIBSOURCES = $(wildcard src/htslib/*.c) $(wildcard src/htslib/*.h)
 PBASE=$(shell pwd)
 
@@ -56,7 +56,7 @@ all:   	$(TARGETS)
 .htslib: $(HTSLIBSOURCES)
 	if [ -r src/htslib/Makefile ]; then cd src/htslib && autoheader && autoconf && ./configure --disable-s3 --disable-gcs --disable-libcurl --disable-plugins && $(MAKE) && $(MAKE) lib-static && cd ../../ && touch .htslib; fi
 
-src/tracy: ${SUBMODULES} ${TRACYSOURCES}
+src/tracy: ${SUBMODULES} ${SOURCES}
 	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
 
 install: ${BUILT_PROGRAMS}
