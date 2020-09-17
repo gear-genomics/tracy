@@ -310,52 +310,49 @@ namespace tracy
       rfile << dcp[i].second;
     }
     rfile << "]" << std::endl;
-    if (var.empty()) rfile << "}" << std::endl;
-    else rfile << "}," << std::endl;
+    rfile << "}," << std::endl;
 
     // Variants
-    if (!var.empty()) {
-      rfile << "\"variants\": {" <<  std::endl;
-      rfile << "\"columns\": [";
-      rfile << "\"chr\", \"pos\", \"id\", \"ref\", \"alt\", \"qual\", \"filter\", \"type\", \"genotype\", \"basepos\", \"signalpos\"";
-      rfile << "]," << std::endl;
-      rfile << "\"rows\": [" << std::endl;
-      for(uint32_t i = 0; i < var.size(); ++i) {
-	if (i > 0) rfile << "," << std::endl;
-	rfile << "[";
-	rfile << "\"" << var[i].chr << "\", ";
-	rfile << var[i].pos << ", ";
-	rfile << "\"" << var[i].id << "\", ";
-	rfile << "\"" << var[i].ref << "\", ";
-	rfile << "\"" << var[i].alt << "\", ";
-	rfile << (int32_t) bc.estQual[var[i].basenum] << ", ";
-	if ((int32_t) bc.estQual[var[i].basenum] < c.qualCut) rfile << "\"LowQual\", ";
-	else rfile << "\"PASS\", ";
-	rfile << "\"" << variantType(var[i].ref, var[i].alt) << "\", ";
-	if (var[i].gt == 0) rfile << "\"hom. REF\", ";
-	else if (var[i].gt == 1) rfile << "\"het.\", ";
-	else if (var[i].gt == 2) rfile << "\"hom. ALT\", ";
-	else rfile << "\"missing\", ";
-	if (rs1.forward) rfile << c.trimLeft + var[i].basenum << ", ";
-	else rfile << bc.primary.size() - (c.trimRight + var[i].basenum) + 1 << ", ";
-	if (rs1.forward) rfile << bc.bcPos[c.trimLeft + var[i].basenum - 1] + 1;
-	else rfile << bc.bcPos[bc.primary.size() - (c.trimRight + var[i].basenum)] + 1;
-	rfile << "]";
-      }
-      rfile << "]," << std::endl;
-      rfile << "\"xranges\": [" << std::endl;
-      for(uint32_t i = 0; i < var.size(); ++i) {
-	if (i > 0) rfile << "," << std::endl;
-	rfile << "[";
-	std::pair<int32_t, int32_t> xwin;
-	if (rs1.forward) xwin = xWindowViewport(bc, c.trimLeft + var[i].basenum - 1);
-	else xwin = xWindowViewport(bc, bc.primary.size() - (c.trimRight + var[i].basenum));
-	rfile << xwin.first << ", " << xwin.second;
-    	rfile << "]";	
-      }
-      rfile << "]" << std::endl;
-      rfile << "}" << std::endl;
+    rfile << "\"variants\": {" <<  std::endl;
+    rfile << "\"columns\": [";
+    rfile << "\"chr\", \"pos\", \"id\", \"ref\", \"alt\", \"qual\", \"filter\", \"type\", \"genotype\", \"basepos\", \"signalpos\"";
+    rfile << "]," << std::endl;
+    rfile << "\"rows\": [" << std::endl;
+    for(uint32_t i = 0; i < var.size(); ++i) {
+      if (i > 0) rfile << "," << std::endl;
+      rfile << "[";
+      rfile << "\"" << var[i].chr << "\", ";
+      rfile << var[i].pos << ", ";
+      rfile << "\"" << var[i].id << "\", ";
+      rfile << "\"" << var[i].ref << "\", ";
+      rfile << "\"" << var[i].alt << "\", ";
+      rfile << (int32_t) bc.estQual[var[i].basenum] << ", ";
+      if ((int32_t) bc.estQual[var[i].basenum] < c.qualCut) rfile << "\"LowQual\", ";
+      else rfile << "\"PASS\", ";
+      rfile << "\"" << variantType(var[i].ref, var[i].alt) << "\", ";
+      if (var[i].gt == 0) rfile << "\"hom. REF\", ";
+      else if (var[i].gt == 1) rfile << "\"het.\", ";
+      else if (var[i].gt == 2) rfile << "\"hom. ALT\", ";
+      else rfile << "\"missing\", ";
+      if (rs1.forward) rfile << c.trimLeft + var[i].basenum << ", ";
+      else rfile << bc.primary.size() - (c.trimRight + var[i].basenum) + 1 << ", ";
+      if (rs1.forward) rfile << bc.bcPos[c.trimLeft + var[i].basenum - 1] + 1;
+      else rfile << bc.bcPos[bc.primary.size() - (c.trimRight + var[i].basenum)] + 1;
+      rfile << "]";
     }
+    rfile << "]," << std::endl;
+    rfile << "\"xranges\": [" << std::endl;
+    for(uint32_t i = 0; i < var.size(); ++i) {
+      if (i > 0) rfile << "," << std::endl;
+      rfile << "[";
+      std::pair<int32_t, int32_t> xwin;
+      if (rs1.forward) xwin = xWindowViewport(bc, c.trimLeft + var[i].basenum - 1);
+      else xwin = xWindowViewport(bc, bc.primary.size() - (c.trimRight + var[i].basenum));
+      rfile << xwin.first << ", " << xwin.second;
+      rfile << "]";	
+    }
+    rfile << "]" << std::endl;
+    rfile << "}" << std::endl;
     
     // Close
     rfile << "}" << std::endl;
