@@ -75,11 +75,12 @@ trimmedSeq(std::string const& str, uint32_t const ltrim, uint32_t const rtrim) {
 }
  
 template<typename TACGTMountains, typename TMountains>
-inline void
+inline bool
 peak(TACGTMountains const& trace, float const s, float const e, TMountains& pVal, TMountains& pIdx) {
   typedef typename TMountains::value_type TValue;
+  if ((int32_t) (std::floor(s)) == (int32_t) (std::floor(e))) return false; // too small
   for(uint32_t k = 0; k<4; ++k) {
-    TValue bestIdx = (int32_t) (std::floor(s)) + 1;
+    TValue bestIdx = (int32_t) (std::floor(s));
     TValue bestVal = (TValue) 0;
     for(int32_t i = std::max(1, (int32_t) std::floor(s)); i < std::min((int32_t) (trace[k].size() - 1), (int32_t) std::floor(e)); ++i) {
       if (((trace[k][i-1] <= trace[k][i]) && (trace[k][i] > trace[k][i+1])) || ((trace[k][i-1] < trace[k][i]) && (trace[k][i] >= trace[k][i+1]))) {
@@ -92,6 +93,7 @@ peak(TACGTMountains const& trace, float const s, float const e, TMountains& pVal
     pVal.push_back(bestVal);
     pIdx.push_back(bestIdx);
   }
+  return true;
 }
 
 inline std::string
@@ -424,12 +426,11 @@ basecall(Trace const& tr, BaseCalls& bc, float sigratio) {
   for(uint32_t i = 0; i<st.size(); ++i) {
     TMountains pVal;
     TMountains pIdx;
-    peak(tr.traceACGT, st[i], ed[i], pVal, pIdx);
+    if (!peak(tr.traceACGT, st[i], ed[i], pVal, pIdx)) continue;
     if ((pVal[0] == 0) && (pVal[1] == 0) && (pVal[2] == 0) && (pVal[3] == 0)) {
       // No peaks found, replace by midpoint
       int32_t midpoint = (int32_t) ((st[i] + ed[i]) / 2.0);
-      if (midpoint > std::floor(ed[i])) midpoint = std::floor(ed[i]);
-      if (midpoint < std::floor(st[i]) + 1) midpoint = std::floor(st[i]) + 1;
+      if (midpoint >= std::floor(ed[i])) midpoint = std::floor(st[i]);
       for(uint32_t k = 0; k<4; ++k) {
 	pIdx[k] = midpoint;
 	pVal[k] = tr.traceACGT[k][midpoint];
