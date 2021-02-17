@@ -23,6 +23,6 @@ BMC Genomics 21, 230 (2020).
 [https://doi.org/10.1186/s12864-020-6635-8](https://doi.org/10.1186/s12864-020-6635-8)
 
 
-License
--------
+## License
+
 Tracy is distributed under the BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/gear-genomics/tracy/blob/master/LICENSE) file for more details.
