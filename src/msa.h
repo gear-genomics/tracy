@@ -161,7 +161,7 @@ namespace tracy {
 
   template<typename TConfig, typename TAlign>
   inline void
-  consensus(TConfig const& c, TAlign const& align, std::string& gapped, std::string& cs, bool ignoreLast) {
+  consensus(TConfig const& c, TAlign const& align, std::string& gapped, std::string& cs, std::string& qstr, bool ignoreLast) {
     typedef typename TAlign::index TAIndex;
 
     // Ignore last sequence?
@@ -193,8 +193,12 @@ namespace tracy {
     int32_t covThreshold = (int32_t) (c.fractionCalled * (align.shape()[0] - getRidOffRef));
     TAIndex j = 0;
     std::vector<char> cons(align.shape()[1], '-');
+    std::vector<char> qual(align.shape()[1], '#');
+    int32_t totCount = align.shape()[0] - getRidOffRef;
+    int32_t qualval = 33;
     for(typename TCoverage::const_iterator itCov = cov.begin(); itCov != cov.end(); ++itCov, ++j) {
       int32_t maxIdx = 4;  // Leading/trailing gaps until min. coverage is reached
+      int32_t maxCount = 0;
       if ((*itCov >= 1) && (*itCov >= covThreshold)) {
 	// Get consensus letter
 	std::vector<int32_t> count(5, 0); // ACGT-
@@ -208,25 +212,29 @@ namespace tracy {
 	  }
 	}
 	maxIdx = 0;
-	int32_t maxCount = count[0];
+	maxCount = count[0];
 	for(uint32_t i = 1; i<5; ++i) {
 	  if (count[i] > maxCount) {
 	    maxCount = count[i];
 	    maxIdx = i;
 	  }
 	}
+	qualval = 47 + maxCount * 10 / totCount;
       }
       switch (maxIdx) {
-      case 0: cons[j] = 'A'; break;
-      case 1: cons[j] = 'C'; break;
-      case 2: cons[j] = 'G'; break;
-      case 3: cons[j] = 'T'; break;
+      case 0: cons[j] = 'A'; qual[j] = (char) qualval; break;
+      case 1: cons[j] = 'C'; qual[j] = (char) qualval; break;
+      case 2: cons[j] = 'G'; qual[j] = (char) qualval; break;
+      case 3: cons[j] = 'T'; qual[j] = (char) qualval; break;
       default: break;
       }
     }
     gapped = std::string(cons.begin(), cons.end());
     for(uint32_t i = 0; i<cons.size(); ++i) {
-      if (cons[i] != '-') cs.push_back(cons[i]);
+      if (cons[i] != '-') {
+	cs.push_back(cons[i]);
+	qstr.push_back(qual[i]);
+      }
     }
   }
 

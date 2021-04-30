@@ -22,6 +22,7 @@ namespace tracy {
     float matchFraction;
     float fractionCalled;
     std::string outprefix;
+    std::string format;
     DnaScore<int32_t> aliscore;
     boost::filesystem::path reference;
     boost::filesystem::path alignment;
@@ -81,6 +82,7 @@ namespace tracy {
     otp.add_options()
       ("called,d", boost::program_options::value<float>(&c.fractionCalled)->default_value(0.1), "fraction of traces required for consensus")
       ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
+      ("format,a", boost::program_options::value<std::string>(&c.format)->default_value("fasta"), "consensus output format [fasta|fastq]")
       ("inccons,i", "include consensus in FASTA align")
       ;
 
@@ -150,6 +152,7 @@ namespace tracy {
     TAlign align;
     std::string gapped;
     std::string cs;
+    std::string qstr;
     
     // Reference-guided
     if (c.hasReference) {
@@ -270,7 +273,7 @@ namespace tracy {
 	}
 
 	// Consensus calling
-	consensus(c, align, gapped, cs, true);
+	consensus(c, align, gapped, cs, qstr, true);
 
 	// Output horizontal alignment
 	std::string alignfilename = c.outprefix + ".align.fa";
@@ -446,7 +449,7 @@ namespace tracy {
       msa(c, seqProfiles, align, seqidx);
 
       // Consensus calling
-      consensus(c, align, gapped, cs, false);
+      consensus(c, align, gapped, cs, qstr, false);
 
       // Output horizontal alignment
       std::string alignfilename = c.outprefix + ".align.fa";
@@ -538,6 +541,23 @@ namespace tracy {
       vfile << '|' << gapped[j] << std::endl;
     }
     vfile.close();
+
+    // Output consensus
+    if (c.format == "fasta") {
+      filename = c.outprefix + ".cons.fa";
+      std::ofstream csfile(filename.c_str());
+      csfile << ">Consensus" << std::endl;
+      csfile << cs << std::endl;
+      csfile.close();
+    } else if (c.format == "fastq") {
+      filename = c.outprefix + ".cons.fq";
+      std::ofstream csfile(filename.c_str());
+      csfile << "@Consensus" << std::endl;
+      csfile << cs << std::endl;
+      csfile << "+" << std::endl;
+      csfile << qstr << std::endl;
+      csfile.close();
+    }
 
     // Done
     now = boost::posix_time::second_clock::local_time();
