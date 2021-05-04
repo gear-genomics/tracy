@@ -7,7 +7,7 @@
 
 ## Tracy: basecalling, alignment, assembly and deconvolution of Sanger Chromatogram trace files
 
-Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy), as a pre-compiled statically linked binary from [Tracy's github release page](https://github.com/gear-genomics/tracy/releases), as a singularity container [SIF file](https://github.com/gear-genomics/tracy/releases) or as a minimal [Docker container](https://hub.docker.com/r/geargenomics/tracy/).
+Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy), as a pre-compiled statically linked binary from [Tracy's github release page](https://github.com/gear-genomics/tracy/releases), as a singularity container [SIF file](https://github.com/gear-genomics/tracy/releases) or as a [Docker container](https://hub.docker.com/r/geargenomics/tracy/).
 
 [Source Code](https://github.com/gear-genomics/tracy/)
 
