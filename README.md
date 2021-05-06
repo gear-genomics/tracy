@@ -1,7 +1,8 @@
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat-square)](http://bioconda.github.io/recipes/tracy/README.html)
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/tracy/badges/downloads.svg)](https://anaconda.org/bioconda/tracy)
-[![Platforms](https://anaconda.org/bioconda/tracy/badges/platforms.svg)](https://anaconda.org/bioconda/tracy)
-[![Build Status](https://travis-ci.org/gear-genomics/tracy.svg?branch=master)](https://travis-ci.org/gear-genomics/tracy)
+[![C/C++ CI](https://github.com/gear-genomics/tracy/workflows/C/C++%20CI/badge.svg)](https://github.com/gear-genomics/tracy/actions)
+[![Docker CI](https://github.com/gear-genomics/tracy/workflows/Docker%20CI/badge.svg)](https://hub.docker.com/r/geargenomics/tracy/)
+[![GitHub license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/gear-genomics/tracy/blob/master/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/gear-genomics/tracy.svg)](https://github.com/gear-genomics/tracy/releases)
 
 
