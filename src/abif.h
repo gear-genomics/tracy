@@ -397,7 +397,11 @@ readab(std::string const& filename, Trace& tr) {
   }
   
   // Close input file
-  return true;
+  if (minsize) return true;
+  else {
+    std::cerr << "File lacks basecalls!" << std::endl;
+    return false;
+  }
 }
 
 
