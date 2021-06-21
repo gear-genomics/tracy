@@ -13,6 +13,7 @@ namespace tracy {
   struct AssembleConfig {
     bool hasReference;
     bool incCons;
+    bool incRef;
     int32_t gapopen;
     int32_t gapext;
     int32_t match;
@@ -84,6 +85,7 @@ namespace tracy {
       ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
       ("format,a", boost::program_options::value<std::string>(&c.format)->default_value("fasta"), "consensus output format [fasta|fastq]")
       ("inccons,i", "include consensus in FASTA align")
+      ("incref,j", "include reference in consensus computation (req. --reference)")
       ;
 
     
@@ -125,6 +127,10 @@ namespace tracy {
     // Check include consensus flag
     if (vm.count("inccons")) c.incCons = true;
     else c.incCons = false;
+
+    // Check include reference flag
+    if (vm.count("incref")) c.incRef = true;
+    else c.incRef = false;
 
     // Check trimming stringency
     if (c.trimStringency > 9) c.trimStringency = 9;
@@ -278,7 +284,8 @@ namespace tracy {
 	}
 
 	// Consensus calling
-	consensus(c, align, gapped, cs, qstr, true);
+	if (c.incRef) consensus(c, align, gapped, cs, qstr, false);
+	else consensus(c, align, gapped, cs, qstr, true);
 
 	// Output horizontal alignment
 	std::string alignfilename = c.outprefix + ".align.fa";
