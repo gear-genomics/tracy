@@ -200,6 +200,11 @@ namespace tracy {
 	uint32_t trimLeft = 0;
 	uint32_t trimRight = 0;
 	trimTrace(c, bc, trimLeft, trimRight);
+	if (trimLeft + trimRight >= bc.bcPos.size()) {
+	  std::cerr << "Too stringent trimming parameters!" << std::endl;
+	  std::cerr << c.ab[i].string() << " has no peaks left!" << std::endl;
+	  return -1;
+	}
 	
 	// Create Trace Profile
 	TProfile ptrace;
@@ -384,12 +389,17 @@ namespace tracy {
 	// Call bases
 	BaseCalls bc;
 	basecall(tr, bc, c.pratio);
-
+	
 	// Get trim sizes
 	uint32_t trimLeft = 0;
 	uint32_t trimRight = 0;
 	trimTrace(c, bc, trimLeft, trimRight);
-
+	if (trimLeft + trimRight >= bc.bcPos.size()) {
+	  std::cerr << "Too stringent trimming parameters!" << std::endl;
+	  std::cerr << c.ab[i].string() << " has no peaks left!" << std::endl;
+	  return -1;
+	}
+	
 	// Create Trace Profile
 	TProfile ptrace;
 	createProfile(tr, bc, ptrace, trimLeft, trimRight);
