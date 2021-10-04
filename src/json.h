@@ -85,7 +85,7 @@ namespace tracy
     for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
       if (idx == i) {
 	if (i!=bc.bcPos[0]) rfile << ", ";
-	rfile << (int32_t) tr.qual[bcpos];
+	rfile << (int32_t) bc.estQual[bcpos];
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }
@@ -161,6 +161,17 @@ namespace tracy
       if (idx == i) {
 	if (i!=bc.bcPos[0]) rfile << ", ";
 	rfile << (i+1);
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+      }
+    }
+    rfile << "]," << std::endl;
+    bcpos = 0;
+    idx = bc.bcPos[0];
+    rfile << "\"basecallQual\": [";
+    for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
+      if (idx == i) {
+	if (i!=bc.bcPos[0]) rfile << ", ";
+	rfile << (int32_t) bc.estQual[bcpos];
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }
@@ -437,6 +448,7 @@ namespace tracy
       if (insIdx == tracePos) {
 	for(uint32_t k = 0; k < insSize[inspos]; ++k) {
 	  nbc.bcPos.push_back(tracePos + offset + (uint32_t) (step / 2.0));
+	  nbc.estQual.push_back(0);
 	  nbc.primary.push_back('-');
 	  nbc.secondary.push_back('-');
 	  nbc.consensus.push_back('-');
@@ -451,6 +463,7 @@ namespace tracy
       }
       if (idx == tracePos) {
 	nbc.bcPos.push_back(idx + offset);
+	nbc.estQual.push_back(bc.estQual[bcpos]);
 	nbc.primary.push_back(bc.primary[bcpos]);
 	nbc.secondary.push_back(bc.secondary[bcpos]);
 	nbc.consensus.push_back(bc.consensus[bcpos]);

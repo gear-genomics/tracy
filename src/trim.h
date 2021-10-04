@@ -91,6 +91,7 @@ namespace tracy {
 	  nbc.primary.push_back(bc.primary[bcpos]);
 	  nbc.secondary.push_back(bc.secondary[bcpos]);
 	  nbc.consensus.push_back(bc.consensus[bcpos]);
+	  nbc.estQual.push_back(bc.estQual[bcpos]);
 	}
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
@@ -137,6 +138,7 @@ namespace tracy {
 	nbc.primary.push_back(reverseComplement(bc.primary[bcpos]));
 	nbc.secondary.push_back(reverseComplement(bc.secondary[bcpos]));
 	nbc.consensus.push_back(reverseComplement(bc.consensus[bcpos]));
+	nbc.estQual.push_back(bc.estQual[bcpos]);
 	ntr.qual.push_back(tr.qual[bcpos]);
 	if (bcpos > 0) idx = bc.bcPos[--bcpos];
       }

@@ -524,7 +524,7 @@ traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, uint32_t
     for(uint32_t k =0; k<4; ++k) rfile << tr.traceACGT[k][i] << "\t";
     if (idx == i) {
       rfile << (bcpos+1) << "\t";
-      rfile << bc.primary[bcpos] << "\t" << bc.secondary[bcpos] << "\t" << bc.consensus[bcpos] << "\t" << (int32_t) tr.qual[bcpos] << "\t";
+      rfile << bc.primary[bcpos] << "\t" << bc.secondary[bcpos] << "\t" << bc.consensus[bcpos] << "\t" << (int32_t) bc.estQual[bcpos] << "\t";
       if ((bcpos < leftTrim) || (bcpos >= rtr)) rfile << "Y" << std::endl;
       else rfile << "N" << std::endl;
       if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];

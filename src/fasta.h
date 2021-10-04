@@ -104,7 +104,7 @@ namespace tracy
     TValue idx = bc.bcPos[bcpos];
     for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
       if (idx == i) {
-	rfile << (char) (tr.qual[bcpos] + 33);
+	rfile << (char) (bc.estQual[bcpos] + 33);
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }
