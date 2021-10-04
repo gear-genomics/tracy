@@ -81,6 +81,17 @@ namespace tracy
     rfile << "]," << std::endl;
     bcpos = 0;
     idx = bc.bcPos[0];
+    rfile << "\"basecallQual\": [";
+    for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
+      if (idx == i) {
+	if (i!=bc.bcPos[0]) rfile << ", ";
+	rfile << (int32_t) tr.qual[bcpos];
+	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
+      }
+    }
+    rfile << "]," << std::endl;
+    bcpos = 0;
+    idx = bc.bcPos[0];
     rfile << "\"basecalls\": {";
     for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
       if (idx == i) {
