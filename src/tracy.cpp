@@ -15,6 +15,7 @@
 #include "sage.h"
 #include "indigo.h"
 #include "assemble.h"
+#include "consensus.h"
 
 using namespace tracy;
 
@@ -29,6 +30,7 @@ displayUsage() {
   std::cout << "    basecall     basecall Chromatogram trace file" << std::endl;
   std::cout << "    align        alignment of a trace file to a genome" << std::endl;
   std::cout << "    decompose    variant calling and indel decomposition" << std::endl;
+  std::cout << "    consensus    consensus for a pair of trace files" << std::endl;
   std::cout << "    assemble     assemble a set of trace files" << std::endl;
   std::cout << std::endl;
   std::cout << std::endl;
@@ -71,6 +73,9 @@ int main(int argc, char **argv) {
   }
   else if ((std::string(argv[1]) == "decompose")) {
     return indigo(argc-1,argv+1);
+  }
+  else if ((std::string(argv[1]) == "consensus")) {
+    return consensus(argc-1,argv+1);
   }
   else if ((std::string(argv[1]) == "assemble")) {
     return assemble(argc-1,argv+1);
