@@ -53,6 +53,7 @@ namespace tracy {
     int32_t mismatch;
     float pratio;
     float trimStringency;
+    std::string label;
     std::string outprefix;
     DnaScore<int32_t> aliscore;
     boost::filesystem::path align;
@@ -60,20 +61,24 @@ namespace tracy {
     std::vector<boost::filesystem::path> files;
   };
 
+  template<typename TConfig>
   inline void
-  consensusFastaOut(std::string const& outfile, std::string const& cons) {
+  consensusFastaOut(TConfig const& c, std::string const& cons) {
     // Output trace
+    std::string outfile = c.outprefix + ".fa";
     std::ofstream rfile(outfile.c_str());
-    rfile << ">Consensus" << std::endl;
+    rfile << ">" << c.label << std::endl;
     rfile << cons << std::endl;
     rfile.close();  
   }
 
+  template<typename TConfig>
   inline void
-  consensusFastqOut(std::string const& outfile, std::string const& cons, std::vector<uint32_t>& qual) {
+  consensusFastqOut(TConfig const& c, std::string const& cons, std::vector<uint32_t>& qual) {
     // Output trace
+    std::string outfile = c.outprefix + ".fq";
     std::ofstream rfile(outfile.c_str());
-    rfile << "@consensus" << std::endl;
+    rfile << "@" << c.label << std::endl;
     rfile << cons << std::endl;
     rfile << "+" << std::endl;
     for(uint32_t i = 0; i < qual.size(); ++i) {
@@ -335,6 +340,7 @@ namespace tracy {
     boost::program_options::options_description generic("Generic options");
     generic.add_options()
       ("help,?", "show help message")
+      ("label,b", boost::program_options::value<std::string>(&c.label)->default_value("Consensus"), "sample label")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
       ;
 
@@ -553,8 +559,8 @@ namespace tracy {
     pairwiseConsensus(c, fali, trimmedtrace1, trimmedtrace2, cons, qual);
 
     // Output
-    consensusFastaOut(c.outprefix + ".fa", cons);
-    consensusFastqOut(c.outprefix + ".fq", cons, qual);
+    consensusFastaOut(c, cons);
+    consensusFastqOut(c, cons, qual);
 
     // Show ClustalW like alignment
     plotClustalPairwise(c, fali, forward, score, c.linelimit);
