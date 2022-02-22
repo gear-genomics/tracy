@@ -41,6 +41,7 @@ namespace tracy {
 
   struct ConsensusConfig {
     bool computeUnion;
+    bool useIUPAC;
     uint16_t linelimit;
     uint16_t trimLeft1;
     uint16_t trimRight1;
@@ -59,9 +60,34 @@ namespace tracy {
     std::vector<boost::filesystem::path> files;
   };
 
+  inline void
+  consensusFastaOut(std::string const& outfile, std::string const& cons) {
+    // Output trace
+    std::ofstream rfile(outfile.c_str());
+    rfile << ">Consensus" << std::endl;
+    rfile << cons << std::endl;
+    rfile.close();  
+  }
 
   inline void
-  gtLetter(std::vector<double>& cl, std::string& cons, std::vector<uint32_t>& qual) {
+  consensusFastqOut(std::string const& outfile, std::string const& cons, std::vector<uint32_t>& qual) {
+    // Output trace
+    std::ofstream rfile(outfile.c_str());
+    rfile << "@consensus" << std::endl;
+    rfile << cons << std::endl;
+    rfile << "+" << std::endl;
+    for(uint32_t i = 0; i < qual.size(); ++i) {
+      int32_t qval = qual[i] + 33;
+      if (qval > 122) qval = 122;
+      rfile << (char) (qval);
+    }
+    rfile << std::endl;
+    rfile.close();
+  }
+
+  template<typename TConfig>
+  inline void
+  gtLetter(TConfig const& c, std::vector<double>& cl, std::string& cons, std::vector<uint32_t>& qual) {
     // Genotype likelihoods
     std::vector<double> gl(6);
     double total = 0;
@@ -91,6 +117,13 @@ namespace tracy {
       }
     }
     double glBestVal = gl[glBest];
+    bool ambiguous = false;
+    if (c.useIUPAC) {
+      if (gl[gl2ndBest] > -1) {
+	// Make sure both nucleotides are A, C, G, T
+	if ((glBest <= 3) && (gl2ndBest <= 3)) ambiguous = true;
+      }
+    }
     for(uint32_t k = 0; k < gl.size(); ++k) gl[k] -= glBestVal;
 
     // Compute quality (2nd best basecall to best basecall)
@@ -107,29 +140,44 @@ namespace tracy {
 
     // Determine consensus letter and quality
     // 'A', 'C', 'G', 'T', 'N', '-'
-    if (glBest == 0) cons += 'A';
-    else if (glBest == 1) cons += 'C';
-    else if (glBest == 2) cons += 'G';
-    else if (glBest == 3) cons += 'T';
-    else if (glBest == 4) cons += 'N';
-    else cons += '-';
+    if (ambiguous) {
+      // Use IUPAC
+      char c1 = 'A';
+      if (glBest == 0) c1 = 'A';
+      else if (glBest == 1) c1 = 'C';
+      else if (glBest == 2) c1 = 'G';
+      else if (glBest == 3) c1 = 'T';
+      char c2 = 'A';
+      if (gl2ndBest == 0) c2 = 'A';
+      else if (gl2ndBest == 1) c2 = 'C';
+      else if (gl2ndBest == 2) c2 = 'G';
+      else if (gl2ndBest == 3) c2 = 'T';
+      cons += iupac(c1, c2);
+    } else {
+      if (glBest == 0) cons += 'A';
+      else if (glBest == 1) cons += 'C';
+      else if (glBest == 2) cons += 'G';
+      else if (glBest == 3) cons += 'T';
+      else if (glBest == 4) cons += 'N';
+      else cons += '-';
+    }
     qual.push_back(gqval);
   }
   
-  template<typename TProfile>
+  template<typename TConfig, typename TProfile>
   inline void
-  consLetter(TProfile const& p1, TProfile const& p2, int32_t const s1, int32_t const s2, std::string& cons, std::vector<uint32_t>& qual) {
+  consLetter(TConfig const& c, TProfile const& p1, TProfile const& p2, int32_t const s1, int32_t const s2, std::string& cons, std::vector<uint32_t>& qual) {
     std::vector<double> cl(6);
     for(uint32_t k = 0; k < 6; ++k) cl[k] = p1[k][s1] + p2[k][s2];
-    gtLetter(cl, cons, qual); 
+    gtLetter(c, cl, cons, qual); 
   }
 
-  template<typename TProfile>
+  template<typename TConfig, typename TProfile>
   inline void
-  consLetter(TProfile const& p, int32_t const s, std::string& cons, std::vector<uint32_t>& qual) {
+  consLetter(TConfig const& c, TProfile const& p, int32_t const s, std::string& cons, std::vector<uint32_t>& qual) {
     std::vector<double> cl(6);
     for(uint32_t k = 0; k < 6; ++k) cl[k] = p[k][s];
-    gtLetter(cl, cons, qual); 
+    gtLetter(c, cl, cons, qual); 
   }
   
   template<typename TConfig, typename TAlign, typename TProfile>
@@ -155,11 +203,11 @@ namespace tracy {
 	  gapEx += 1;
 	}
 	if (align[0][j] != '-') {
-	  if (c.computeUnion) consLetter(trimmedtrace1, seq1, cons, qual);
+	  if (c.computeUnion) consLetter(c, trimmedtrace1, seq1, cons, qual);
 	  ++seq1;
 	}
 	if (align[1][j] != '-') {
-	  if (c.computeUnion) consLetter(trimmedtrace2, seq2, cons, qual);
+	  if (c.computeUnion) consLetter(c, trimmedtrace2, seq2, cons, qual);
 	  ++seq2;
 	}
       } else {
@@ -172,7 +220,7 @@ namespace tracy {
 	else mm += 1;
 	//std::cerr << align[0][j] << ',' << align[1][j] << std::endl;
 	//for(uint32_t k = 0; k < 6; ++k) std::cerr << k << ':' << trimmedtrace1[k][seq1] << ',' << trimmedtrace2[k][seq2] << std::endl;
-	consLetter(trimmedtrace1, trimmedtrace2, seq1, seq2, cons, qual);
+	consLetter(c, trimmedtrace1, trimmedtrace2, seq1, seq2, cons, qual);
 	++seq1;
 	++seq2;
       }
@@ -312,6 +360,7 @@ namespace tracy {
       ("linelimit,l", boost::program_options::value<uint16_t>(&c.linelimit)->default_value(60), "alignment line length")
       ("outprefix,o", boost::program_options::value<std::string>(&c.outprefix)->default_value("out"), "output prefix")
       ("intersect,i", "use only trace intersection for consensus")
+      ("iupac,a", "use IUPAC nucleotide code in consensus (max. 2 nucleotides)")
       ;
     
     boost::program_options::options_description hidden("Hidden options");
@@ -354,6 +403,10 @@ namespace tracy {
     // Intersection for consensus
     if (vm.count("intersect")) c.computeUnion = false;
     else c.computeUnion = true;
+
+    // Use IUPAC
+    if (vm.count("iupac")) c.useIUPAC = true;
+    else c.useIUPAC = false;
     
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
@@ -498,9 +551,11 @@ namespace tracy {
     std::string cons;
     std::vector<uint32_t> qual;
     pairwiseConsensus(c, fali, trimmedtrace1, trimmedtrace2, cons, qual);
-    std::cerr << cons.size() << ',' << qual.size() << std::endl;
 
-			   
+    // Output
+    consensusFastaOut(c.outprefix + ".fa", cons);
+    consensusFastqOut(c.outprefix + ".fq", cons, qual);
+
     // Show ClustalW like alignment
     plotClustalPairwise(c, fali, forward, score, c.linelimit);
 
