@@ -36,7 +36,7 @@ namespace tracy
     
   inline void
   bsd() {
-    std::cout << "Copyright (c) 2019 Tracy Project Authors (see AUTHORS file for details)." << std::endl;
+    std::cout << "Copyright (c) 2019- European Molecular Biology Laboratory (EMBL)." << std::endl;
     std::cout << "All rights reserved." << std::endl;
     std::cout << std::endl;
     std::cout << "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:" << std::endl;
