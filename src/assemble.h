@@ -67,7 +67,7 @@ namespace tracy {
       ("help,?", "show help message")
       ("reference,r", boost::program_options::value<boost::filesystem::path>(&c.reference), "reference-guided assembly (optional)")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
-      ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9]")
+      ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(4), "trimming stringency [1:9], 0: disable trimming")
       ("fracmatch,f", boost::program_options::value<float>(&c.matchFraction)->default_value(0.5), "min. fraction of matches [0:1]")
       ;
 
@@ -133,8 +133,10 @@ namespace tracy {
     else c.incRef = false;
 
     // Check trimming stringency
-    if (c.trimStringency > 9) c.trimStringency = 9;
-    if (c.trimStringency < 1) c.trimStringency = 1;
+    if (c.trimStringency != 0) {
+      if (c.trimStringency > 9) c.trimStringency = 9;
+      else if (c.trimStringency < 1) c.trimStringency = 1;
+    }
     
     // Check match fraction
     if (c.matchFraction < 0) c.matchFraction = 0;
@@ -205,11 +207,13 @@ namespace tracy {
 	// Get trim sizes
 	uint32_t trimLeft = 0;
 	uint32_t trimRight = 0;
-	trimTrace(c, bc, trimLeft, trimRight);
-	if (trimLeft + trimRight >= bc.bcPos.size()) {
-	  std::cerr << "Too stringent trimming parameters!" << std::endl;
-	  std::cerr << c.ab[i].string() << " has no peaks left!" << std::endl;
-	  return -1;
+	if (c.trimStringency) {
+	  trimTrace(c, bc, trimLeft, trimRight);
+	  if (trimLeft + trimRight >= bc.bcPos.size()) {
+	    std::cerr << "Too stringent trimming parameters!" << std::endl;
+	    std::cerr << c.ab[i].string() << " has no peaks left!" << std::endl;
+	    return -1;
+	  }
 	}
 	
 	// Create Trace Profile
@@ -349,8 +353,8 @@ namespace tracy {
 	  // Get trim sizes
 	  uint32_t trimLeft = 0;
 	  uint32_t trimRight = 0;
-	  trimTrace(c, bc, trimLeft, trimRight);
-
+	  if (c.trimStringency) trimTrace(c, bc, trimLeft, trimRight);
+	  
 	  // Hard trim of the basecalls, keep trace data structure
 	  BaseCalls nbc;
 	  trimTrace(tr, bc, trimLeft, trimRight, nbc);
@@ -400,11 +404,13 @@ namespace tracy {
 	// Get trim sizes
 	uint32_t trimLeft = 0;
 	uint32_t trimRight = 0;
-	trimTrace(c, bc, trimLeft, trimRight);
-	if (trimLeft + trimRight >= bc.bcPos.size()) {
-	  std::cerr << "Too stringent trimming parameters!" << std::endl;
-	  std::cerr << c.ab[i].string() << " has no peaks left!" << std::endl;
-	  return -1;
+	if (c.trimStringency) {
+	  trimTrace(c, bc, trimLeft, trimRight);
+	  if (trimLeft + trimRight >= bc.bcPos.size()) {
+	    std::cerr << "Too stringent trimming parameters!" << std::endl;
+	    std::cerr << c.ab[i].string() << " has no peaks left!" << std::endl;
+	    return -1;
+	  }
 	}
 	
 	// Create Trace Profile
@@ -522,8 +528,8 @@ namespace tracy {
 	// Get trim sizes
 	uint32_t trimLeft = 0;
 	uint32_t trimRight = 0;
-	trimTrace(c, bc, trimLeft, trimRight);
-
+	if (c.trimStringency) trimTrace(c, bc, trimLeft, trimRight);
+	
 	// Hard trim of the trace data structures
 	BaseCalls nbc;
 	trimTrace(tr, bc, trimLeft, trimRight, nbc);
