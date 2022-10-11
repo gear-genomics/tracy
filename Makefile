@@ -18,7 +18,7 @@ CXXFLAGS += -std=c++14 -isystem ${JLIB} -isystem ${EBROOTHTSLIB} -isystem ${SDSL
 LDFLAGS += -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time -ldl -lpthread
 
 ifeq (${STATIC}, 1)
-	LDFLAGS += -static -static-libgcc -pthread -lhts -lz -llzma -lbz2
+	LDFLAGS += -static -static-libgcc -pthread -lhts -lz -llzma -lbz2 -ldeflate
 else
 	LDFLAGS += -lhts -lz -llzma -lbz2 -Wl,-rpath,${EBROOTHTSLIB}
 endif
