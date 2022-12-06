@@ -1,7 +1,6 @@
 #ifndef FASTA_H
 #define FASTA_H
 
-#include <boost/progress.hpp>
 #include "abif.h"
 #include "fmindex.h"
 
@@ -79,24 +78,50 @@ namespace tracy
     return true;
   }
 
-  
+
+  template<typename TConfig>
   inline void
-  traceFastaOut(std::string const& outfile, BaseCalls& bc, Trace const&) {
+  traceFastaOut(TConfig const& c, BaseCalls& bc, Trace const&) {
     // Output trace
-    std::ofstream rfile(outfile.c_str());
-    rfile << ">primary" << std::endl;
-    for(uint32_t i = 0; i < bc.primary.size(); ++i) rfile << bc.primary[i];
-    rfile << std::endl;
+    std::ofstream rfile(c.outfile.c_str());
+    if (c.otype == "primary") {
+      rfile << ">primary" << std::endl;
+      for(uint32_t i = c.trimLeft; i < (bc.primary.size() - c.trimRight); ++i) rfile << bc.primary[i];
+      rfile << std::endl;
+    }
+    else if (c.otype == "secondary") {
+      rfile << ">secondary" << std::endl;
+      for(uint32_t i = c.trimLeft; i < (bc.secondary.size() - c.trimRight); ++i) rfile << bc.secondary[i];
+      rfile << std::endl;
+    }
+    else if (c.otype == "consensus") {
+      rfile << ">consensus" << std::endl;
+      for(uint32_t i = c.trimLeft; i < (bc.consensus.size() - c.trimRight); ++i) rfile << bc.consensus[i];
+      rfile << std::endl;
+    }
     rfile.close();  
   }
 
+  template<typename TConfig>
   inline void
-  traceFastqOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
+  traceFastqOut(TConfig const& c, BaseCalls& bc, Trace const& tr) {
     // Output trace
-    std::ofstream rfile(outfile.c_str());
-    rfile << "@primary" << std::endl;
-    for(uint32_t i = 0; i < bc.primary.size(); ++i) rfile << bc.primary[i];
-    rfile << std::endl;
+    std::ofstream rfile(c.outfile.c_str());
+    if (c.otype == "primary") {
+      rfile << "@primary" << std::endl;
+      for(uint32_t i = c.trimLeft; i < (bc.primary.size() - c.trimRight); ++i) rfile << bc.primary[i];
+      rfile << std::endl;
+    }
+    else if (c.otype == "secondary") {
+      rfile << "@secondary" << std::endl;
+      for(uint32_t i = c.trimLeft; i < (bc.secondary.size() - c.trimRight); ++i) rfile << bc.secondary[i];
+      rfile << std::endl;
+    }
+    else if (c.otype == "consensus") {
+      rfile << "@consensus" << std::endl;
+      for(uint32_t i = c.trimLeft; i < (bc.consensus.size() - c.trimRight); ++i) rfile << bc.consensus[i];
+      rfile << std::endl;
+    }
     rfile << "+" << std::endl;
     
     typedef Trace::TValue TValue;
@@ -104,7 +129,7 @@ namespace tracy
     TValue idx = bc.bcPos[bcpos];
     for(int32_t i = 0; i < (int32_t) tr.traceACGT[0].size(); ++i) {
       if (idx == i) {
-	rfile << (char) (bc.estQual[bcpos] + 33);
+	if ((bcpos >= c.trimLeft) && (bcpos < (bc.primary.size() - c.trimRight))) rfile << (char) (bc.estQual[bcpos] + 33);
 	if (bcpos < bc.bcPos.size() - 1) idx = bc.bcPos[++bcpos];
       }
     }

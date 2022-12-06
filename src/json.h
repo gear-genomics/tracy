@@ -1,8 +1,6 @@
 #ifndef JSON_H
 #define JSON_H
 
-#include <boost/progress.hpp>
-
 #include "abif.h"
 #include "fmindex.h"
 #include "version.h"

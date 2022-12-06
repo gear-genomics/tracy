@@ -20,7 +20,6 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/progress.hpp>
 
 using namespace sdsl;
 

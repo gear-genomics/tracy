@@ -1,8 +1,6 @@
 #ifndef PROFILE_H
 #define PROFILE_H
 
-#include <boost/progress.hpp>
-
 namespace tracy
 {
 

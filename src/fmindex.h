@@ -1,8 +1,6 @@
 #ifndef FMINDEX_H
 #define FMINDEX_H
 
-#include <boost/progress.hpp>
-
 #include <htslib/faidx.h>
 
 #include "fasta.h"

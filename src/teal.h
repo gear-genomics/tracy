@@ -3,6 +3,7 @@
 
 #include "abif.h"
 #include "scf.h"
+#include "trim.h"
 #include "json.h"
 #include "fasta.h"
 
@@ -10,7 +11,11 @@ namespace tracy {
 
   struct TealConfig {
     float pratio;
+    uint16_t trimLeft;
+    uint16_t trimRight;
+    float trimStringency;
     std::string format;
+    std::string otype;
     boost::filesystem::path tracein;
     boost::filesystem::path outfile;
   };
@@ -24,6 +29,10 @@ namespace tracy {
       ("help,?", "show help message")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call a base")
       ("format,f", boost::program_options::value<std::string>(&c.format)->default_value("json"), "output format [json|tsv|fasta|fastq]")
+      ("otype,y", boost::program_options::value<std::string>(&c.otype)->default_value("primary"), "fasta/fastq sequence [primary|secondary|consensus]")
+      ("trim,t", boost::program_options::value<float>(&c.trimStringency)->default_value(0), "trimming stringency [1:9], 0: use trimLeft and trimRight")
+      ("trimLeft,q", boost::program_options::value<uint16_t>(&c.trimLeft)->default_value(0), "trim size left")
+      ("trimRight,u", boost::program_options::value<uint16_t>(&c.trimRight)->default_value(0), "trim size right")
       ("output,o", boost::program_options::value<boost::filesystem::path>(&c.outfile)->default_value("out.json"), "basecalling output")
       ;
     
@@ -77,11 +86,26 @@ namespace tracy {
       // Call bases
       BaseCalls bc;
       basecall(tr, bc, c.pratio);
-	  
+
+      // Trace trimming
+      if (c.trimStringency >= 1) {
+	uint32_t trimLeft = 0;
+	uint32_t trimRight = 0;
+	trimTrace(c, bc, trimLeft, trimRight);
+	c.trimLeft = trimLeft;
+	c.trimRight = trimRight;
+      }
+
+      // Check trim sizes
+      if (c.trimLeft + c.trimRight >= bc.bcPos.size()) {
+	std::cerr << "The sum of the left and right trim size is larger than the trace!" << std::endl;
+	return -1;
+      }
+
       // Write bases
-      if (c.format == "tsv") traceTxtOut(c.outfile.string(), bc, tr);
-      else if (c.format == "fasta") traceFastaOut(c.outfile.string(), bc, tr);
-      else if (c.format == "fastq") traceFastqOut(c.outfile.string(), bc, tr);
+      if (c.format == "tsv") traceTxtOut(c.outfile.string(), bc, tr, c.trimLeft, c.trimRight);
+      else if (c.format == "fasta") traceFastaOut(c, bc, tr);
+      else if (c.format == "fastq") traceFastqOut(c, bc, tr);
       else traceJsonOut(c.outfile.string(), bc, tr);
     }
 

@@ -532,11 +532,6 @@ traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr, uint32_t
   }
 }
 
-inline void
-traceTxtOut(std::string const& outfile, BaseCalls& bc, Trace const& tr) {
-  traceTxtOut(outfile, bc, tr, 0, bc.primary.size());
-}
-
 }
 
 #endif
