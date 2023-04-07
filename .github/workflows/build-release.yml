@@ -77,6 +77,17 @@ jobs:
           depends: 'libc6 (>= 2.2.1)'
           desc: 'Tracy: basecalling, alignment, assembly and deconvolution of Sanger Chromatogram trace files'
 
+      - name: Install Singularity
+        if: matrix.name == 'amd64'
+        uses: eWaterCycle/setup-singularity@master
+        with:
+          singularity-version: 3.8.7
+
+      - name: Build Singularity package
+        if: matrix.name == 'amd64'
+        run: |
+          singularity build --fakeroot tracy-${{ matrix.arch }}.sif singularity/tracy.def
+
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3
         if: steps.extract.outputs.status == 'success' && !cancelled()
@@ -87,7 +98,7 @@ jobs:
           path: |
             ./${{ steps.extract.outputs.filename }}
             ./*.deb
-          if-no-files-found: error
+            ./tracy-${{ matrix.arch }}.sif
   make-release:
     needs: build-debs
     runs-on: ubuntu-latest
