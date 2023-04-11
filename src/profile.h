@@ -29,7 +29,9 @@ namespace tracy
     p.resize(boost::extents[6][sz]);   // 'A', 'C', 'G', 'T', 'N', '-'
     for(int32_t j = trimleft; j < (trimleft + sz); ++j) {
       float totalsig = 0;
+      float allBaseSig = 0;
       for(uint32_t k = 0; k<4; ++k) {
+	allBaseSig += tr.traceACGT[k][bc.bcPos[j]];
 	if (_inBaseCalled(k, bc.primary[j], bc.secondary[j])) totalsig += tr.traceACGT[k][bc.bcPos[j]];
       }
       p[4][j-trimleft] = 0;
@@ -39,6 +41,11 @@ namespace tracy
       } else {
 	for(uint32_t k = 0; k<4; ++k) {
 	  if (_inBaseCalled(k, bc.primary[j], bc.secondary[j])) p[k][j-trimleft] = ((float) (tr.traceACGT[k][bc.bcPos[j]]) / totalsig);
+	}
+	// Sometimes basecall signal is tiny fraction of all base signals (e.g., missing peaks in signal ramps)
+	float normfac = totalsig / allBaseSig;
+	for(uint32_t k = 0; k<4; ++k) {
+	  p[k][j-trimleft] = normfac * p[k][j-trimleft] + (1 - normfac) * 0.25;
 	}
       }
     }
