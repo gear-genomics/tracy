@@ -39,15 +39,16 @@ RUN cd /opt \
 
 # Multi-stage build
 FROM alpine:latest
+RUN apk add --no-cache bash
 RUN mkdir -p /opt/tracy/bin
 WORKDIR /opt/tracy/bin
 COPY --from=0 /opt/tracy/bin/tracy .
 
 # Workdir
-WORKDIR /root/
+WORKDIR /home
 
 # Add Tracy to PATH
 ENV PATH="/opt/tracy/bin:${PATH}"
 
 # by default /bin/sh is executed
-CMD ["/bin/sh"]
+CMD ["/bin/bash"]
