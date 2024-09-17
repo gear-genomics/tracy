@@ -38,17 +38,13 @@ namespace tracy {
     bool forward;
 
     TraceScore(int32_t const s, int32_t const i, int32_t const n, bool const f) : score(s), idx(i), newidx(n), forward(f) {}
-  };
 
-
-  template<typename TTraceScore>
-  struct SortTraceScore : public std::binary_function<TTraceScore, TTraceScore, bool>
-  {
-    inline bool operator()(TTraceScore const& ts1, TTraceScore const& ts2) {
-      return ((ts1.score > ts2.score) || ((ts1.score == ts2.score) && (ts1.idx < ts2.idx)));
+    bool operator<(const TraceScore& ts2) const {
+      return ((score > ts2.score) || ((score == ts2.score) && (idx < ts2.idx)));
     }
   };
-  
+
+
   struct SequenceSegment {
     std::string seq;
     int32_t trimLeft;
@@ -248,7 +244,7 @@ namespace tracy {
       }
 
       // Sort score
-      std::sort(scoreIdx.begin(), scoreIdx.end(), SortTraceScore<TraceScore>());
+      std::sort(scoreIdx.begin(), scoreIdx.end());
 
       // Align iteratively
       if (scoreIdx.size()) {

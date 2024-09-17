@@ -16,16 +16,11 @@ namespace tracy {
     std::string id;
     
     Variant(int32_t const p, int32_t const bc, int32_t const g, std::string const& c, std::string const& r, std::string const& a) : pos(p), basenum(bc), gt(g), chr(c), ref(r), alt(a), id(".") {}
-  };
 
-  template<typename TVar>
-  struct SortVariant : public std::binary_function<TVar, TVar, bool>
-  {
-    inline bool operator()(TVar const& var1, TVar const& var2) {
-      return ((var1.chr < var2.chr) || ((var1.chr == var2.chr) && (var1.pos < var2.pos)) || ((var1.chr == var2.chr) && (var1.pos == var2.pos) && (var1.basenum < var2.basenum)));
+    bool operator<(const Variant& var2) const {
+      return ((chr < var2.chr) || ((chr == var2.chr) && (pos < var2.pos)) || ((chr == var2.chr) && (pos == var2.pos) && (basenum < var2.basenum)));
     }
   };
-  
 
   inline bool
   strInclN(std::string const& ref) {

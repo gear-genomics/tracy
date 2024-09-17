@@ -440,7 +440,7 @@ namespace tracy {
       }
 
       // Sort variants
-      std::sort(var.begin(), var.end(), SortVariant<Variant>());
+      std::sort(var.begin(), var.end());
 
       // VCF output
       vcfOutput(c, bc, var, rs);
