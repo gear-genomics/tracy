@@ -11,9 +11,11 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
     - name: make
       run: |
-        brew install boost htslib sdsl-lite
-        export CXXFLAGS='-I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/htslib/include -I/opt/homebrew/opt/sdsl-lite/include'
-        export LDFLAGS='-L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/htslib/lib -L/opt/homebrew/opt/sdsl-lite/lib'
+        brew install boost htslib
+        export CXXFLAGS='-I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/htslib/include'
+        export LDFLAGS='-L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/htslib/lib'
         make
