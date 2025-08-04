@@ -15,7 +15,7 @@ jobs:
         submodules: 'recursive'
     - name: make
       run: |
-        brew install boost htslib autoconf
+        brew install boost htslib autoconf libtool automake
         export CXXFLAGS='-I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/htslib/include'
         export LDFLAGS='-L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/htslib/lib'
         make
