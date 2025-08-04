@@ -60,15 +60,14 @@ namespace tracy {
   inline int32_t
     variantsInRegion(TConfig const& c, std::string const& locus, std::string& respstr) {
     try {
-      boost::asio::io_service io_service;
+      boost::asio::io_context io_context;
 
       // Connection
       std::string host(c.host);
-      tcp::resolver resolver(io_service);
-      tcp::resolver::query query(host, "http");
-      tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
-      tcp::socket socket(io_service);
-      boost::asio::connect(socket, endpoint_iterator);
+      tcp::resolver resolver(io_context);
+      auto endpoints = resolver.resolve(host, "http");
+      tcp::socket socket(io_context);
+      boost::asio::connect(socket, endpoints);
       
       // Request
       boost::asio::streambuf request;
