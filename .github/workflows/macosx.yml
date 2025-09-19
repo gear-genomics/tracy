@@ -15,6 +15,7 @@ jobs:
       run: |
         brew install boost htslib
         git submodule update --init --recursive src/xxsds
+        export CMAKE_POLICY_VERSION_MINIMUM=3.5
         export CXXFLAGS='-I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/htslib/include'
         export LDFLAGS='-L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/htslib/lib'
         make
