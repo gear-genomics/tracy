@@ -13,7 +13,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: make
       run: |
-        brew install boost htslib
+        brew install boost htslib autoconf libtool automake
+        export PATH="/opt/homebrew/opt/libtool/libexec/gnubin:$PATH"
         git submodule update --init --recursive src/xxsds
         export CMAKE_POLICY_VERSION_MINIMUM=3.5
         export CXXFLAGS='-I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/htslib/include'
