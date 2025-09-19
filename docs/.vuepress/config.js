@@ -1,20 +1,26 @@
-module.exports = {
+import { defineUserConfig } from '@vuepress/cli'
+import { viteBundler } from '@vuepress/bundler-vite'
+import { defaultTheme } from '@vuepress/theme-default'
+
+export default defineUserConfig({
   title: "Tracy documentation",
-  description:
-    "Documentation of Tracy, an app for basecalling, alignment, assembly and deconvolution of Sanger Chromatogram trace files",
+  description: "Documentation of Tracy, an app for basecalling, alignment, assembly and deconvolution of Sanger Chromatogram trace files",
   base: "/docs/tracy/",
-  themeConfig: {
+  theme: defaultTheme({
     repo: "gear-genomics/tracy",
-    nav: [
+    navbar: [
       { text: "Home", link: "/" },
       { text: "Installation", link: "/installation/" },
       { text: "Usage", link: "/cli/" },
-      { text: "Web Apps", link: "/webapps/" },
+      { text: "Web Apps", link: "/webapp/" },
       { text: "FAQ", link: "/faq/" }
     ],
-    sidebar: ["/installation/", "/cli/", "/webapps/", "/faq/"]
-  },
-  plugins: {
-    "@vuepress/back-to-top": true
-  }
-};
+    sidebar: [
+      { text: "Installation", link: "/installation/" },
+      { text: "Usage", link: "/cli/" },	
+      { text: "Web App", link: "/webapp/" },
+      { text: "FAQ", link: "/faq/" }
+    ]
+  }),
+  bundler: viteBundler({})
+})

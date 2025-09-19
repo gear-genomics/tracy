@@ -1,18 +1,16 @@
 {
-  "name": "docs",
-  "private": true,
-  "version": "1.0.0",
+  "name": "tracy-docs",
+  "version": "2.0.0",
   "description": "Tracy documentation",
-  "main": "index.js",
   "scripts": {
     "dev": "vuepress dev",
     "build": "vuepress build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
-    "@vuepress/plugin-back-to-top": "^1.2.0",
-    "vuepress": "^1.8.2"
+    "@vuepress/bundler-vite": "^2.0.0-rc.2",
+    "@vuepress/cli": "^2.0.0-rc.2",
+    "@vuepress/theme-default": "^2.0.0-rc.2",
+    "sass-embedded": "^1.92.1",
+    "vite": "^7.1.6"	
   }
 }
