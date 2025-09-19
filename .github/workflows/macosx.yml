@@ -1,4 +1,4 @@
-name: MacOS CI
+\61;7600;1cname: MacOS CI
 
 on:
   push:
@@ -11,14 +11,10 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
-    - name: Xcode CLI tools
-      run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
     - name: make
       run: |
-        brew install boost htslib autoconf libtool automake
-        export PATH="/opt/homebrew/opt/libtool/libexec/gnubin:$PATH"
+        brew install boost htslib
+        git sumodule update --init --recursive src/xxsds
         export CXXFLAGS='-I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/htslib/include'
         export LDFLAGS='-L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/htslib/lib'
         make
