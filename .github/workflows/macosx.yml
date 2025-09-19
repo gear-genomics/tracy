@@ -14,7 +14,7 @@ jobs:
     - name: make
       run: |
         brew install boost htslib
-        git sumodule update --init --recursive src/xxsds
+        git submodule update --init --recursive src/xxsds
         export CXXFLAGS='-I/opt/homebrew/opt/boost/include -I/opt/homebrew/opt/htslib/include'
         export LDFLAGS='-L/opt/homebrew/opt/boost/lib -L/opt/homebrew/opt/htslib/lib'
         make
