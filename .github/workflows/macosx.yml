@@ -1,4 +1,4 @@
-\61;7600;1cname: MacOS CI
+name: MacOS CI
 
 on:
   push:
