@@ -4,13 +4,18 @@
 
 Contents:
 
-1. [Installation](/installation/)
-2. [Usage](/cli/)
-3. [Web Application](/webapps/)
-4. [FAQ](/faq/)
+1. [Installation](installation/)
+2. [Usage](cli/)
+3. [Web Application](webapp/)
+4. [FAQ](faq/)
 
 ::: tip
 For questions, help or feature requests please contact gear_genomics@embl.de
 :::
 
-Please cite our Gear Genomics URL [https://www.gear-genomics.com](https://www.gear-genomics.com) in publications.
+If you use tracy in your work please cite:
+
+Rausch, T., Fritz, M.H., Untergasser, A. and Benes, V.         
+Tracy: basecalling, alignment, assembly and deconvolution of sanger chromatogram trace files.             
+BMC Genomics 21, 230 (2020).             
+[https://doi.org/10.1186/s12864-020-6635-8](https://doi.org/10.1186/s12864-020-6635-8)

@@ -50,7 +50,7 @@ Obviously, the index needs to be built only once.
 
 ## Genome index
 
-Pre-built genome indices for commonly used reference genomes are available for download [here](https://gear.embl.de/data/tracy/).
+Pre-built genome indices for commonly used reference genomes are available for download [here](https://gear-genomics.embl.de/data/tracy/).
 
 
 ## Deconvolution of heterozygous mutations
@@ -85,31 +85,13 @@ This output file in BCF format can be converted to VCF using [bcftools](https://
 bcftools view outprefix.bcf
 ```
 
-## Using forward and reverse ab1 files to improve variant calling
+## Using forward and reverse ab1 file
 
-If you do have forward and reverse trace files for the same expected genomic variant you can merge variant files and check consistency of calls and genotypes. Forward trace decomposition:
+If you do have forward and reverse trace files for the same genomic locus you can also generate a consensus.
 
-```bash
-tracy decompose -o forward -a homo_sapiens -r hg38.fa.gz forward.ab1
-```
-
-Reverse trace decomposition:
 
 ```bash
-tracy decompose -o reverse -a homo_sapiens -r hg38.fa.gz reverse.ab1
-```
-
-Left-alignment of InDels:
-
-```bash
-bcftools norm -O b -o forward.norm.bcf -f hg38.fa.gz forward.bcf
-bcftools norm -O b -o reverse.norm.bcf -f hg38.fa.gz reverse.bcf
-```
-
-Merging of normalized variant files:
-
-```bash
-bcftools merge --force-samples forward.norm.bcf reverse.norm.bcf
+tracy consensus forward.ab1 reverse.ab1
 ```
 
 ## Trace assembly
