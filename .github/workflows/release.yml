@@ -81,7 +81,7 @@ jobs:
 
       - name: Rename binary
         run: |
-          mv ./bin/tracy ./tracy-${{ github.event.release.tag_name }}-macos-${{ matrix.arch }}
+          mv ./src/tracy ./tracy-${{ github.event.release.tag_name }}-macos-${{ matrix.arch }}
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
