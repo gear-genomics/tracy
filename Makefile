@@ -51,7 +51,7 @@ TARGETS = ${SUBMODULES} ${BUILT_PROGRAMS}
 all:   	$(TARGETS)
 
 .sdsl: $(SDSLSOURCES)
-	if [ -r src/xxsds/install.sh ]; then cd src/xxsds/build && ./clean.sh && cmake -DCMAKE_INSTALL_PREFIX=${PBASE}/src/sdslLite -DSDSL_BUILD_TESTS=OFF -DSDSL_BUILD_EXAMPLES=OFF -DSDSL_BUILD_TUTORIAL=OFF .. && make -j sdsl && make install && cd ../../../ && touch .sdsl; fi
+	if [ -r src/xxsds/install.sh ]; then cd src/xxsds/build && ./clean.sh && cmake -DCMAKE_INSTALL_PREFIX=${PBASE}/src/sdslLite -DSDSL_BUILD_TESTS=OFF -DSDSL_BUILD_EXAMPLES=OFF -DSDSL_BUILD_TUTORIAL=OFF .. && make -j 8 sdsl && make install && cd ../../../ && touch .sdsl; fi
 
 .htslib: $(HTSLIBSOURCES)
 	if [ -r src/htslib/Makefile ]; then cd src/htslib && autoreconf -i && ./configure --disable-s3 --disable-gcs --disable-libcurl --disable-plugins && $(MAKE) && $(MAKE) lib-static && cd ../../ && touch .htslib; fi

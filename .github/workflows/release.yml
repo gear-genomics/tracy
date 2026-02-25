@@ -113,6 +113,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: tracy-*
+          merge-multiple: false
 
       - name: Upload to GitHub release
         uses: softprops/action-gh-release@v2
