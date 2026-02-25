@@ -1,0 +1,70 @@
+name: Windows CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-boost
+          mingw-w64-x86_64-xz
+          mingw-w64-x86_64-curl
+          mingw-w64-x86_64-zlib
+          mingw-w64-x86_64-bzip2
+          autoconf
+          automake
+          libtool
+          pkg-config
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-libdeflate
+          mingw-w64-x86_64-libtre
+          mingw-w64-x86_64-libsystre
+          mingw-w64-x86_64-gettext
+          make
+          git
+
+    - name: Build Tracy
+      shell: msys2 {0}
+      run: |
+        # Patch all CMakeLists.txt in sdsl-lite for modern CMake (>= 3.27)
+        find src/xxsds -name "CMakeLists.txt" -exec sed -i 's/cmake_minimum_required(VERSION [^)]*)/cmake_minimum_required(VERSION 3.5)/' {} \;
+        # Build sdsl-lite manually (bypass install.sh to avoid googletest build)
+        cd src/xxsds/build
+        cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX="$(pwd)/../../sdslLite" ..
+        make -j sdsl
+        # Manually install headers and library (skip googletest/examples)
+        mkdir -p ../../sdslLite/include ../../sdslLite/lib
+        cp -r ../include/sdsl ../../sdslLite/include/
+        # Find and copy built library files
+        find . -name "libsdsl.a" -exec cp {} ../../sdslLite/lib/ \;
+        find . -name "libdivsufsort.a" -exec cp {} ../../sdslLite/lib/ \;
+        find . -name "libdivsufsort64.a" -exec cp {} ../../sdslLite/lib/ \;
+        cd ../../..
+        # Create sentinel file so Tracy's Makefile skips install.sh
+        touch .sdsl
+        # Patch Makefile for Windows: remove -ldl, add Winsock flags, and fix Boost lib names (-mt suffix in MSYS2)
+        sed -i 's/-ldl//g' Makefile
+        sed -i 's/^CXXFLAGS += /CXXFLAGS += -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0601 -Wno-use-after-free /' Makefile
+        sed -i 's/-lboost_iostreams/-lboost_iostreams-mt/g' Makefile
+        sed -i 's/-lboost_filesystem/-lboost_filesystem-mt/g' Makefile
+        sed -i 's/-lboost_program_options/-lboost_program_options-mt/g' Makefile
+        sed -i 's/-lboost_date_time/-lboost_date_time-mt/g' Makefile
+        # Order matters for static linking: ws2_32, regex, tre, intl, iconv, and bcrypt MUST come after lhts
+        sed -i 's/-ldeflate/-ldeflate -lws2_32 -lregex -ltre -lintl -liconv -lbcrypt/g' Makefile
+        make STATIC=1 CXX=g++
