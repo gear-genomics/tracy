@@ -1,6 +1,8 @@
 name: Windows CI
 
 on:
+  release:
+    types: [published]
   push:
     branches: [ main ]
   pull_request:
@@ -68,3 +70,16 @@ jobs:
         # Order matters for static linking: ws2_32, regex, tre, intl, iconv, and bcrypt MUST come after lhts
         sed -i 's/-ldeflate/-ldeflate -lws2_32 -lregex -ltre -lintl -liconv -lbcrypt/g' Makefile
         make STATIC=1 CXX=g++
+
+    - name: Rename executable logic
+      shell: bash
+      run: |
+        mv src/tracy.exe tracy_windows_x86_64bit.exe
+
+    - name: Upload portable executable to release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: tracy_windows_x86_64bit.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
