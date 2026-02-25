@@ -44,6 +44,7 @@ jobs:
     - name: Build Tracy
       shell: msys2 {0}
       run: |
+        set -euo pipefail
         # Patch all CMakeLists.txt in sdsl-lite for modern CMake (>= 3.27)
         find src/xxsds -name "CMakeLists.txt" -exec sed -i 's/cmake_minimum_required(VERSION [^)]*)/cmake_minimum_required(VERSION 3.5)/' {} \;
         # Build sdsl-lite manually (bypass install.sh to avoid googletest build)
@@ -74,12 +75,23 @@ jobs:
     - name: Rename executable logic
       shell: bash
       run: |
-        mv src/tracy.exe tracy_windows_x86_64bit.exe
+        VERSION="${{ github.event.release.tag_name }}"
+        if [ -z "$VERSION" ]; then
+          VERSION="snapshot"
+        fi
+        OUTPUT_NAME="tracy-${VERSION}-windows-amd64.exe"
+        mv src/tracy.exe "$OUTPUT_NAME"
+        echo "OUTPUT_NAME=$OUTPUT_NAME" >> "$GITHUB_ENV"
+
+    - name: Verify executable exists
+      shell: bash
+      run: |
+        test -f "$OUTPUT_NAME"
 
     - name: Upload portable executable to release
       if: github.event_name == 'release'
       uses: softprops/action-gh-release@v1
       with:
-        files: tracy_windows_x86_64bit.exe
+        files: ${{ env.OUTPUT_NAME }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
