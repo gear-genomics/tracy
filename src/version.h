@@ -5,7 +5,7 @@ namespace tracy
 {
 
 
-  std::string tracyVersionNumber = "0.8.6";
+  std::string tracyVersionNumber = "0.8.7";
 
   inline 
     void printTitle(std::string const& title) 
