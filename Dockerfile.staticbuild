@@ -1,9 +1,7 @@
-# use the ubuntu base image
 FROM ubuntu:22.04
 
 MAINTAINER Tobias Rausch rausch@embl.de
 
-# install packages
 RUN apt-get update && apt-get install -y \
     autoconf \
     build-essential \
@@ -23,19 +21,14 @@ RUN apt-get update && apt-get install -y \
     libhdf5-dev \
     libncurses-dev \
     liblzma-dev \
+    pkg-config \
     zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# set environment
 ENV BOOST_ROOT /usr
 
-# install tracy
 WORKDIR /opt/tracy/
 ADD ./src/ /opt/tracy/src/
 COPY .gitmodules Makefile /opt/tracy/
-RUN make STATIC=1 all \
-    && make install
-
-# by default /bin/sh is executed
-CMD ["/bin/sh"]
+RUN make STATIC=1 all && make install

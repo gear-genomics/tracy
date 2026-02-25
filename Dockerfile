@@ -1,4 +1,3 @@
-# use the ubuntu base image
 FROM ubuntu:22.04
 
 MAINTAINER Tobias Rausch rausch@embl.de
