@@ -27,3 +27,7 @@ BMC Genomics 21, 230 (2020).
 ## License
 
 Tracy is distributed under the BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/gear-genomics/tracy/blob/master/LICENSE) file for more details.
+
+## Credits
+
+[HTSlib](https://github.com/samtools/htslib) is heavily used for all genomic alignment and variant processing. [Boost](https://www.boost.org/) and [SDSL](https://github.com/xxsds/sdsl-lite) for various data structures and algorithms. [Claude](https://claude.com/) for bug fixes, performance improvements and code suggestions.
