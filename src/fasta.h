@@ -64,11 +64,21 @@ namespace tracy
       }
       fafile.close();
     }
+    // Replace degenerate bases with N
+    for(char &c : tmpfasta) {
+      switch (c) {
+      case 'W': case 'S': case 'M': case 'K': case 'R': case 'Y': case 'B': case 'D': case 'H': case 'V': case '-':
+        c = 'N';
+        break;
+      default:
+        break;
+      }
+    }
     // Check FASTA
     for(uint32_t k = 0; k < tmpfasta.size(); ++k)
       if ((tmpfasta[k] == 'A') || (tmpfasta[k] == 'C') || (tmpfasta[k] == 'G') || (tmpfasta[k] == 'T') || (tmpfasta[k] == 'N')) seq += tmpfasta[k];
     if (seq.size() != tmpfasta.size()) {
-      std::cerr << "FASTA file contains nucleotides != [ACGTN]." << std::endl;
+      std::cerr << "FASTA file contains nucleotides != [ACGTNWSMKRYBDHV]." << std::endl;
       return false;
     }
 
