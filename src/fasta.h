@@ -33,7 +33,24 @@ namespace tracy
     boost::erase_all(s, "\r");
     boost::erase_all(s, "#");
   }
-  
+
+  // Replace IUPAC with N
+  inline bool
+  _replaceDegenerateBases(std::string& seq) {
+    for(uint32_t i = 0; i < seq.size(); ++i) {
+      switch (seq[i]) {
+      case 'A': case 'C': case 'G': case 'T': case 'N':
+	break;
+      case 'W': case 'S': case 'M': case 'K': case 'R': case 'Y': case 'B': case 'D': case 'H': case 'V':
+	seq[i] = 'N';
+	break;
+      default:
+	return false;
+      }
+    }
+    return true;
+  }
+
   inline bool
   loadSingleFasta(std::string const& filename, std::string& faname, std::string& seq) {
     faname = "";
@@ -64,23 +81,12 @@ namespace tracy
       }
       fafile.close();
     }
-    // Replace degenerate bases with N
-    for(char &c : tmpfasta) {
-      switch (c) {
-      case 'W': case 'S': case 'M': case 'K': case 'R': case 'Y': case 'B': case 'D': case 'H': case 'V': case '-':
-        c = 'N';
-        break;
-      default:
-        break;
-      }
-    }
-    // Check FASTA
-    for(uint32_t k = 0; k < tmpfasta.size(); ++k)
-      if ((tmpfasta[k] == 'A') || (tmpfasta[k] == 'C') || (tmpfasta[k] == 'G') || (tmpfasta[k] == 'T') || (tmpfasta[k] == 'N')) seq += tmpfasta[k];
-    if (seq.size() != tmpfasta.size()) {
-      std::cerr << "FASTA file contains nucleotides != [ACGTNWSMKRYBDHV]." << std::endl;
+    // Replace degenerate bases with N; reject gaps and other non-[ACGTN] characters
+    if (!_replaceDegenerateBases(tmpfasta)) {
+      std::cerr << "FASTA file contains non-IUPAC characters." << std::endl;
       return false;
     }
+    seq += tmpfasta;
 
     // Fix FASTA sequence name for BCF output
     _fixReferenceName(faname);  // Replace special characters

@@ -153,24 +153,12 @@ namespace tracy
 	  }
 	  fafile.close();
 	}
-	// Replace degenerate bases with N
-	for(char &c : tmpfasta) {
-	  switch (c) {
-	  case 'W': case 'S': case 'M': case 'K': case 'R': case 'Y': case 'B': case 'D': case 'H': case 'V': case '-':
-	    c = 'N';
-	    break;
-	  default:
-	    break;
-	  }
-	}
-	// Check FASTA
-	rs.refslice = "";
-	for(uint32_t k = 0; k < tmpfasta.size(); ++k)
-	  if ((tmpfasta[k] == 'A') || (tmpfasta[k] == 'C') || (tmpfasta[k] == 'G') || (tmpfasta[k] == 'T') || (tmpfasta[k] == 'N')) rs.refslice += tmpfasta[k];
-	if (rs.refslice.size() != tmpfasta.size()) {
-	  std::cerr << "FASTA file contains nucleotides != [ACGTNWSMKRYBDHV]." << std::endl;
+	// Replace degenerate bases with N; reject gaps and other non-[ACGTN] characters
+	if (!_replaceDegenerateBases(tmpfasta)) {
+	  std::cerr << "FASTA file contains non-IUPAC characters." << std::endl;
 	  return false;
 	}
+	rs.refslice = tmpfasta;
 	construct_im(fm_index, rs.refslice.c_str(), 1);
       } else {
 	std::cerr << "Couldn't recognize reference file format!" << std::endl;
