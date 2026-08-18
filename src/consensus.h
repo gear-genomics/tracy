@@ -50,6 +50,8 @@ namespace tracy {
     int32_t gapext;
     int32_t match;
     int32_t mismatch;
+    uint32_t minOverlap;
+    float matchFraction;
     float pratio;
     float trimStringency;
     std::string label;
@@ -341,6 +343,8 @@ namespace tracy {
       ("help,?", "show help message")
       ("label,b", boost::program_options::value<std::string>(&c.label)->default_value("Consensus"), "sample label")
       ("pratio,p", boost::program_options::value<float>(&c.pratio)->default_value(0.33), "peak ratio to call base")
+      ("fracmatch,f", boost::program_options::value<float>(&c.matchFraction)->default_value(0.5), "min. fraction of matches [0:1]")
+      ("minoverlap,c", boost::program_options::value<uint32_t>(&c.minOverlap)->default_value(25), "min. overlap length")
       ;
 
     boost::program_options::options_description alignment("Alignment options");
@@ -529,6 +533,21 @@ namespace tracy {
     typedef boost::multi_array<char, 2> TAlign;
     TAlign fali;
     int32_t score = gotoh(trimmedtrace1, trimmedtrace2, fali, global, c.aliscore);
+
+    // Overlap?
+    uint32_t numAligned = 0;
+    uint32_t numMatch = 0;
+    for(uint32_t j = 0; j < fali.shape()[1]; ++j) {
+      if ((fali[0][j] != '-') && (fali[1][j] != '-')) {
+	++numAligned;
+	if (fali[0][j] == fali[1][j]) ++numMatch;
+      }
+    }
+    double matchFrac = numAligned ? (double) numMatch / (double) numAligned : 0.0;
+    if ((numAligned < c.minOverlap) || (matchFrac < c.matchFraction)) {
+      std::cerr << "Error: No sufficient trace overlap!" << std::endl;
+      return 1;
+    }
     // Debug Alignment
     //for(uint32_t i = 0; i < fali.shape()[0]; ++i) {
     //for(uint32_t j = 0; j < fali.shape()[1]; ++j) std::cerr << fali[i][j];
