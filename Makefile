@@ -1,10 +1,19 @@
+# To build against HTSlib system libraries
+#
+#   make HTSLIBINCDIR=/usr/include HTSLIBLIBDIR=/usr/lib all
+#
+PWD = $(shell pwd)
+HTSLIBINCDIR ?= ${PWD}/src/htslib/
+HTSLIBLIBDIR ?= ${PWD}/src/htslib/
+BOOSTINCDIR ?=
+BOOSTLIBDIR ?=
+
+# Debug or static build
 DEBUG ?= 0
 STATIC ?= 0
 
 # Submodules
-PWD = $(shell pwd)
 SDSL_ROOT ?= ${PWD}/src/sdslLite/
-EBROOTHTSLIB ?= ${PWD}/src/htslib/
 JLIB ?= ${PWD}/src/jlib/
 
 # Install dir
@@ -13,15 +22,26 @@ exec_prefix = $(prefix)
 bindir ?= $(exec_prefix)/bin
 
 # Flags
-CXX=g++
-CXXFLAGS += -std=c++17 -isystem ${JLIB} -isystem ${EBROOTHTSLIB} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall
-LDFLAGS += -L${EBROOTHTSLIB} -L${EBROOTHTSLIB}/lib -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_program_options -lboost_date_time -ldl -lpthread
+CXX ?= g++
+CXXFLAGS += -std=c++17 -isystem ${JLIB} -isystem ${HTSLIBINCDIR} -isystem ${SDSL_ROOT}/include -pedantic -W -Wall
+LDFLAGS += -L${HTSLIBLIBDIR} -L${SDSL_ROOT}/lib -lboost_iostreams -lboost_filesystem -lboost_program_options -lboost_date_time -ldl -lpthread
 
-ifeq (${STATIC}, 1)
-	LDFLAGS += -static -static-libgcc -pthread -lhts -lz -llzma -lbz2 -ldeflate
-else
-	LDFLAGS += -lhts -lz -llzma -lbz2 -Wl,-rpath,${EBROOTHTSLIB}
+# Boost location
+ifneq (${BOOSTINCDIR},)
+	CXXFLAGS += -isystem ${BOOSTINCDIR}
 endif
+ifneq (${BOOSTLIBDIR},)
+	LDFLAGS += -L${BOOSTLIBDIR} -Wl,-rpath,${BOOSTLIBDIR}
+endif
+
+# Flags for static compile
+ifeq (${STATIC}, 1)
+	LDFLAGS += -static -static-libgcc -lhts -lz -llzma -lbz2 -ldeflate
+else
+	LDFLAGS += -lhts -lz -llzma -lbz2 -Wl,-rpath,${HTSLIBLIBDIR}
+endif
+
+# Flags for debugging, profiling and releases
 ifeq (${DEBUG}, 1)
 	CXXFLAGS += -g -O0 -fno-inline -DDEBUG
 else ifeq (${DEBUG}, 2)
@@ -30,7 +50,7 @@ else ifeq (${DEBUG}, 2)
 else
 	CXXFLAGS += -O3 -fno-tree-vectorize -DNDEBUG
 endif
-ifeq (${EBROOTHTSLIB}, ${PWD}/src/htslib/)
+ifeq (${HTSLIBINCDIR}, ${PWD}/src/htslib/)
 	SUBMODULES += .htslib
 endif
 ifeq (${SDSL_ROOT}, ${PWD}/src/sdslLite/)
