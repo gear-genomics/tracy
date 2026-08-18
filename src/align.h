@@ -173,7 +173,9 @@ namespace tracy
 	  else --sum;
 	}
       }
-      for(TPIndex k = 0; k<6; ++k) p[k][j] /= sum;
+      if (sum > 0) {
+	for(TPIndex k = 0; k<6; ++k) p[k][j] /= sum;
+      }
     }
   }
 

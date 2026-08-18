@@ -265,7 +265,7 @@ readBinUI8(std::vector<char> const& buffer, int32_t pos) {
 
 inline int32_t
 readBinI32(std::vector<char> const& buffer, int32_t pos) {
-  return (((uint32_t) 0) | ((uint8_t)(buffer[pos])<<24) | ((uint8_t)(buffer[pos+1])<<16) | ((uint8_t)(buffer[pos+2])<<8) | ((uint8_t)(buffer[pos+3])));
+  return (int32_t) (((uint32_t)(uint8_t)(buffer[pos])<<24) | ((uint32_t)(uint8_t)(buffer[pos+1])<<16) | ((uint32_t)(uint8_t)(buffer[pos+2])<<8) | ((uint32_t)(uint8_t)(buffer[pos+3])));
 }
 
 inline int16_t

@@ -346,8 +346,9 @@ namespace tracy
       rfile << "\"" << var[i].id << "\", ";
       rfile << "\"" << var[i].ref << "\", ";
       rfile << "\"" << var[i].alt << "\", ";
-      rfile << (int32_t) bc.estQual[var[i].basenum] << ", ";
-      if ((int32_t) bc.estQual[var[i].basenum] < c.qualCut) rfile << "\"LowQual\", ";
+      uint32_t qidx = rs1.forward ? (c.trimLeft + var[i].basenum - 1) : (bc.primary.size() - (c.trimRight + var[i].basenum));
+      rfile << (int32_t) bc.estQual[qidx] << ", ";
+      if ((int32_t) bc.estQual[qidx] < c.qualCut) rfile << "\"LowQual\", ";
       else rfile << "\"PASS\", ";
       rfile << "\"" << variantType(var[i].ref, var[i].alt) << "\", ";
       if (var[i].gt == 0) rfile << "\"hom. REF\", ";

@@ -63,7 +63,12 @@ namespace tracy
       std::cout << visible_options << "\n";
       return -1;
     }
-    
+
+    // Set default output
+    if (vm["output"].defaulted()) {
+      c.outfile = c.genome.parent_path() / boost::filesystem::path(c.genome.stem().string() + ".fm9");
+    }
+
     // Show cmd
     boost::posix_time::ptime now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] ";
@@ -117,8 +122,15 @@ namespace tracy
 	  store_to_checked_file(fm_index, index_file);
 	  boost::filesystem::remove(dumpfile);
 	}
+      } else {
+	ifile.close();
+	std::cerr << "Error: Please compress " << c.genome.string() << " with bgzip." << std::endl;
+	return -1;
       }
       ifile.close();
+    } else {
+      std::cerr << "Error: " << c.genome.string() << " cannot be opened!" << std::endl;
+      return -1;
     }
     now = boost::posix_time::second_clock::local_time();
     std::cout << '[' << boost::posix_time::to_simple_string(now) << "] " << "Done." << std::endl;

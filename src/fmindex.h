@@ -206,11 +206,10 @@ namespace tracy
   inline void
   scanSequence(TFMIndex const& fm_index, std::string const& consensus, uint16_t const trimLeft, uint16_t const trimRight, uint16_t const kmer, THits& hits, bool unique) {
     int32_t ncount = 0;
-    for(uint16_t i = trimLeft; ((i < trimLeft + kmer) && (i < consensus.size())); ++i)
+    for(uint16_t i = trimLeft; ((i < trimLeft + kmer) && (i < consensus.size())); ++i) {
       if (consensus[i] == 'N') ++ncount;
-    for(uint16_t k = trimLeft + kmer; ((k < (consensus.size() - trimRight)) && (k < consensus.size())); ++k) {
-      if (consensus[k-kmer] == 'N') --ncount;
-      if (consensus[k] == 'N') ++ncount;
+    }
+    for(uint16_t k = trimLeft; ((k < (consensus.size() - trimRight)) && (k < consensus.size())); ++k) {
       if (ncount == 0) {
 	std::string seq = consensus.substr(k, kmer);
 	std::size_t occs = sdsl::count(fm_index, seq.begin(), seq.end());
@@ -229,6 +228,8 @@ namespace tracy
 	  }
 	}
       }
+      if (consensus[k] == 'N') --ncount;
+      if (((uint32_t) (k + kmer) < consensus.size()) && (consensus[k + kmer] == 'N')) ++ncount;
     }
   }
 
@@ -301,7 +302,8 @@ namespace tracy
     uint32_t refIndex = 0;
     for(; bestPos >= cumsum + seqlen[refIndex]; ++refIndex) cumsum += seqlen[refIndex];
     if (!rs.filetype) rs.chr = std::string(faidx_iseq(fai, refIndex));
-    uint32_t chrpos = bestPos - cumsum;
+    int64_t chrposSigned = bestPos - cumsum;
+    uint32_t chrpos = (chrposSigned > 0) ? (uint32_t) chrposSigned : 0;
     int32_t slen = -1;
     uint32_t slicestart = 0;
     uint32_t sliceend = seqlen[refIndex];
@@ -311,8 +313,10 @@ namespace tracy
     if (!rs.filetype) {
       rs.pos = slicestart;
       char* seq = faidx_fetch_seq(fai, rs.chr.c_str(), slicestart, sliceend, &slen);
-      rs.refslice = boost::to_upper_copy(std::string(seq));
-      if (seq != NULL) free(seq);
+      if (seq != NULL) {
+	rs.refslice = boost::to_upper_copy(std::string(seq));
+	free(seq);
+      }
     }
     if (!rs.forward) reverseComplement(rs.refslice);
     //std::cerr << rs.chr << "\t" << rs.pos << "\t" << rs.forward << std::endl;

@@ -59,14 +59,14 @@ namespace tracy {
     int32_t ri = rs.pos;
     
     // Get leading and trailing gaps
-    int32_t viStart = 0;
-    int32_t viEnd = 0;
+    int32_t viStart = -1;
+    int32_t viEnd = -1;
     for(uint32_t j = 0; j < align.shape()[1]; ++j) {
       if (align[0][j] != '-') {
-	if (viStart == 0) viStart = j;
+	if (viStart == -1) viStart = j;
 	viEnd = j;
       }
-      if ((align[1][j] != '-') && (viStart == 0)) ++ri;
+      if ((align[1][j] != '-') && (viStart == -1)) ++ri;
     }
 
     // Call variants
@@ -76,7 +76,7 @@ namespace tracy {
     std::string ins = "";
     int32_t insStart = 0;
     char lastRefChar = 'N';  // Leading insertion so we don't know the preceeding character
-    for(int32_t j = viStart; j <= viEnd; ++j) {
+    for(int32_t j = viStart; (viStart >= 0) && (j <= viEnd); ++j) {
       if ((!del.empty()) && (align[0][j] != '-')) {
 	// End of deletion
 	insertVariant(var, delStart, vi, 1, rs.chr, del, std::string(1, del[0]));
@@ -202,9 +202,10 @@ namespace tracy {
 	// Output main vcf fields
 	rec->rid = bcf_hdr_name2id(hdr, var[i].chr.c_str());
 	rec->pos = var[i].pos - 1;
+	uint32_t qidx = rs.forward ? (c.trimLeft + var[i].basenum - 1) : (bc.primary.size() - (c.trimRight + var[i].basenum));
 	// For ALT alleles with Ns set quality to 0
 	if (strInclN(var[i].alt)) rec->qual = 0;
-	else rec->qual = (int) bc.estQual[var[i].basenum]; 
+	else rec->qual = (int) bc.estQual[qidx];
 	std::string id(var[i].id);
 	bcf_update_id(hdr, rec, id.c_str());
 	std::string alleles = var[i].ref + "," + var[i].alt;
@@ -240,7 +241,7 @@ namespace tracy {
 	  gts[0] = bcf_gt_missing;
 	  gts[1] = bcf_gt_missing;
 	}
-	gqval[0] = (int) bc.estQual[var[i].basenum];
+	gqval[0] = (int) bc.estQual[qidx];
 	bcf_update_genotypes(hdr, rec, gts, bcf_hdr_nsamples(hdr) * 2);
 	bcf_update_format_int32(hdr, rec, "GQ", gqval, bcf_hdr_nsamples(hdr));
 

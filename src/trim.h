@@ -60,7 +60,7 @@ namespace tracy {
     for(uint32_t i = bestIdx; ((i < bestIdx + win) && (i < bc.secondary.size())); ++i) localPenalty += penalty[i];
     int32_t i = bestIdx - 1;
     while (i >= 0) {
-      localPenalty -= penalty[i + win];
+      if ((uint32_t) (i + win) < bc.secondary.size()) localPenalty -= penalty[i + win];
       localPenalty += penalty[i];
       if (localPenalty > (perBasePenalty * win)) {
 	leftTrim = i + win - 1;

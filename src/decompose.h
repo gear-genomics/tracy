@@ -88,6 +88,10 @@ namespace tracy
     bp.traceleft = true;
     bp.breakpoint = 0;
     uint32_t minWindow = 25;
+    if (alignEnd < alignStart + (TAIndex) (2 * minWindow)) {
+      std::cerr << "Alignment too short between consensus and reference!" << std::endl;
+      return false;
+    }
     for(uint32_t i = alignStart; i < alignStart + minWindow; ++i) {
       if (align[0][i] != '-') ++varIndex;
     }
