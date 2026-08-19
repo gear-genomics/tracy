@@ -8,7 +8,7 @@
 
 ## Tracy: basecalling, alignment, assembly and deconvolution of Sanger Chromatogram trace files
 
-Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy), as a pre-compiled statically linked binary from [Tracy's github release page](https://github.com/gear-genomics/tracy/releases), as a singularity container [SIF file](https://github.com/gear-genomics/tracy/releases) or as a [Docker container](https://hub.docker.com/r/geargenomics/tracy/).
+Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy), a [Homebrew formula](https://formulae.brew.sh/formula/tracy-genomics), a [Singularity container](https://github.com/gear-genomics/tracy/releases) or as a minimal [Docker container](https://hub.docker.com/r/geargenomics/tracy/).
 
 [Source Code](https://github.com/gear-genomics/tracy/)
 
@@ -26,8 +26,8 @@ BMC Genomics 21, 230 (2020).
 
 ## License
 
-Tracy is distributed under the BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/gear-genomics/tracy/blob/master/LICENSE) file for more details.
+The BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/gear-genomics/tracy/blob/master/LICENSE) file for more details.
 
 ## Credits
 
-[HTSlib](https://github.com/samtools/htslib) is heavily used for all genomic alignment and variant processing. [Boost](https://www.boost.org/) and [SDSL](https://github.com/xxsds/sdsl-lite) for various data structures and algorithms. [Claude](https://claude.com/) for bug fixes, performance improvements and code suggestions.
+[HTSlib](https://github.com/samtools/htslib) for all genomic alignment and variant processing. [Boost](https://www.boost.org/) and [SDSL](https://github.com/xxsds/sdsl-lite) for various data structures and algorithms. [Claude](https://claude.com/) for bug fixes, performance improvements, and code suggestions.

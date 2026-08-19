@@ -1,6 +1,8 @@
 # Tracy: basecalling, alignment, assembly and deconvolution of Sanger Chromatogram trace files
 
-[Tracy](https://github.com/gear-genomics/tracy) is an efficient and versatile command-line application to basecall, align, assemble and deconvolute Sanger Chromatogram trace files. Tracy supports various Chromatogram input file formats (*.ab1, *.abi, *.scf), aligns traces across entire genomes, calls variants and supports as output commonly used NGS file formatics (VCF/BCF, JSON). Tracy's [companion web applications](https://www.gear-genomics.com) enable an interactive exploration of results. All code is open-source and hosted on [Tracy's GitHub page](https://github.com/gear-genomics/tracy).
+[Tracy](https://github.com/gear-genomics/tracy) is an efficient and versatile command-line application to basecall, align, assemble, and deconvolute Sanger Chromatogram trace files. Tracy supports various Chromatogram input file formats (*.ab1, *.abi, *.scf), aligns traces across entire genomes, calls variants, and supports as output commonly used NGS file formatics (VCF/BCF, JSON). Tracy's [companion web applications](https://www.gear-genomics.com) enable an interactive exploration of results.
+
+All code is open-source and hosted on [Tracy's GitHub page](https://github.com/gear-genomics/tracy).
 
 Contents:
 
@@ -10,10 +12,10 @@ Contents:
 4. [FAQ](faq/)
 
 ::: tip
-For questions, help or feature requests please contact gear_genomics@embl.de
+For questions, help, or feature requests please contact gear_genomics@embl.de
 :::
 
-If you use tracy in your work please cite:
+If you use Tracy in your work, please cite it accordingly:
 
 Rausch, T., Fritz, M.H., Untergasser, A. and Benes, V.         
 Tracy: basecalling, alignment, assembly and deconvolution of sanger chromatogram trace files.             
