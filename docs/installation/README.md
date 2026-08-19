@@ -1,11 +1,14 @@
 # Installation
 
-Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy), as a pre-compiled statically linked binary from [Tracy's github release page](https://github.com/gear-genomics/tracy/releases), as a singularity container [SIF file](https://github.com/gear-genomics/tracy/releases) or as a minimal [Docker container](https://hub.docker.com/r/geargenomics/tracy/).
+Tracy is available as a [Bioconda package](https://anaconda.org/bioconda/tracy), a [Homebrew formula](https://formulae.brew.sh/formula/tracy-genomics), a [Singularity container](https://github.com/gear-genomics/tracy/releases) or as a minimal [Docker container](https://hub.docker.com/r/geargenomics/tracy/).
 
+If desired, you can compile Tracy from source on Ubuntu or macOS to suit your specific needs.
 
 ## Installation from Source
 
-To build Tracy from source you need some build essentials and the Boost libraries, i.e. for Ubuntu:
+### Ubuntu
+
+To build Tracy from source, you need some build essentials and the Boost libraries:
 
 ```bash
 apt install \
@@ -23,7 +26,7 @@ apt install \
     libboost-iostreams-dev
 ```
 
-Once you have installed these system libraries you can compile and link Tracy.
+Once you have these libraries installed, compile and link Tracy:
 
 ```bash
 git clone --recursive https://github.com/gear-genomics/tracy.git
@@ -33,9 +36,9 @@ make install
 ./bin/tracy -h
 ```
 
-## Installation for Mac OSX
+### macOS
 
-To build Tracy from source you need some system libraries.
+To build Tracy from source, you will need the following libraries:
 
 ```bash
 brew install \
@@ -50,7 +53,7 @@ brew install \
      boost
 ```
 
-For Mac OSX you also often need to set the library path to HTSlib.
+For macOS, you also often need to set the `DYLD_LIBRARY_PATH` to `htslib`.
 
 ```bash
 git clone --recursive https://github.com/gear-genomics/tracy.git
