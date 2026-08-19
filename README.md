@@ -2,7 +2,7 @@
 [![Anaconda-Server Badge](https://anaconda.org/bioconda/tracy/badges/downloads.svg)](https://anaconda.org/bioconda/tracy)
 [![C/C++ CI](https://github.com/gear-genomics/tracy/workflows/C/C++%20CI/badge.svg)](https://github.com/gear-genomics/tracy/actions)
 [![Docker CI](https://github.com/gear-genomics/tracy/workflows/Docker%20CI/badge.svg)](https://hub.docker.com/r/geargenomics/tracy/)
-[![GitHub license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/gear-genomics/tracy/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://github.com/gear-genomics/tracy/blob/main/LICENSE)
 [![GitHub Releases](https://img.shields.io/github/release/gear-genomics/tracy.svg)](https://github.com/gear-genomics/tracy/releases)
 
 
@@ -26,7 +26,7 @@ BMC Genomics 21, 230 (2020).
 
 ## License
 
-The BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/gear-genomics/tracy/blob/master/LICENSE) file for more details.
+The BSD 3-Clause license. Consult the accompanying [LICENSE](https://github.com/gear-genomics/tracy/blob/main/LICENSE) file for more details.
 
 ## Credits
 
