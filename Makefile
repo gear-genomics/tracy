@@ -38,7 +38,7 @@ endif
 ifeq (${STATIC}, 1)
 	LDFLAGS += -static -static-libgcc -lhts -lz -llzma -lbz2 -ldeflate
 else
-	LDFLAGS += -lhts -lz -llzma -lbz2 -Wl,-rpath,${HTSLIBLIBDIR}
+	LDFLAGS += -lhts -lz -llzma -lbz2 -ldeflate -Wl,-rpath,${HTSLIBLIBDIR}
 endif
 
 # Flags for debugging, profiling and releases
