@@ -62,14 +62,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          brew install boost htslib autoconf libtool automake
+          brew install boost htslib libdeflate autoconf libtool automake
 
       - name: Build
         run: |
           export PATH="$(brew --prefix libtool)/libexec/gnubin:$PATH"
           export CMAKE_POLICY_VERSION_MINIMUM=3.5
           export CXXFLAGS="-I$(brew --prefix boost)/include -I$(brew --prefix htslib)/include"
-          export LDFLAGS="-L$(brew --prefix boost)/lib -L$(brew --prefix htslib)/lib"
+          export LDFLAGS="-L$(brew --prefix boost)/lib -L$(brew --prefix htslib)/lib -L$(brew --prefix libdeflate)/lib"
           make
 
       - name: Rename binary
